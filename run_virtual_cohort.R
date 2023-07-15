@@ -1,6 +1,7 @@
 library(deSolve)
 library(dde)
 library(parallel)
+library(lubridate)
 
 source("functions_sim.R")
 
@@ -55,5 +56,8 @@ SAVE$parameters = params.df
 SAVE$IC = IC
 SAVE$cohort = COHORT
 
-saveRDS(SAVE, file = "sim.Rds")
+saveRDS(SAVE, 
+        file = sprintf("sim_%dinvididuals_%s.Rds",
+                       N, 
+                       format(now(tzone = "UTC"), "%Y_%m_%d-%H_%M_%S")))
 
