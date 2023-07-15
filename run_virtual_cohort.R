@@ -2,6 +2,7 @@ library(parallel)
 library(deSolve)
 library(reshape)
 library(ggplot2)
+library(lubridate)
 
 source("functions_sim.R")
 
@@ -56,7 +57,10 @@ SAVE$parameters = params.df
 SAVE$IC = IC
 SAVE$cohort = COHORT
 
-saveRDS(SAVE, file = "sim.Rds")
+saveRDS(SAVE, 
+        file = sprintf("sim_%dinvididuals_%s.Rds",
+                       N, 
+                       format(now(tzone = "UTC"), "%Y_%m_%d-%H_%M_%S")))
 
 # t = COHORT[[1]][,"time"]
 # V = mat.or.vec(nr = length(t), nc = N)
