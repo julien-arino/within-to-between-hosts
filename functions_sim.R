@@ -1,41 +1,78 @@
 library(deSolve)
+library(dde)
 
-rhs_within_host = function(t, x, p) {
+rhs_within_host_deSolve = function(t, x, p) {
   with(as.list(c(x, p)),{
     # Variables are (in order) V,S,I,R,D,F_U,F_B
     # So to get the lagvalue values...
     if (t<tau_I) {
       V_t = V0
       S_t = S0
+      I_t = 0
+      R_t = 0
     } else {
       V_t = lagvalue(t-tau_I,1)
       S_t = lagvalue(t-tau_I,2)
+      I_t = lagvalue(t-tau_I,3)
+      R_t = lagvalue(t-tau_I,4)
     }
     dV = p*I-d_V*V
     dS = lambda_S*(1-(S+I+D+R)/S_max)*S-beta*S*V
-    dI = beta*S_t*V_t*(1-F_B/(epsilon_FI+F_B))-d_I*I
+    dI = beta*S_t*V_t*(1-F_B/(epsilon_FI+F_B))*A_I-d_I*I
     dR = lambda_S*(1-(S+I+D+R)/S_max)*R +
-      beta*S_t*V_t*(F_B/(epsilon_FI+F_B))
+      beta*S_t*V_t*(F_B/(epsilon_FI+F_B))*A_R
     dD = d_I*I-d_D*D
     dF_U = psi_F_prod+p_FI*I/(I+eta_FI) - 
       k_lin_f*F_U-k_B_F*((T_star+I)*A_F-F_B)*F_U+k_U_F*F_B
     dF_B = -k_int_f*F_B+k_B_F*((T_star+I)*A_F-F_B)*F_U-k_U_F*F_B
-    return(list(c(dV, dS, dI, dR, dD, dF_U, dF_B)))
+    dA_I = delta*A_I*(I_t-I)
+    dA_R = delta*A_R*(R_t-R)
+    return(list(c(dV, dS, dI, dR, dD, dF_U, dF_B,dA_I,dA_R)))
   })
 }
 
-set_IC = function() {
+# rhs_within_host_dde = function(t, x, p) {
+#   with(as.list(c(x, p)),{
+#     # Variables are (in order) V,S,I,R,D,F_U,F_B
+#     # So to get the lagvalue values...
+#     V_t = ylag(tau_I, 1L)
+#     S_t = ylag(tau_I, 2L)
+#     I_t = ylag(tau_I, 3L)
+#     R_t = ylag(tau_I, 4L)
+#     # Now the RHS itself
+#     dV = p*I-d_V*V
+#     dS = lambda_S*(1-(S+I+D+R)/S_max)*S-beta*S*V
+#     dI = beta*S_t*V_t*(1-F_B/(epsilon_FI+F_B))*A_I-d_I*I
+#     dR = lambda_S*(1-(S+I+D+R)/S_max)*R +
+#       beta*S_t*V_t*(F_B/(epsilon_FI+F_B))*A_R
+#     dD = d_I*I-d_D*D
+#     dF_U = psi_F_prod+p_FI*I/(I+eta_FI) - 
+#       k_lin_f*F_U-k_B_F*((T_star+I)*A_F-F_B)*F_U+k_U_F*F_B
+#     dF_B = -k_int_f*F_B+k_B_F*((T_star+I)*A_F-F_B)*F_U-k_U_F*F_B
+#     dA_I = delta*A_I*(I_t-I)
+#     dA_R = delta*A_R*(R_t-R)
+#     return(list(c(dV, dS, dI, dR, dD, dF_U, dF_B,dA_I,dA_R)))
+#   })
+# }
+
+set_IC_1 = function() {
   # | Variable | Definition    | Value  | Unit |
   # |----------|---------------|--------|------|
+  # | V   | Viral load         | 4.5    | log_10(copies/ml) |
   # | S   | Susceptible cell   | 0.16   | 10^9 cells/ml |
   # | I   | Infected cell      | 0      | 10^9 cells/ml |
   # | R   | Resistant cell     | 0      | 10^9 cells/ml |
   # | D   | Dead cell          | 0      | 10^9 cells/ml |
-  # | V   | Viral load         | 4.5    | log_10(copies/ml) |
   # | F_U | Unbound interferon | 0.015  | pg/ml |
   # | F_B | Bound interferon   | 1.1e-8 | pg/ml |
-  IC = c(S = 0.16, I = 0, R = 0, D = 0, V = 4.5, 
-         F_U = 0.015, F_B = 1.1e-8)
+  IC = c(V = 4.5, S = 0.16, I = 0, R = 0, D = 0, 
+         F_U = 0.015, F_B = 1.1e-8, A_I = 1, A_R = 1)
+  return(IC)
+}
+
+set_IC_2 = function() {
+  IC = c(V = 1, S = 0.16, I = 0, R = 0, D = 0, 
+         F_U = 0.015, F_B = 1.1e-8, A_I = 1, A_R = 1)
   return(IC)
 }
 
@@ -65,26 +102,101 @@ set_parameters = function() {
     d_D = 8,
     tau_I = 0.17,
     beta = 0.3,
+    beta_stddev = 0.1994,
     d_V = 8.4,
+    d_V_stddev = 0.67,
     p = 394,
+    p_stddev = 158.65,
     k_U_F = 6.072,
     p_FI = 2.8235,
+    p_FI_stddev = 1.8741,
     psi_F_prod = 0.25,
     k_B_F = 0.0107,
     k_lin_f = 16.635,
+    k_lin_f_stddev = 2.49,
     k_int_f = 16.968,
+    k_int_f_stddev = 2.54,
     epsilon_FI = 2e-4,
-    eta_FI = 0.022,
+    eta_FI = 0.022328,
     T_star = 1.104e-4,
-    tau_I = 0.1,
-    A_F = 0.01
+    delta = 0.1,
+    avo=6.02214e23,
+    MM_F = 19000,
+    R_F_T = 1000,
+    R_F_I = 1300
   )
+  params = c(params,
+             A_F = as.numeric(
+               (params["MM_F"]/params["avo"]) *
+                 (params["R_F_I"]+params["R_F_T"]) *
+                 (1/5000)*(10^9*1e12)
+             ))
   return(params)
 }
 
 add_IC_to_params = function(params, IC) {
   params = c(params, 
              V0 = as.numeric(IC["V"]), 
-             S0 = as.numeric(IC["S"]))
-  return(params)
+             S0 = as.numeric(IC["S"]),
+             I0 = as.numeric(IC["I"]), 
+             R0 = as.numeric(IC["R"]))
+return(params)
+}
+
+# Given parameters, find those with a standard deviation
+# given and generate a table with sampled values of these parameters, 
+# regular values of the others, as well as initial conditions. 
+# This way, we have all that's needed for the cohort.
+generate_params_patients = function(params, n = 1000) {
+  # The whole list of parameters, including values of std dev for some
+  names_params = names(params)
+  # Which are the parameters that contain std dev information
+  idx_stddev = grep("stddev", names_params)
+  # Which parameters is that std dev info for
+  params_with_stddev = gsub("_stddev", 
+                            "", 
+                            names_params[idx_stddev])
+  idx_params_with_stddev = which(names_params %in% params_with_stddev)
+  OUT = 
+    data.frame(
+      mat.or.vec(nr = n,
+                 nc = length(names_params)-length(idx_params_stddev))
+    )
+  colnames(OUT) = names_params[setdiff(1:length(names_params),
+                                       idx_stddev)]
+  for (curr_col in colnames(OUT)) {
+    if (!(curr_col %in% params_with_stddev)) {
+      # This is a "regular" parameter, we just replicate it n times
+      OUT[[curr_col]] = rep(params[curr_col], n)
+    } else {
+      # This a parameter we must sample. As indicated, we sample from a 
+      # normal distribution with mean the value given and std dev 3 times
+      # the given std dev
+      OUT[[curr_col]] = rnorm(n = n,
+                              mean = params[curr_col],
+                              sd = 3*params[sprintf("%s_stddev",
+                                                    curr_col)])
+      # This can give us negative values. If so, just take the mean 
+      # (for now)
+      OUT[[curr_col]][which(OUT[[curr_col]]<0)] = params[curr_col]
+    }
+  }
+  return(OUT)
+}
+
+# Given a patient index idx, a parameters data frame params.df and 
+# initial conditions IC, run the simulation of the within host model for
+# this patient
+run_one_patient = function(idx = 1, 
+                           params.df, 
+                           IC) {
+  writeLines(paste0("patient index = ", idx))
+  params_tmp = params.df[idx,]
+  params_tmp = add_IC_to_params(params_tmp, IC)
+  times <- seq(0, 200, by = 0.1)
+  yout <- dede(y = IC, 
+               times = times, 
+               func = rhs_within_host_deSolve, 
+               parms = params_tmp)
+  return(yout)
 }
