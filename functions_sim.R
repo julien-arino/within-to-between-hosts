@@ -31,30 +31,6 @@ rhs_within_host_deSolve = function(t, x, p) {
   })
 }
 
-# rhs_within_host_dde = function(t, x, p) {
-#   with(as.list(c(x, p)),{
-#     # Variables are (in order) V,S,I,R,D,F_U,F_B
-#     # So to get the lagvalue values...
-#     V_t = ylag(tau_I, 1L)
-#     S_t = ylag(tau_I, 2L)
-#     I_t = ylag(tau_I, 3L)
-#     R_t = ylag(tau_I, 4L)
-#     # Now the RHS itself
-#     dV = p*I-d_V*V
-#     dS = lambda_S*(1-(S+I+D+R)/S_max)*S-beta*S*V
-#     dI = beta*S_t*V_t*(1-F_B/(epsilon_FI+F_B))*A_I-d_I*I
-#     dR = lambda_S*(1-(S+I+D+R)/S_max)*R +
-#       beta*S_t*V_t*(F_B/(epsilon_FI+F_B))*A_R
-#     dD = d_I*I-d_D*D
-#     dF_U = psi_F_prod+p_FI*I/(I+eta_FI) - 
-#       k_lin_f*F_U-k_B_F*((T_star+I)*A_F-F_B)*F_U+k_U_F*F_B
-#     dF_B = -k_int_f*F_B+k_B_F*((T_star+I)*A_F-F_B)*F_U-k_U_F*F_B
-#     dA_I = delta*A_I*(I_t-I)
-#     dA_R = delta*A_R*(R_t-R)
-#     return(list(c(dV, dS, dI, dR, dD, dF_U, dF_B,dA_I,dA_R)))
-#   })
-# }
-
 set_IC_1 = function() {
   # | Variable | Definition    | Value  | Unit |
   # |----------|---------------|--------|------|
@@ -160,7 +136,7 @@ generate_params_patients = function(params, n = 1000) {
   OUT = 
     data.frame(
       mat.or.vec(nr = n,
-                 nc = length(names_params)-length(idx_params_stddev))
+                 nc = length(names_params)-length(idx_stddev))
     )
   colnames(OUT) = names_params[setdiff(1:length(names_params),
                                        idx_stddev)]

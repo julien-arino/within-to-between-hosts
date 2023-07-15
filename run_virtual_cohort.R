@@ -8,12 +8,12 @@ source("functions_sim.R")
 params = set_parameters()
 IC = set_IC_2()
 
-N = 50
+N = 10000
 params.df = generate_params_patients(n = N, params = params)
 patient_idx = 1:N
 
 tictoc::tic()
-if (FALSE) {
+if (TRUE) {
   # RUN IN PARALLEL
   # Detect number of cores, use all but 1
   no_cores <- detectCores()
@@ -51,15 +51,25 @@ if (FALSE) {
 }
 tictoc::toc()
 
-t = COHORT[[1]][,"time"]
-V = mat.or.vec(nr = length(t), nc = N)
-for (i in 1:N) {
-  V[,i] = COHORT[[i]][,"V"]
-}
+SAVE = list()
+SAVE$parameters = params.df
+SAVE$IC = IC
+SAVE$cohort = COHORT
 
-df <- data.frame(x = t, V)
-# Long format
-df <- melt(df, id.vars = "x")
+saveRDS(SAVE, file = "sim.Rds")
 
-ggplot(df, aes(x = x, y = value, color = variable)) +
-  geom_line()
+# t = COHORT[[1]][,"time"]
+# V = mat.or.vec(nr = length(t), nc = N)
+# for (i in 1:N) {
+#   V[,i] = COHORT[[i]][,"V"]
+# }
+# 
+# df <- data.frame(x = t, V)
+# # Long format
+# df <- melt(df, id.vars = "x")
+# 
+# ggplot(df, aes(x = x, y = value, color = variable)) +
+#   geom_line() + 
+#   theme(legend.position = "none")
+# ggsave(filename = "FIGS/viral-load.png",
+#        width = 20, height = 15, units = "cm")
