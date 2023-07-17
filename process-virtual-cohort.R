@@ -1,5 +1,3 @@
-library(parallel)
-
 source("functions_all.R")
 
 NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
@@ -30,11 +28,18 @@ for (n in colnames(COHORT[[1]])) {
   }
 }
 
+# Make a matrix with S_max values as columns to be able to compute Phi
+S_max_tmp = mat.or.vec(nr = dim(STATE_VARS$S)[1],
+                       nc = dim(STATE_VARS$S)[2])
+for (c in 1:dim(STATE_VARS$S)[2]) {
+  S_max_tmp[,c] = rep(cohort$parameters$S_max[c],
+                      dim(STATE_VARS$S)[1])
+}
+STATE_VARS$Phi = (STATE_VARS$S+STATE_VARS$R-S_max_tmp) / S_max_tmp * 100
+
 # Create summary view for state variables
-names_variables = setdiff(colnames(COHORT[[1]]), 
+names_variables = setdiff(c(colnames(COHORT[[1]]),"Phi"), 
                           c("time", "A_I", "A_R"))
-names_variables = setdiff(colnames(COHORT[[1]]), 
-                          c("time"))
 SUMMARIES = list()
 for (n in names_variables) {
   SUMMARIES[[n]] = t(apply(STATE_VARS[[n]], 1, 
