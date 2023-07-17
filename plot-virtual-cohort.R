@@ -5,14 +5,16 @@ library(ggplot2)
 to_plot = "V"
 
 # Plot all the values (V1)
-df <- data.frame(x = STATE_VARS$time, STATE_VARS[[to_plot]])
-# Long format
-df <- melt(df, id.vars = "x")
-ggplot(df, aes(x = x, y = value, color = variable)) +
-  geom_line() +
-  theme(legend.position = "none")
-ggsave(filename = "FIGS/viral-load-v1.png",
-       width = 20, height = 15, units = "cm")
+if (FALSE) {
+  df <- data.frame(x = STATE_VARS$time, STATE_VARS[[to_plot]])
+  # Long format
+  df <- melt(df, id.vars = "x")
+  ggplot(df, aes(x = x, y = value, color = variable)) +
+    geom_line() +
+    theme(legend.position = "none")
+  ggsave(filename = "FIGS/viral-load-v1.png",
+         width = 20, height = 15, units = "cm")
+}
 
 # Plot all the values (V2)
 if (FALSE) {
@@ -52,7 +54,7 @@ ggplot(df, aes(x = time, y = value, color = variable)) +
                                 "grey20")) +
   theme(legend.position = c(0.8,0.5)) +
   scale_fill_manual(name = "Dose", labels = c("A", "B", "C")) +
-  xlim(0,10) +
+  xlim(0,60) +
   xlab("Time (days)") +
   ylab("Viral load")
 ggsave(filename = "FIGS/summary-viral-load.png",
