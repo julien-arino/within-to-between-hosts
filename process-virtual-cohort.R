@@ -2,6 +2,10 @@ library(parallel)
 
 source("functions_all.R")
 
+# Load the file. Let's do the latest one for now..
+COHORT = readRDS("/home/jarino/OUTPUT_NAS_small/within-to-between-hosts/sim_10000invididuals_2023_07_15-21_41_14.Rds")
+COHORT = COHORT$cohort
+
 # Make a list with each entry the state variables. Assumes all 
 # individuals have the same time output and state variables
 STATE_VARS = list()
