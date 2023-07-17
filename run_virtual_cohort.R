@@ -3,10 +3,12 @@ library(dde)
 library(parallel)
 library(lubridate)
 
-source("functions_sim.R")
+source("functions_all.R")
+
+NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
 
 params = set_parameters()
-IC = set_IC_2()
+IC = set_IC()
 
 N = 10000
 params.df = generate_params_patients(n = N, params = params)
@@ -57,7 +59,8 @@ SAVE$IC = IC
 SAVE$cohort = COHORT
 
 saveRDS(SAVE, 
-        file = sprintf("sim_%dinvididuals_%s.Rds",
+        file = sprintf("%s/sim_%dinvididuals_%s.Rds",
+                       NAS,
                        N, 
                        format(now(tzone = "UTC"), "%Y_%m_%d-%H_%M_%S")))
 

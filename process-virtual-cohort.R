@@ -2,8 +2,10 @@ library(parallel)
 
 source("functions_all.R")
 
+NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
 # Load the file. Let's do the latest one for now..
-COHORT = readRDS("/home/jarino/OUTPUT_NAS_small/within-to-between-hosts/sim_10000invididuals_2023_07_15-21_41_14.Rds")
+COHORT = readRDS(sprintf("%s/sim_10000invididuals_2023_07_17-19_28_01.Rds",
+                         NAS))
 COHORT = COHORT$cohort
 
 # Make a list with each entry the state variables. Assumes all 
@@ -12,7 +14,7 @@ STATE_VARS = list()
 for (n in colnames(COHORT[[1]])) {
   if (n == "time") {
     STATE_VARS[[n]] = COHORT[[1]][,"time"]
-  } else if ((n != "A_I") && (n != "A_R")) {
+  } else { #if ((n != "A_I") && (n != "A_R")) {
     STATE_VARS[[n]] = mat.or.vec(nr = dim(COHORT[[1]])[1], 
                                  nc = length(COHORT))
     for (i in 1:length(COHORT)) {
@@ -24,9 +26,12 @@ for (n in colnames(COHORT[[1]])) {
 # Create summary view for state variables
 names_variables = setdiff(colnames(COHORT[[1]]), 
                           c("time", "A_I", "A_R"))
+names_variables = setdiff(colnames(COHORT[[1]]), 
+                          c("time"))
 SUMMARIES = list()
 for (n in names_variables) {
-  SUMMARIES[[n]] = t(apply(STATE_VARS[[n]], 1, quantile))
+  SUMMARIES[[n]] = t(apply(STATE_VARS[[n]], 1, 
+                           function(x) quantile(x, probs = c(0.025,0.25,0.5,0.75,0.975))))
   SUMMARIES[[n]] = as.data.frame(SUMMARIES[[n]])
   SUMMARIES[[n]]$mean = apply(STATE_VARS[[n]], 1, mean)
 }
