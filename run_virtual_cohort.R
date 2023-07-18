@@ -10,7 +10,7 @@ NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
 params = set_parameters()
 IC = set_IC()
 
-N = 10000
+N = 100000
 params.df = generate_params_patients(n = N, params = params)
 patient_idx = 1:N
 

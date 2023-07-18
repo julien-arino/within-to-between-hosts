@@ -38,7 +38,7 @@ set_IC = function() {
   # | D        | Dead cells         | 0      | 10^9 cells/ml     |
   # | F_U      | Unbound interferon | 0.015  | pg/ml             |
   # | F_B      | Bound interferon   | 1.1e-8 | pg/ml             |
-  IC = c(V = 0.6, S = 0.16, I = 0, R = 0, D = 0, 
+  IC = c(V = 1, S = 0.16, I = 0, R = 0, D = 0, 
          F_U = 0.015, F_B = 1.1e-8, A_I = 1, A_R = 1)
   return(IC)
 }
