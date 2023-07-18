@@ -7,7 +7,7 @@ library(latex2exp)
 to_plot = "V"
 
 # Plot all the values of the viral load
-if (TRUE) {
+if (FALSE) {
   df <- data.frame(x = STATE_VARS$time, STATE_VARS[[to_plot]])
   # Long format
   df <- melt(df, id.vars = "x")
@@ -45,7 +45,7 @@ ggsave(filename = "FIGS/summary-viral-load.png",
 to_plot = "Phi"
 
 # Plot all the values (V1)
-if (TRUE) {
+if (FALSE) {
   df <- data.frame(x = STATE_VARS$time, STATE_VARS[[to_plot]])
   # Long format
   df <- melt(df, id.vars = "x")
@@ -100,20 +100,22 @@ ggsave(filename = "FIGS/hospitalisations.png",
 
 # Plot both distributions
 df1 = data.frame(value = SUMMARIES$time_of_death,
-                 Event = rep("Death", 
+                 Events = rep("Deaths", 
                             length(SUMMARIES$time_of_death)))
 df2 = data.frame(value = SUMMARIES$time_of_recovery,
-                 Event = rep("Recoveries", 
+                 Events = rep("Recoveries", 
                             length(SUMMARIES$time_of_recovery)))
 df = rbind(df1, df2)
-df.mean <- plyr::ddply(df, "Event", summarise, rating.mean=mean(value))
-ggplot(df, aes(x = value, fill = Event)) + 
+df.mean <- plyr::ddply(df, "Events", 
+                       plyr::summarise, 
+                       rating.mean=mean(value))
+ggplot(df, aes(x = value, fill = Events)) + 
   geom_density(alpha=.3)+
   xlim(0,30) +
   xlab("Time (days)") +
   ylab("Density") +
-  geom_vline(data=df, aes(xintercept=value.mean,  colour=Event),
-             linetype="dashed", size=1) +
+#  geom_vline(data=df, aes(xintercept=df.mean,  colour=Event),
+#             linetype="dashed", size=1) +
   theme(legend.position = c(0.8,0.5))
 ggsave(filename = "FIGS/deaths-recoveries.png",
        width = 20, height = 15, units = "cm")

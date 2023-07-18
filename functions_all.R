@@ -143,8 +143,22 @@ generate_params_patients = function(params, n = 1000) {
                               mean = params[curr_col],
                               sd = 3*params[sprintf("%s_stddev",
                                                     curr_col)])
-      # This can give us negative values. If so, just take the mean 
-      # (for now)
+      # This can give us negative values. If so, resample..
+      idx_negative = which(OUT[[curr_col]]<0)
+      if (length(idx_negative)>0) {
+        repeat{
+          # writeLines(paste0("Nb negative ", length(idx_negative)))
+          OUT[[curr_col]][idx_negative] = 
+            rnorm(n = length(idx_negative),
+                  mean = params[curr_col],
+                  sd = 3*params[sprintf("%s_stddev",
+                                        curr_col)])
+          idx_negative = which(OUT[[curr_col]]<0)
+          if(length(idx_negative) == 0) {
+            break
+          }
+        }
+      }
       OUT[[curr_col]][which(OUT[[curr_col]]<0)] = params[curr_col]
     }
   }

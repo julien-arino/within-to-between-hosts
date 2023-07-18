@@ -2,7 +2,7 @@ source("functions_all.R")
 
 NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
 # Load the file. Let's do the latest one for now..
-cohort = readRDS(sprintf("%s/sim_10000invididuals_2023_07_17-21_10_34.Rds",
+cohort = readRDS(sprintf("%s/sim_50000invididuals_2023_07_18-07_44_19.Rds",
                       NAS))
 COHORT = cohort$cohort
 
@@ -94,5 +94,5 @@ for (i in 1:dim(STATE_VARS$Phi)[2]) {
 }
 SUMMARIES$time_of_recovery = 
   sort(STATE_VARS$time[idx_cross_threshold[idx_uncensored]])
-SUMMARIES$time_of_recovery = 
-  SUMMARIES$time_of_recovery[which(SUMMARIES$time_of_recovery > 0)]
+#SUMMARIES$time_of_recovery = 
+#  SUMMARIES$time_of_recovery[which(SUMMARIES$time_of_recovery > 0)]

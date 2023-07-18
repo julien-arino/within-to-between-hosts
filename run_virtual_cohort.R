@@ -10,10 +10,11 @@ NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
 params = set_parameters()
 IC = set_IC()
 
-N = 100000
+N = 50000
 params.df = generate_params_patients(n = N, params = params)
 patient_idx = 1:N
 
+writeLines("Starting computations")
 tictoc::tic()
 if (TRUE) {
   # RUN IN PARALLEL
@@ -58,9 +59,9 @@ SAVE$parameters = params.df
 SAVE$IC = IC
 SAVE$cohort = COHORT
 
+writeLines("Saving results")
 saveRDS(SAVE, 
         file = sprintf("%s/sim_%dinvididuals_%s.Rds",
                        NAS,
                        N, 
                        format(now(tzone = "UTC"), "%Y_%m_%d-%H_%M_%S")))
-
