@@ -21,7 +21,7 @@ if (TRUE) {
   # Detect number of cores, use all but 1
   no_cores <- detectCores()
   if (no_cores > 124) {
-    no_cores = 124
+    no_cores = 100
   }
   # Initiate cluster
   cl <- makeCluster(no_cores)
