@@ -1,8 +1,9 @@
 source("functions_all.R")
 
 NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
+NAS = "."
 # Load the file. Let's do the latest one for now..
-cohort = readRDS(sprintf("%s/sim_50000invididuals_2023_07_18-07_44_19.Rds",
+cohort = readRDS(sprintf("%s/sim_100000invididuals_2023_07_18-07_44_19_merged.Rds",
                       NAS))
 COHORT = cohort$cohort
 
