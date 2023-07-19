@@ -6,6 +6,9 @@ cohort = readRDS(sprintf("%s/sim_50000invididuals_2023_07_18-07_44_19.Rds",
                       NAS))
 COHORT = cohort$cohort
 
+###
+### STATE VARIABLES
+###
 # Make a list with each entry the state variables. Assumes all 
 # individuals have the same time output and state variables
 # Shift time to start at tau_I, because up to then, we are in the initial
@@ -36,9 +39,21 @@ for (c in 1:dim(STATE_VARS$S)[2]) {
                       dim(STATE_VARS$S)[1])
 }
 STATE_VARS$Phi = (STATE_VARS$S+STATE_VARS$R-S_max_tmp) / S_max_tmp * 100
+# Compute transmission
+alpha = 16.422
+k_v = 7.49
+STATE_VARS$beta_hat = 
+  STATE_VARS$V ^ alpha / 
+  (k_v ^ alpha + STATE_VARS$V ^ alpha)
 
-# Create summary view for state variables
-names_variables = setdiff(c(colnames(COHORT[[1]]),"Phi"), 
+
+###
+### SUMMARIES OF STATE VARIABLES
+###
+# Create summary view for state variables. 
+
+# Make list of variables we want to process
+names_variables = setdiff(c(colnames(COHORT[[1]]), "Phi", "beta_hat"), 
                           c("time", "A_I", "A_R"))
 SUMMARIES = list()
 for (n in names_variables) {
@@ -94,5 +109,4 @@ for (i in 1:dim(STATE_VARS$Phi)[2]) {
 }
 SUMMARIES$time_of_recovery = 
   sort(STATE_VARS$time[idx_cross_threshold[idx_uncensored]])
-#SUMMARIES$time_of_recovery = 
-#  SUMMARIES$time_of_recovery[which(SUMMARIES$time_of_recovery > 0)]
+
