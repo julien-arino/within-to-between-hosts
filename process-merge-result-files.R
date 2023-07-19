@@ -3,7 +3,8 @@ source("functions_all.R")
 NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
 
 list_files = c(
-  "sim_50000invididuals_2023_07_18-07_44_19"
+  "sim_50000invididuals_2023_07_18-07_44_19",
+  "sim_50000invididuals_2023_07_18-22_10_44"
 )
 
 # Load the files. Let's do the latest one for now..
