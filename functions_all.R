@@ -183,6 +183,20 @@ run_one_patient = function(idx = 1,
   return(yout)
 }
 
+# Function that sets up the data frame for plotting (changes names, formats, etc.)
+# By default, prepares data with mean and 2.5 and 97.5 percentiles. Change as needed.
+format_df = function(time,
+                     data,
+                     line_plotted = "mean", 
+                     lower = "2.5%",
+                     upper = "97.5%") {
+  df = data.frame(time = time,
+                  lower = data[,lower],
+                  line = data[,line_plotted],
+                  upper = data[,upper])
+  return(df)
+}
+
 
 # From http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/#Helper%20functions
 ## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).

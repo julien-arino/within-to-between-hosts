@@ -111,3 +111,92 @@ for (i in 1:dim(STATE_VARS$Phi)[2]) {
 SUMMARIES$time_of_recovery = 
   sort(STATE_VARS$time[idx_cross_threshold[idx_uncensored]])
 
+# Get viral loads and beta_hat summaries for each type of patient (severities
+# in 1,2,3). 
+SUMMARIES$V_outcome = list()
+SUMMARIES$beta_hat_outcome = list()
+SUMMARIES$beta_hat_max_value_outcome = list()
+SUMMARIES$beta_hat_max_idx_outcome = list()
+SUMMARIES$beta_hat_max_time_outcome = list()
+for (s in sort(unique(SUMMARIES$lung_loss$outcome))) {
+  tmp = STATE_VARS$V[, which(SUMMARIES$lung_loss$outcome == s)]
+  tmp_beta_hat = 
+    tmp ^ alpha / 
+    (k_v ^ alpha + tmp ^ alpha)
+  # Value of the max
+  SUMMARIES$beta_hat_max_value_outcome[[s]] = 
+    apply(tmp_beta_hat, 2, max)
+  SUMMARIES$beta_hat_max_idx_outcome[[s]] = 
+    unlist(apply(tmp_beta_hat, 2,
+                 function(x) which(x == max(x))))
+  SUMMARIES$beta_hat_max_time_outcome[[s]] = 
+    STATE_VARS$time[SUMMARIES$beta_hat_max_idx_outcome[[s]]]
+  SUMMARIES$V_outcome[[s]] = t(apply(tmp, 1, 
+                                     function(x) 
+                                       quantile(x, 
+                                                probs = c(0.025,0.25,0.5,0.75,0.975))))
+  SUMMARIES$V_outcome[[s]] = as.data.frame(SUMMARIES$V_outcome[[s]])
+  SUMMARIES$V_outcome[[s]]$mean = apply(tmp, 1, mean)
+  SUMMARIES$beta_hat_outcome[[s]] = t(apply(tmp_beta_hat, 1, 
+                                            function(x) 
+                                              quantile(x, 
+                                                probs = c(0.025,0.25,0.5,0.75,0.975))))
+  SUMMARIES$beta_hat_outcome[[s]] = as.data.frame(SUMMARIES$beta_hat_outcome[[s]])
+  SUMMARIES$beta_hat_outcome[[s]]$mean = apply(tmp_beta_hat, 1, mean)
+}
+# # Add severity 4, combining 2 and 3.
+# tmp = STATE_VARS$V[, which(SUMMARIES$lung_loss$outcome %in% c(2,3))]
+# tmp_beta_hat = 
+#   tmp ^ alpha / 
+#   (k_v ^ alpha + tmp ^ alpha)
+# # Value of the max
+# SUMMARIES$beta_hat_max_value_outcome[[4]] = 
+#   apply(tmp_beta_hat, 2, max)
+# SUMMARIES$beta_hat_max_idx_outcome[[4]] = 
+#   unlist(apply(tmp_beta_hat, 2,
+#                function(x) which(x == max(x))))
+# SUMMARIES$beta_hat_max_time_outcome[[4]] = 
+#   STATE_VARS$time[SUMMARIES$beta_hat_max_idx_outcome[[4]]]
+# SUMMARIES$V_outcome[[4]] = t(apply(tmp, 1, 
+#                                    function(x) 
+#                                      quantile(x, 
+#                                               probs = c(0.025,0.25,0.5,0.75,0.975))))
+# SUMMARIES$V_outcome[[4]] = as.data.frame(SUMMARIES$V_outcome[[4]])
+# SUMMARIES$V_outcome[[4]]$mean = apply(tmp, 1, mean)
+# SUMMARIES$beta_hat_outcome[[4]] = t(apply(tmp_beta_hat, 1, 
+#                                           function(x) 
+#                                             quantile(x, 
+#                                                      probs = c(0.025,0.25,0.5,0.75,0.975))))
+# SUMMARIES$beta_hat_outcome[[4]] = as.data.frame(SUMMARIES$beta_hat_outcome[[4]])
+# SUMMARIES$beta_hat_outcome[[4]]$mean = apply(tmp_beta_hat, 1, mean)
+
+# Now consider viral load as a function of IFB
+# Get viral loads and beta_hat summaries for each type of patient (severities
+# in 1,2,3).
+min_FB = min(STATE_VARS$F_B)
+max_FB = max(STATE_VARS$F_B)
+values_FB = seq(min_FB, max_FB, length.out = 50)
+SUMMARIES$V_fct_FB = list()
+SUMMARIES$beta_hat_fct_FB = list()
+for (s in sort(unique(SUMMARIES$lung_loss$outcome))) {
+  tmp_V = STATE_VARS$V[, which(SUMMARIES$lung_loss$outcome == s)]
+  tmp_FB = STATE_VARS$F_B[, which(SUMMARIES$lung_loss$outcome == s)]
+  tmp_values_FB = mat.or.vec(nr = length(values_FB),
+                             nc = dim(tmp_V)[2])
+  for (i in 1:dim(tmp_V)[2]) {
+    if (i %% 10000 == 0) {
+      writeLines(paste0("s=", s, " i=", i))
+    }
+    tmp = data.frame(FB = tmp_FB[,i],
+                     V = tmp_V[,i])
+    tmp_coeffs = lm(V ~ FB, data = tmp)$coefficients
+    tmp_values_FB[,i] = tmp_coeffs[1] + tmp_coeffs[2]*values_FB
+  }
+  SUMMARIES$V_fct_FB[[s]] = t(apply(tmp_values_FB, 1, 
+                                    function(x) 
+                                      quantile(x, 
+                                               probs = c(0.025,0.25,0.5,0.75,0.975))))
+  SUMMARIES$V_fct_FB[[s]] = as.data.frame(SUMMARIES$V_fct_FB[[s]])
+  SUMMARIES$V_fct_FB[[s]]$mean = apply(tmp_values_FB, 1, mean)
+}
+

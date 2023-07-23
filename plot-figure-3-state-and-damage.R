@@ -4,20 +4,6 @@ library(latex2exp)
 library(ggpubr)
 library(scales)
 
-# Function that sets up the data frame for plotting (changes names, formats, etc.)
-# By default, prepares data with mean and 2.5 and 97.5 percentiles. Change as needed.
-format_df = function(time,
-                     data,
-                     line_plotted = "mean", 
-                     lower = "2.5%",
-                     upper = "97.5%") {
-  df = data.frame(time = time,
-                  lower = data[,lower],
-                  line = data[,line_plotted],
-                  upper = data[,upper])
-  return(df)
-}
-
 # Set equal time range for all figures
 time_range = c(0,80)
 # Legend position for small figures
@@ -61,7 +47,7 @@ p_viral_load = ggplot(df) +
   ggtitle("Viral load") +
   theme(plot.title = element_text(hjust = 0.5))
 
-# Plot the number of infected calls
+# Plot the number of infected cells
 to_plot = "I"
 df <- format_df(time = STATE_VARS$time, data = SUMMARIES[[to_plot]])
 p_infected = ggplot(df) +
