@@ -162,6 +162,7 @@ generate_params_patients = function(params, n = 1000) {
       OUT[[curr_col]][which(OUT[[curr_col]]<0)] = params[curr_col]
     }
   }
+  OUT = cbind(ID = 1:dim(OUT)[1], OUT)
   return(OUT)
 }
 
@@ -172,7 +173,7 @@ run_one_patient = function(idx = 1,
                            patients, 
                            IC) {
   writeLines(paste0("patient index = ", idx))
-  params_tmp = patients[idx,]
+  params_tmp = patients[which(patients$ID == idx),]
   params_tmp = add_IC_to_params(params_tmp, IC)
   times <- c(seq(0, ceiling(params_tmp$tau_I), by = 0.01), 
              seq(ceiling(params_tmp$tau_I), 200, by = 0.1))
