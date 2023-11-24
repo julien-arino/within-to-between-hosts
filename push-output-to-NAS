@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# Push results from the local directory to the NAS
+rsync -a /home/jarino/OUTPUT_local/within-to-between-hosts/ /home/jarino/OUTPUT_NAS_small/within-to-between-hosts

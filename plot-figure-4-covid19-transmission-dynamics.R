@@ -59,6 +59,7 @@ p_boxplot = ggplot(max_beta_hat,
                        "firebrick4")) + 
   theme(legend.position = "none") +
   stat_summary(fun=mean, geom="point", shape=23, size=4) +
+  stat_summary(fun=median, geom="point", shape=22, size=4) +
   ylab(TeX("$\\hat{\\beta}$ (day$^{-1}$)")) +
   ggtitle("Peak transmissibility") +
   theme(plot.title = element_text(hjust = 0.5))
@@ -88,6 +89,7 @@ p_boxplot_time = ggplot(time_max_beta_hat,
                               "firebrick4")) + 
   theme(legend.position = "none") +
   stat_summary(fun=mean, geom="point", shape=23, size=4) +
+  stat_summary(fun=median, geom="point", shape=22, size=4) +
   ylab("Time (days)") +
   ggtitle("Time peak transmissibility") +
   theme(plot.title = element_text(hjust = 0.5)) + 

@@ -1,10 +1,11 @@
 source("functions_all.R")
 
-NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
-NAS = "."
+OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
+OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/"
+
 # Load the file. Let's do the latest one for now..
 cohort = readRDS(sprintf("%s/sim_100000invididuals_2023_07_18-07_44_19_merged.Rds",
-                      NAS))
+                      OUTPUT_NAS))
 COHORT = cohort$cohort
 
 ###
@@ -39,7 +40,7 @@ for (c in 1:dim(STATE_VARS$S)[2]) {
   S_max_tmp[,c] = rep(cohort$parameters$S_max[c],
                       dim(STATE_VARS$S)[1])
 }
-STATE_VARS$Phi = (STATE_VARS$S+STATE_VARS$R-S_max_tmp) / S_max_tmp * 100
+STATE_VARS$Phi = (S_max_tmp-(STATE_VARS$S+STATE_VARS$R)) / S_max_tmp * 100
 # Compute transmission
 alpha = 16.422
 k_v = 7.49
@@ -54,7 +55,7 @@ STATE_VARS$beta_hat =
 # Create summary view for state variables. 
 
 # Make list of variables we want to process
-names_variables = setdiff(c(colnames(COHORT[[1]]), "Phi", "beta_hat"), 
+names_variables = setdiff(c(colnames(COHORT[[1]]), "Phi", "beta_hat"),
                           c("time", "A_I", "A_R"))
 SUMMARIES = list()
 for (n in names_variables) {
@@ -66,18 +67,19 @@ for (n in names_variables) {
   SUMMARIES[[n]]$mean = apply(STATE_VARS[[n]], 1, mean)
 }
 # Which of the patients are in the different zones?
-SUMMARIES$lung_loss = data.frame(max = apply(STATE_VARS$Phi, 2, min))
-SUMMARIES$lung_loss$outcome = 4-findInterval(SUMMARIES$lung_loss$max,
-                                             vec = c(-200,-85,-75,0))
+SUMMARIES$lung_loss = data.frame(max = apply(STATE_VARS$Phi, 2, max))
+SUMMARIES$lung_loss$outcome = 
+  findInterval(SUMMARIES$lung_loss$max,
+               vec = c(0, 75, 85, 100))
 
 
-# Prepare right censored data: for individuals who die, write down time 
+# Prepare right censored data: for individuals who die, write down time
 # of death this happens (>=85% lung cell loss)
 STATE_VARS$idx_censored = rep(NA, dim(STATE_VARS$V)[2])
 STATE_VARS$time_censored = rep(NA, dim(STATE_VARS$V)[2])
 for (i in 1:dim(STATE_VARS$V)[2]) {
   if (SUMMARIES$lung_loss$outcome[i] == 3) {
-    STATE_VARS$idx_censored[i] = which(STATE_VARS$Phi[,i]<=-85)[1]
+    STATE_VARS$idx_censored[i] = which(STATE_VARS$Phi[,i]>=85)[1]
     STATE_VARS$time_censored[i] = STATE_VARS$time[STATE_VARS$idx_censored[i]]
   }
 }
@@ -89,7 +91,7 @@ STATE_VARS$idx_hosp = rep(NA, dim(STATE_VARS$V)[2])
 STATE_VARS$time_hosp = rep(NA, dim(STATE_VARS$V)[2])
 for (i in 1:dim(STATE_VARS$V)[2]) {
   if (SUMMARIES$lung_loss$outcome[i] == 2) {
-    STATE_VARS$idx_hosp[i] = which(STATE_VARS$Phi[,i]<=-75)[1]
+    STATE_VARS$idx_hosp[i] = which(STATE_VARS$Phi[,i]>=75)[1]
     STATE_VARS$time_hosp[i] = STATE_VARS$time[STATE_VARS$idx_hosp[i]]
   }
 }
@@ -97,7 +99,7 @@ for (i in 1:dim(STATE_VARS$V)[2]) {
 SUMMARIES$time_of_hospitalisation = 
   sort(STATE_VARS$time_hosp[!is.na(STATE_VARS$time_hosp)])
 # Now recoveries. Suppose Phi gets larger than some threshold theta
-threshold = -15
+threshold = 15
 idx_uncensored = which(is.na(STATE_VARS$idx_censored))
 min_phi = apply(STATE_VARS$Phi, 2, min)
 idx_min_phi = c()
@@ -106,7 +108,7 @@ for (i in 1:dim(STATE_VARS$Phi)[2]) {
   idx_min_phi = c(idx_min_phi, which(STATE_VARS$Phi[,i] == min_phi[i]))
   idx_tmp = idx_min_phi[i]:dim(STATE_VARS$Phi)[1]
   idx_cross_threshold = c(idx_cross_threshold,
-                          which(STATE_VARS$Phi[idx_tmp,i] >= threshold)[1])
+                          which(STATE_VARS$Phi[idx_tmp,i] <= threshold)[1])
 }
 SUMMARIES$time_of_recovery = 
   sort(STATE_VARS$time[idx_cross_threshold[idx_uncensored]])

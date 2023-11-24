@@ -5,7 +5,8 @@ library(lubridate)
 
 source("functions_all.R")
 
-NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
+OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
+OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/"
 
 params = set_parameters()
 IC = set_IC()
@@ -18,10 +19,10 @@ writeLines("Starting computations")
 tictoc::tic()
 if (TRUE) {
   # RUN IN PARALLEL
-  # Detect number of cores, use all but 1
+  # Detect number of cores
   no_cores <- detectCores()
   if (no_cores > 124) {
-    no_cores = 100
+    no_cores = 120
   }
   # Initiate cluster
   cl <- makeCluster(no_cores)
@@ -62,6 +63,6 @@ SAVE$cohort = COHORT
 writeLines("Saving results")
 saveRDS(SAVE, 
         file = sprintf("%s/sim_%dinvididuals_%s.Rds",
-                       NAS,
+                       OUTPUT_NAS,
                        N, 
                        format(now(tzone = "UTC"), "%Y_%m_%d-%H_%M_%S")))
