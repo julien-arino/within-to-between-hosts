@@ -38,10 +38,6 @@ for (b in 1:nb_batches) {
   patients_idx[[b]] = tmp_idx[start_current_batch:end_current_batch]
 }
 
-# Start preparing the save variable
-SAVE = list()
-SAVE$parameters = params.df
-
 writeLines("Starting computations")
 # Set up the cluster if needed
 if (PARALLEL) {
@@ -97,6 +93,9 @@ for (b in 1:nb_batches) {
   }
   tictoc::toc()
   
+  # Start preparing the save variable
+  SAVE = list()
+  SAVE$parameters = patients
   # Add IC and results to save variable
   SAVE$IC = IC
   SAVE$cohort = COHORT
