@@ -71,6 +71,8 @@ for (b in 1:nb_batches) {
   tictoc::tic()
   # Take the patients for this batch
   patients = patients_df[[b]]
+  # Indices for this batch
+  patients_idx_this_batch = patients_idx[[b]]
   if (PARALLEL) {
     # RUN IN PARALLEL, set parameters specific to this batch.
     clusterExport(cl,
@@ -79,14 +81,14 @@ for (b in 1:nb_batches) {
     # Run computation
     COHORT = 
       parLapply(cl = cl, 
-                X = patients_idx[[b]],
+                X = patients_idx_this_batch,
                 fun = function(x) run_one_patient(idx = x,
                                                   patients = patients,
                                                   IC = IC))
   } else {
     # RUN SEQUENTIALLY
     writeLines("Going old school (debugging, probably)")
-    COHORT = lapply(X = patient_idx,
+    COHORT = lapply(X = patients_idx_this_batch,
                     FUN = function(x) run_one_patient(idx = x,
                                                       patients = patients,
                                                       IC = IC))
