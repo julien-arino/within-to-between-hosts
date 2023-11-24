@@ -13,7 +13,7 @@ PARALLEL = TRUE
 
 # Weight of sims in RAM may lead to explosion of RAM usage (or swapping). Set
 # a maximum number of individuals to be simulated at once.
-max_patients_per_batch = 50000
+max_patients_per_batch = 20000
 # Number of patients in the virtual cohort
 N = 1000000
 # Number of sims needed to reach N
@@ -102,11 +102,14 @@ for (b in 1:nb_batches) {
   
   writeLines("Saving results")
   saveRDS(SAVE, 
-          file = sprintf("%s/sim_P%07d_DT%s_part-%02d-of-%02d.Rds",
+          file = sprintf("%s/sim_P%07d_DT%s_part-%03d-of-%03d.Rds",
                          OUTPUT_LOCAL,
                          N, 
                          format(now(tzone = "UTC"), "%Y_%m_%d-%H_%M_%S"),
                          b, nb_batches))
+  # Clean up to avoid a run with previous run in RAM
+  rm(COHORT)
+  rm(SAVE)
 }
 
 # Stop cluster
