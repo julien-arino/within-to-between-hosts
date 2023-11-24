@@ -9,7 +9,7 @@ OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
 OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/within-to-between-hosts"
 
 # Run parallel?
-PARALLEL = FALSE
+PARALLEL = TRUE
 
 # Weight of sims in RAM may lead to explosion of RAM usage (or swapping). Set
 # a maximum number of individuals to be simulated at once.
@@ -66,7 +66,7 @@ if (PARALLEL) {
   writeLines("We're running sequentially!")
 }
 
-for (b in 2:nb_batches) {
+for (b in 1:nb_batches) {
   writeLines(paste0("Starting batch ", b, " out of ", nb_batches))
   tictoc::tic()
   # Take the patients for this batch
