@@ -11,9 +11,16 @@ OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/within-to-between-hosts"
 params = set_parameters()
 IC = set_IC()
 
-N = 50000
+# Number of patients in the virtual cohort
+N = 1000000
+# Generate virtual cohort
 params.df = generate_params_patients(n = N, params = params)
+# Needed for the parallel call
 patient_idx = 1:N
+
+# Start preparing the save variable
+SAVE = list()
+SAVE$parameters = params.df
 
 writeLines("Starting computations")
 tictoc::tic()
@@ -55,14 +62,13 @@ if (TRUE) {
 }
 tictoc::toc()
 
-SAVE = list()
-SAVE$parameters = params.df
+# Add IC and results to save variable
 SAVE$IC = IC
 SAVE$cohort = COHORT
 
 writeLines("Saving results")
 saveRDS(SAVE, 
         file = sprintf("%s/sim_P%07d_DT%s.Rds",
-                       OUTPUT_NAS,
+                       OUTPUT_LOCAL,
                        N, 
                        format(now(tzone = "UTC"), "%Y_%m_%d-%H_%M_%S")))
