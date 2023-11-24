@@ -165,14 +165,14 @@ generate_params_patients = function(params, n = 1000) {
   return(OUT)
 }
 
-# Given a patient index idx, a parameters data frame params.df and 
+# Given a patient index idx, a parameters data frame patients and 
 # initial conditions IC, run the simulation of the within host model for
 # this patient
 run_one_patient = function(idx = 1, 
-                           params.df, 
+                           patients, 
                            IC) {
   writeLines(paste0("patient index = ", idx))
-  params_tmp = params.df[idx,]
+  params_tmp = patients[idx,]
   params_tmp = add_IC_to_params(params_tmp, IC)
   times <- c(seq(0, ceiling(params_tmp$tau_I), by = 0.01), 
              seq(ceiling(params_tmp$tau_I), 200, by = 0.1))

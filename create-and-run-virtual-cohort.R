@@ -73,9 +73,10 @@ if (PARALLEL) {
 for (b in 1:nb_batches) {
   writeLines(paste0("Starting batch ", b, " out of ", nb_batches))
   tictoc::tic()
+  # Take the patients for this batch
+  patients = patients_df[[i]]
   if (PARALLEL) {
     # RUN IN PARALLEL, set parameters specific to this batch.
-    patients = patients_df[[i]]
     clusterExport(cl,
                   c("patients"),
                   envir = .GlobalEnv)
@@ -91,7 +92,7 @@ for (b in 1:nb_batches) {
     writeLines("Going old school (debugging, probably)")
     COHORT = lapply(X = patient_idx,
                     FUN = function(x) run_one_patient(idx = x,
-                                                      params.df = params.df,
+                                                      patients = patients,
                                                       IC = IC))
   }
   tictoc::toc()
