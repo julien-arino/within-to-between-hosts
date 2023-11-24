@@ -6,7 +6,7 @@ library(lubridate)
 source("functions_all.R")
 
 OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
-OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/"
+OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/within-to-between-hosts"
 
 params = set_parameters()
 IC = set_IC()
@@ -62,7 +62,7 @@ SAVE$cohort = COHORT
 
 writeLines("Saving results")
 saveRDS(SAVE, 
-        file = sprintf("%s/sim_%dinvididuals_%s.Rds",
+        file = sprintf("%s/sim_P%07d_DT%s.Rds",
                        OUTPUT_NAS,
                        N, 
                        format(now(tzone = "UTC"), "%Y_%m_%d-%H_%M_%S")))
