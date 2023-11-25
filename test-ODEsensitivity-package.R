@@ -1,4 +1,4 @@
-library(ODEsentivity)
+library(ODEsensitivity)
 
 ##### Lotka-Volterra equations #####
 # The model function:
