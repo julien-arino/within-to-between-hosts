@@ -1,4 +1,4 @@
-library(ODEsensitivity)
+library(sensitivity)
 
 source("functions_all.R")
 
@@ -93,7 +93,7 @@ params_all = set_parameters()
 # The initial values of the state variables:
 IC = set_IC()
 # The timepoints of interest:
-times <- c(0.01, seq(1, 50, by = 1))
+times <- c(0.01, seq(1, 200, by = 1))
 # Morris screening:
 # Warning: The following code might take very long!
 writeLines("Starting DDEmorris")
@@ -156,3 +156,24 @@ tictoc::toc()
 
 plot(within_host_morris)
 plot(within_host_sobol)
+
+# a 100-sample with X1 ~ U(0.5, 1.5)
+# X2 ~ U(1.5, 4.5)
+# X3 ~ U(4.5, 13.5)
+# library(boot)
+# n <- 1000
+# X <- data.frame(X1 = runif(n, 0.5, 2.5),
+#                 X2 = runif(n, 1.5, 4.5),
+#                 X3 = runif(n, 4.5, 13.5))
+# # linear model : Y = X1^2 + X2 + X3
+# y <- with(X, X1^2 + X2 + X3)
+# # sensitivity analysis
+# x <- pcc(X, y, nboot = 100)
+# print(x)
+# plot(x)
+# library(ggplot2)
+# ggplot(x)
+# ggplot(x, ylim = c(-1.5,1.5))
+# x <- pcc(X, y, semi = TRUE, nboot = 100)
+# print(x)
+# plot(x)
