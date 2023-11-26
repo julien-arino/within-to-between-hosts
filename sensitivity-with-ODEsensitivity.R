@@ -122,7 +122,7 @@ within_host_sobol <- DDEsobol(mod = rhs_within_host_deSolve,
                         pars = pars$params,
                         state_init = IC,
                         times = times,
-                        n = 500,
+                        n = 1000,
                         rfuncs = "runif",
                         rargs = paste0("min = ", pars$min,
                                        ", max = ", pars$max),
@@ -137,20 +137,22 @@ tictoc::toc()
 # parameters (here, the distributions and their arguments are chosen 
 # completely arbitrarily):
 # Warning: The following code might take very long!
+# writeLines("Starting DDEsobol with distributions")
+# tictoc::tic()
+# demo_dists <- DDEsobol(mod = rhs_within_host_deSolve,
+#                        pars = pars$params,
+#                        state_init = IC,
+#                        times = times,
+#                        n = 500,
+#                        rfuncs = c("runif", "rnorm", "rexp"),
+#                        rargs = c("min = 0.18, max = 0.22",
+#                                  "mean = 0.2, sd = 0.2 / 3",
+#                                  "rate = 1 / 3"),
+#                        sobol_method = "Martinez",
+#                        ode_method = "adams",
+#                        parallel_eval = TRUE,
+#                        parallel_eval_ncores = 60)
+# tictoc::toc()
 
-writeLines("Starting DDEsobol with distributions")
-tictoc::tic()
-demo_dists <- DDEsobol(mod = rhs_within_host_deSolve,
-                       pars = pars$params,
-                       state_init = IC,
-                       times = times,
-                       n = 500,
-                       rfuncs = c("runif", "rnorm", "rexp"),
-                       rargs = c("min = 0.18, max = 0.22",
-                                 "mean = 0.2, sd = 0.2 / 3",
-                                 "rate = 1 / 3"),
-                       sobol_method = "Martinez",
-                       ode_method = "adams",
-                       parallel_eval = TRUE,
-                       parallel_eval_ncores = 60)
-tictoc::toc()
+plot(within_host_morris)
+plot(within_host_sobol)
