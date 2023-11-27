@@ -5,7 +5,11 @@ library(sensitivity)
 library(ggplot2)
 library(randtoolbox)
 library(latex2exp)
-
+# For a little bit of fun
+# library(xkcd)
+# library(extrafont)
+# download.file("http://simonsoftware.se/other/xkcd.ttf",
+#              dest="xkcd.ttf", mode="wb")
 
 source("functions_all.R")
 
@@ -288,7 +292,7 @@ x_labels = c(TeX("$\\beta$"),
              TeX("$\\psi_{F_{prod}}$"),
              TeX("$S_{max}$"),
              TeX("$\\tau_{I}$"),
-             TeX("$T_*$"))
+             TeX("$T^*$"))
 # Do some scaling for the size of points
 scaled_size_values = PRCC_values$value
 max_value_values = max(abs(PRCC_values$value))
@@ -326,7 +330,9 @@ ggplot(data = PRCC_values, aes(names, value, col = variable)) +
   labs(color="Indicator") +
   scale_x_discrete(labels = x_labels[order_PRCC_values],
                    limits = names(pars.list)[order_PRCC_values]) +
-  theme(legend.position = c(0.9,0.9))
+  theme(legend.position = c(0.9,0.9)) +
+  #theme_xkcd()
+  theme_minimal()
 ggsave(filename = "FIGS/sensitivities-PRCC-values.png",
        width = 20, height = 15, units = "cm")
 # Plot the times
@@ -341,7 +347,8 @@ ggplot(data = PRCC_times, aes(names, value, col = variable)) +
   labs(color="Indicator") +
   scale_x_discrete(labels = x_labels[order_PRCC_times],
                    limits = names(pars.list)[order_PRCC_times]) +
-  theme(legend.position = c(0.9,0.9))
+  theme(legend.position = c(0.9,0.9)) +
+  theme_minimal()
 ggsave(filename = "FIGS/sensitivities-PRCC-times.png",
        width = 20, height = 15, units = "cm")
 
