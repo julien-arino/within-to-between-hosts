@@ -289,9 +289,32 @@ x_labels = c(TeX("$\\beta$"),
              TeX("$S_{max}$"),
              TeX("$\\tau_{I}$"),
              TeX("$T_*$"))
+# Do some scaling for the size of points
+scaled_size_values = PRCC_values$value
+max_value_values = max(abs(PRCC_values$value))
+half_saturation_values = 0.01
+for (i in 1:dim(PRCC_values)[1]) {
+  if (PRCC_values$value[i] < 0) {
+    scaled_size_values[i] = 
+      PRCC_values$value[i]/(-half_saturation_values-max_value_values)
+  } else {
+    scaled_size_values[i] = 
+      PRCC_values$value[i]/(half_saturation_values+max_value_values)
+  }
+}
+scaled_size_times = PRCC_times$value
+max_value = max(abs(PRCC_times$value))
+half_saturation = 0.01
+for (i in 1:dim(PRCC_values)[1]) {
+  if (PRCC_values$value[i] < 0) {
+    scaled_size_values[i] = PRCC_values$value[i]/(-half_saturation-max_value)
+  } else {
+    scaled_size_values[i] = PRCC_values$value[i]/(half_saturation+max_value)
+  }
+}
 # Plot the values
 ggplot(data = PRCC_values, aes(names, value, col = variable)) + 
-  geom_point(size=5) +
+  geom_point(size = scaled_size_values*12) +
   xlab("Parameter") +
   ylab("Partial rank correlation coefficients") +
   ylim(-1,1) +
@@ -300,7 +323,8 @@ ggplot(data = PRCC_values, aes(names, value, col = variable)) +
                                   TeX("$F_{B_{max}}$"))) +
   labs(color="Indicator") +
   scale_x_discrete(labels = x_labels[order_PRCC_values],
-                   limits = names(pars.list)[order_PRCC_values])
+                   limits = names(pars.list)[order_PRCC_values]) +
+  theme(legend.position = c(0.9,0.9))
 ggsave(filename = "FIGS/sensitivities-PRCC-values.png",
        width = 20, height = 15, units = "cm")
 # Plot the times
@@ -314,7 +338,8 @@ ggplot(data = PRCC_times, aes(names, value, col = variable)) +
                                   TeX("$t_{F_{B_{max}}}$"))) +
   labs(color="Indicator") +
   scale_x_discrete(labels = x_labels[order_PRCC_times],
-                   limits = names(pars.list)[order_PRCC_times])
+                   limits = names(pars.list)[order_PRCC_times]) +
+  theme(legend.position = c(0.9,0.9))
 ggsave(filename = "FIGS/sensitivities-PRCC-times.png",
        width = 20, height = 15, units = "cm")
 
