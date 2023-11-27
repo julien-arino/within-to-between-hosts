@@ -178,8 +178,8 @@ tmp = matrix(c(
   10, 20, # k_lin_f
   2, 10, # k_U_F
   0.5, 1, # lambda_S
-  200, 500, # p
-  1, 4, # p_FI
+  100, 800, # p
+  0.8, 4, # p_FI
   0.1, 0.5, # psi_F_prod
   0.1, 0.2, # S_max
   0.1, 0.3, # tau_I
