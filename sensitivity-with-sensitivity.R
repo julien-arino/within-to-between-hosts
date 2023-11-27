@@ -303,13 +303,15 @@ for (i in 1:dim(PRCC_values)[1]) {
   }
 }
 scaled_size_times = PRCC_times$value
-max_value = max(abs(PRCC_times$value))
-half_saturation = 0.01
-for (i in 1:dim(PRCC_values)[1]) {
-  if (PRCC_values$value[i] < 0) {
-    scaled_size_values[i] = PRCC_values$value[i]/(-half_saturation-max_value)
+max_value_times = max(abs(PRCC_times$value))
+half_saturation_times = 0.01
+for (i in 1:dim(PRCC_times)[1]) {
+  if (PRCC_times$value[i] < 0) {
+    scaled_size_times[i] = 
+      PRCC_times$value[i]/(-half_saturation_times-max_value_times)
   } else {
-    scaled_size_values[i] = PRCC_values$value[i]/(half_saturation+max_value)
+    scaled_size_times[i] = 
+      PRCC_times$value[i]/(half_saturation_times+max_value_times)
   }
 }
 # Plot the values
@@ -329,7 +331,7 @@ ggsave(filename = "FIGS/sensitivities-PRCC-values.png",
        width = 20, height = 15, units = "cm")
 # Plot the times
 ggplot(data = PRCC_times, aes(names, value, col = variable)) + 
-  geom_point(size=5) +
+  geom_point(size = scaled_size_times*12) +
   xlab("Parameter") +
   ylab("Partial rank correlation coefficients") +
   ylim(-1,1) +
