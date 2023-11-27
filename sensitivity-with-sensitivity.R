@@ -189,7 +189,7 @@ pars.df$min = tmp[,1]
 pars.df$max = tmp[,2]
 
 # Number of patients in the virtual cohort (sample size for the sensitivity)
-N = 5000
+N = 100000
 
 # To use sensitivity::parameterSets, we need to convert the data frame to a list
 pars.list = list()
