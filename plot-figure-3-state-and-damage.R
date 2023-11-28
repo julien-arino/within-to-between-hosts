@@ -27,8 +27,8 @@ p_damage = ggplot(df) +
            alpha=.2, fill='red') + 
   annotate('text',
            x = time_range[2]/2, y = - 92.5, label = "Dead patients") +
-  geom_ribbon(aes(x = time, ymin = lower, ymax = upper), fill="grey", alpha = 0.5) +
-  geom_line(aes(x = time, y = line), colour = "dodgerblue4", size = 1.5) +
+  geom_ribbon(aes(x = time, ymin = -upper, ymax = -lower), fill="grey", alpha = 0.5) +
+  geom_line(aes(x = time, y = -line), colour = "dodgerblue4", size = 1.5) +
   xlim(time_range) +
   xlab("Time (days)") +
   ylab(TeX("Percentage $\\Psi$ of tissue damage")) +
@@ -105,6 +105,8 @@ pp = ggarrange(p_damage,
                widths = c(1, 1.5))
 pp
 ggsave(filename = "FIGS/figure-3-state-and-damage.png",
+       width = 20, height = 15, units = "cm")
+ggsave(filename = "FIGS/figure-3-state-and-damage.pdf",
        width = 20, height = 15, units = "cm")
 
 

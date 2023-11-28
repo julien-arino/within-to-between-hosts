@@ -32,7 +32,8 @@ p_beta_vs_time = ggplot(df_low) +
   xlab("Time (days)") +
   ylab(TeX("$\\hat{\\beta}$ (day$^{-1}$)")) +
   ggtitle("Transmissibility") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_minimal()
   
 # Boxplot of max transmissibility
 max_beta_hat = data.frame(Status = c(), value = c())
@@ -62,7 +63,8 @@ p_boxplot = ggplot(max_beta_hat,
   stat_summary(fun=median, geom="point", shape=22, size=4) +
   ylab(TeX("$\\hat{\\beta}$ (day$^{-1}$)")) +
   ggtitle("Peak transmissibility") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_minimal()
 
 # Boxplot of time of max transmissibility
 time_max_beta_hat = data.frame(Status = c(), value = c())
@@ -93,7 +95,8 @@ p_boxplot_time = ggplot(time_max_beta_hat,
   ylab("Time (days)") +
   ggtitle("Time peak transmissibility") +
   theme(plot.title = element_text(hjust = 0.5)) + 
-  ylim(0,30)
+  ylim(0,30) +
+  theme_minimal()
 
 
 # Set up figure
