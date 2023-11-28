@@ -110,5 +110,7 @@ pp = ggarrange(ggarrange(p_beta_vs_time, p_boxplot,
 pp
 ggsave(filename = "FIGS/figure-4-covid-19-transmission.png",
        width = 20, height = 15, units = "cm")
+ggsave(filename = "FIGS/figure-4-covid-19-transmission.pdf",
+       width = 20, height = 15, units = "cm")
 
 
