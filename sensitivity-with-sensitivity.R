@@ -2,14 +2,7 @@ library(deSolve)
 library(parallel)
 library(lubridate)
 library(sensitivity)
-library(ggplot2)
 library(randtoolbox)
-library(latex2exp)
-# For a little bit of fun
-# library(xkcd)
-# library(extrafont)
-# download.file("http://simonsoftware.se/other/xkcd.ttf",
-#              dest="xkcd.ttf", mode="wb")
 
 source("functions_all.R")
 
