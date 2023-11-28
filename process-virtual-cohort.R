@@ -1,10 +1,13 @@
 source("functions_all.R")
 
-OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
-OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/"
+if (grepl("node", Sys.info()["nodename"])) {
+  OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
+} else {
+  OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/"
+}
 
 # Load the file. Let's do the latest one for now..
-cohort = readRDS(sprintf("%s/sim_100000invididuals_2023_07_18-07_44_19_merged.Rds",
+cohort = readRDS(sprintf("%s/sim_P0100000_DT2023_07_18-07_44_19_merged.Rds",
                       OUTPUT_NAS))
 COHORT = cohort$cohort
 
