@@ -15,8 +15,11 @@ if (FALSE) {
     geom_line() +
     xlab("Time (days)") +
     ylab("Viral load") +
-    theme(legend.position = "none")
+    theme(legend.position = "none") +
+    theme_minimal()
   ggsave(filename = "FIGS/viral-load.png",
+         width = 20, height = 15, units = "cm")
+  ggsave(filename = "FIGS/viral-load.pdf",
          width = 20, height = 15, units = "cm")
 }
 
@@ -36,8 +39,11 @@ ggplot(df, aes(x = time, y = value, color = variable)) +
   scale_fill_manual(name = "Dose", labels = c("A", "B", "C")) +
   xlim(0,60) +
   xlab("Time (days)") +
-  ylab("Viral load")
+  ylab("Viral load") +
+  theme_minimal()
 ggsave(filename = "FIGS/summary-viral-load.png",
+       width = 20, height = 15, units = "cm")
+ggsave(filename = "FIGS/summary-viral-load.pdf",
        width = 20, height = 15, units = "cm")
 
 
@@ -57,8 +63,11 @@ if (FALSE) {
     geom_line() +
     xlab("Time (days)") +
     ylab(TeX("$\\Phi$")) +
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+    theme_minimal()
   ggsave(filename = "FIGS/lung-damage.png",
+         width = 20, height = 15, units = "cm")
+  ggsave(filename = "FIGS/lung-damage.pdf",
          width = 20, height = 15, units = "cm")
 }
 
@@ -78,8 +87,11 @@ ggplot(df, aes(x = time, y = value, color = variable)) +
   scale_fill_manual(name = "Dose", labels = c("A", "B", "C")) +
   xlim(0,80) +
   xlab("Time (days)") +
-  ylab(TeX("$\\Phi$"))
+  ylab(TeX("$\\Phi$")) +
+  theme_minimal()
 ggsave(filename = "FIGS/summary-lung-damage.png",
+       width = 20, height = 15, units = "cm")
+ggsave(filename = "FIGS/summary-lung-damage.pdf",
        width = 20, height = 15, units = "cm")
 
 # Plot time of death and hospitalisation info
@@ -94,8 +106,11 @@ df = data.frame(value = SUMMARIES$time_of_hospitalisation)
 ggplot(df, aes(x = value)) + 
   geom_histogram(binwidth=.25) +
   xlab("Time (days)") +
-  ylab("# hospitalisations without death")
+  ylab("# hospitalisations without death") +
+  theme_minimal()
 ggsave(filename = "FIGS/hospitalisations.png",
+       width = 20, height = 15, units = "cm")
+ggsave(filename = "FIGS/hospitalisations.pdf",
        width = 20, height = 15, units = "cm")
 
 # Plot both distributions
@@ -116,6 +131,9 @@ ggplot(df, aes(x = value, fill = Events)) +
   ylab("Density") +
 #  geom_vline(data=df, aes(xintercept=df.mean,  colour=Event),
 #             linetype="dashed", size=1) +
-  theme(legend.position = c(0.8,0.5))
+  theme(legend.position = c(0.8,0.5)) +
+  theme_minimal()
 ggsave(filename = "FIGS/deaths-recoveries.png",
+       width = 20, height = 15, units = "cm")
+ggsave(filename = "FIGS/deaths-recoveries.pdf",
        width = 20, height = 15, units = "cm")
