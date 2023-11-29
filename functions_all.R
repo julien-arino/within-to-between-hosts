@@ -1,3 +1,14 @@
+##################
+## FUNCTIONS_ALL.R
+##################
+#
+# This file contains most functions used in the code.
+# 
+
+##
+## rhs_within_host_deSolve
+##
+# The right hand side of the within host DDE
 rhs_within_host_deSolve = function(t, x, p) {
   with(as.list(c(x, p)),{
     # Variables are (in order) V,S,I,R,D,F_U,F_B
@@ -28,6 +39,56 @@ rhs_within_host_deSolve = function(t, x, p) {
   })
 }
 
+
+##
+## rhs_within_host_deSolve_some_pars_fixed
+##
+# The right hand side of the within host DDE. In this version, some parameters
+# are fixed and thus not passed as arguments. Used for the sensitivity analysis.
+rhs_within_host_deSolve_some_pars_fixed = function(t, x, p) {
+  # Set stuff that doesn't change
+  avo=6.02214e23
+  MM_F = 19000
+  R_F_T = 1000
+  R_F_I = 1300
+  A_F = as.numeric((MM_F/avo) *
+                     (R_F_I+R_F_T) *
+                     (1/5000)*(10^9*1e12))
+  V0 = 1
+  S0 = 0.16
+  I0 = 0
+  R0 = 0 
+  # Rest of the right hand side
+  with(as.list(c(x, p)),{
+    # Variables are (in order) V,S,I,R,D,F_U,F_B
+    # So to get the lagvalue values...
+    if (t<tau_I) {
+      V_t = V0
+      S_t = S0
+      I_t = 0
+      R_t = 0
+    } else {
+      V_t = lagvalue(t-tau_I,1)
+      S_t = lagvalue(t-tau_I,2)
+      I_t = lagvalue(t-tau_I,3)
+      R_t = lagvalue(t-tau_I,4)
+    }
+    dV = p*I-d_V*V
+    dS = lambda_S*(1-(S+I+D+R)/S_max)*S-beta*S*V
+    dI = beta*S_t*V_t*(1-F_B/(epsilon_FI+F_B))*A_I-d_I*I
+    dR = lambda_S*(1-(S+I+D+R)/S_max)*R +
+      beta*S_t*V_t*(F_B/(epsilon_FI+F_B))*A_R
+    dD = d_I*I-d_D*D
+    dF_U = psi_F_prod+p_FI*I/(I+eta_FI) - 
+      k_lin_f*F_U-k_B_F*((T_star+I)*A_F-F_B)*F_U+k_U_F*F_B
+    dF_B = -k_int_f*F_B+k_B_F*((T_star+I)*A_F-F_B)*F_U-k_U_F*F_B
+    dA_I = delta*A_I*(I_t-I)
+    dA_R = delta*A_R*(R_t-R)
+    return(list(c(dV, dS, dI, dR, dD, dF_U, dF_B,dA_I,dA_R)))
+  })
+}
+
+
 set_IC = function() {
   # | Variable | Definition         | Value  | Unit              |
   # |----------|--------------------|--------|-------------------|
@@ -42,6 +103,7 @@ set_IC = function() {
          F_U = 0.015, F_B = 1.1e-8, A_I = 1, A_R = 1)
   return(IC)
 }
+
 
 set_parameters = function() {
   # | Parameter  | Definition | Value | Unit |
@@ -110,6 +172,7 @@ add_IC_to_params = function(params, IC) {
 return(params)
 }
 
+
 # Given parameters, find those with a standard deviation
 # given and generate a table with sampled values of these parameters, 
 # regular values of the others, as well as initial conditions. 
@@ -166,6 +229,7 @@ generate_params_patients = function(params, n = 1000) {
   return(OUT)
 }
 
+
 # Given a patient index idx, a parameters data frame patients and 
 # initial conditions IC, run the simulation of the within host model for
 # this patient
@@ -184,6 +248,38 @@ run_one_patient = function(idx = 1,
   return(yout)
 }
 
+
+# Given a patient index idx, a parameters data frame patients and 
+# initial conditions IC, run the simulation of the within host model for
+# this patient
+# Return only the indicators of that patient (V_max, etc.)
+run_one_patient_indicators = function(idx = 1, 
+                                      patients, 
+                                      IC) {
+  writeLines(paste0("patient index = ", idx))
+  params_tmp = patients[which(patients$ID == idx),]
+  params_tmp = add_IC_to_params(params_tmp, IC)
+  times <- c(seq(0, ceiling(params_tmp$tau_I), by = 0.01), 
+             seq(ceiling(params_tmp$tau_I), 200, by = 0.1))
+  tmp <- dede(y = IC, 
+              times = times, 
+              func = rhs_within_host_deSolve_some_pars_fixed, 
+              parms = params_tmp)
+  OUT = list()
+  OUT$V_max = max(tmp[, "V"])
+  OUT$F_U_max = max(tmp[, "F_U"])
+  OUT$F_B_max = max(tmp[, "F_B"])
+  OUT$A_I_max = max(tmp[, "A_I"])
+  OUT$A_R_max = max(tmp[, "A_R"])
+  OUT$T_max_V = times[which.max(tmp[, "V"])]
+  OUT$T_max_F_U = times[which.max(tmp[, "F_U"])]
+  OUT$T_max_F_B = times[which.max(tmp[, "F_B"])]
+  OUT$T_max_A_I = times[which.max(tmp[, "A_I"])]
+  OUT$T_max_A_R = times[which.max(tmp[, "A_R"])]
+  return(OUT)
+}
+
+
 # Function that sets up the data frame for plotting (changes names, formats, etc.)
 # By default, prepares data with mean and 2.5 and 97.5 percentiles. Change as needed.
 format_df = function(time,
@@ -198,6 +294,115 @@ format_df = function(time,
   return(df)
 }
 
+
+
+# Create response for all computed indicators, returning a data frame for each
+# different point in parameter space provided as argument.
+value_indicators = function(params_change, 
+                            params_fixed, 
+                            t_f = 200,
+                            ncpus = 60,
+                            parallel = TRUE) {
+  writeLines("Finalising parameters data frame")
+  col_names = colnames(params_change)[2:dim(params_change)[2]]
+  col_names_fixed = names(params_fixed)
+  col_names_fixed = setdiff(col_names_fixed, col_names)
+  for (i in 1:length(col_names_fixed)) {
+    params_change[[col_names_fixed[i]]] = params_fixed[[col_names_fixed[i]]]
+  }
+  # Indices for this batch
+  patients_idx = 1:dim(params_change)[1]
+  if (parallel) {
+    # RUN IN PARALLEL
+    writeLines("Setting up cluster")
+    # Detect number of cores
+    no_cores <- detectCores()
+    if (no_cores > 124) {
+      # Detect rich person's problem. 
+      # (Could also recompile R setting the number of sockets higher than the 
+      # default... not done here.)
+      no_cores = 124
+    }
+    # Initiate cluster with parts shared across all batches
+    cl <- makeCluster(no_cores)
+    # Export needed variables
+    clusterEvalQ(cl,{
+      library(deSolve)
+    })
+    clusterExport(cl,
+                  c("rhs_within_host_deSolve_some_pars_fixed",
+                    "add_IC_to_params",
+                    "run_one_patient_indicators",
+                    "IC"),
+                  envir = .GlobalEnv)
+    # Run computation in parallel
+    writeLines("Starting simulations in parallel")
+    COHORT = 
+      parLapply(cl = cl, 
+                X = patients_idx,
+                fun = function(x) 
+                  run_one_patient_indicators(idx = x,
+                                             patients = params_change,
+                                             IC = IC))
+    # Stop cluster
+    stopCluster(cl)
+  } else {
+    # Run computation sequentially
+    writeLines("Going old school, running sequentially (debugging, probably)")
+    COHORT = lapply(X = patients_idx,
+                    FUN = function(x) 
+                      run_one_patient_indicators(idx = x,
+                                                 patients = params_change,
+                                                 IC = IC))
+  }
+  # We now need to transform the cohort (list) into a data frame
+  writeLines("Assembling results")
+  COHORT = as.data.frame(as.matrix(do.call(rbind, COHORT)))
+  return(COHORT)
+}
+
+
+# Compute the correlation between the indicators and the parameters
+compute_PRCC = function(v, pars) {
+  tmp = as.numeric(v)
+  x = pcc(pars, tmp,
+          rank = TRUE, semi = FALSE)
+  return(x)
+}
+
+
+setup_cluster = function(variables, 
+                         libs = NA,
+                         no_cores = NA,
+                         safe_cores = 0) {
+  if (is.na(no_cores)) {
+    # Detect number of cores
+    no_cores <- detectCores()
+    if (no_cores > 124) {
+      # Detect rich person's problem. 
+      # (Could also recompile R setting the number of sockets higher than the 
+      # default... not done here.)
+      no_cores = 124
+    }
+  }
+  # Safe cores, if any
+  no_cores <- no_cores - safe_cores
+  # Initiate cluster
+  cl <- makeCluster(no_cores)
+  # If any library needs to be loaded, load it. Note: it is possible to also just
+  # load the libraries in the global environment and export functions as variables.
+  # For now, this doesn't work, needs debugging.
+  if (!is.na(libs)) {
+    clusterEvalQ(cl,{
+      library(libs, character.only = TRUE)
+    })
+  }
+  # Export needed variables
+  clusterExport(cl,
+                variables,
+                envir = .GlobalEnv)
+  return(cl)
+}
 
 # From http://www.cookbook-r.com/Graphs/Plotting_means_and_error_bars_(ggplot2)/#Helper%20functions
 ## Gives count, mean, standard deviation, standard error of the mean, and confidence interval (default 95%).
@@ -241,6 +446,8 @@ summarySE <- function(data=NULL, measurevar, groupvars=NULL, na.rm=FALSE,
   
   return(datac)
 }
+
+
 ## Norms the data within specified groups in a data frame; it normalizes each
 ## subject (identified by idvar) so that they have the same mean, within each group
 ## specified by betweenvars.

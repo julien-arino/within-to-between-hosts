@@ -9,7 +9,7 @@ library(latex2exp)
 source("functions_all.R")
 
 # Plots of sensitivity values computed using the sensitivity package
-vals = value_indicators (params_change = pars.sobol, params_fixed = params_all)
+vals = value_indicators(params_change = pars.sobol, params_fixed = params_all)
 # Compute the correlation between the indicators and the parameters
 writeLines("Computing partial rank correlations - V_max")
 tmp = as.numeric(vals$V_max)
