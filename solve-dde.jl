@@ -1,7 +1,7 @@
 using DifferentialEquations, Plots
 
 function Immune!(du,u,h,p,t)
-    
+    ##
     hist1 = h(p, t-tau)[1] #V
     hist2 = h(p, t-tau)[2] #S
     hist3 = h(p, t-tau)[3] #I
@@ -45,11 +45,12 @@ lags = [tau];
 u0 = [1; 0.16;0.0 ;0.0 ; 0.0;0.015 ;1.1e-8 ;1.0 ;1.0];
 #####################################################################
 #1
-p_F_I=2.8235*1e4*1e-4;eps_F_I =2*1e-4
+p_F_I = 2.8235*1e4*1e-4;
+eps_F_I = 2*1e-4;
 ###
-p=[tau,phat,dV,beta,Smax,lamS,dI,eps_F_I,dD,psi_F_prod, p_F_I,eta_F_I,k_lin_F,k_B_F,T_star,k_U_F,k_int_F,A_F,k_B_F,delta];
+p = [tau,phat,dV,beta,Smax,lamS,dI,eps_F_I,dD,psi_F_prod, p_F_I,eta_F_I,k_lin_F,k_B_F,T_star,k_U_F,k_int_F,A_F,k_B_F,delta];
 h(p,t) = [1; 0.16; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0; 0.0]
-z =  DDEProblem(Immune!,u0,h,tspan,p;constant_lags=lags);
+z = DDEProblem(Immune!,u0,h,tspan,p;constant_lags=lags);
 alg = MethodOfSteps(Tsit5())
 sol = solve(z,saveat=0:0.01:3,alg,abstol=1e-8,reltol=1e-8);
 ###########################################
@@ -68,14 +69,7 @@ betaave = [((u[7], ((u[1])^3.623)/((u[1])^3.623+7.68^3.623))) for (u,t) in tuple
 # betaave = [(u[7], (1.2*(u[1]^2))/(u[1]^2+15.21)) for (u,t) in tuples(sol)]
 betaave2 = [(u[1], 1.2*(((39581.1*u[7]+0.424384)^2))/((39581.1*u[7]+0.424384)^2+15.21)) for (u,t) in tuples(sol)]
 #betas2 = [(u[7],u[1], 1.2*(((55195.90786608686*u[7]+0.07082905855419551)^2))/((55195.90786608686*u[7]+0.07082905855419551)^2+15.21)) for (u,t) in tuples(sol)]
+
 ###
 using DelimitedFiles
 # writedlm("/Users/suzan/Desktop/Datafinal1.2/Vave.txt", V0)
-# writedlm("/Users/suzan/Desktop/Datafinal1.2/Save.txt", S0)
-# writedlm("/Users/suzan/Desktop/Datafinal1.2/Iave.txt", I0)
-# writedlm("/Users/suzan/Desktop/Datafinal1.2/Rave.txt", R0)
-# writedlm("/Users/suzan/Desktop/Datafinal1.2/Dave.txt", D0)
-# writedlm("/Users/suzan/Desktop/Datafinal1.2/Fuave.txt", Fu0)
-# writedlm("/Users/suzan/Desktop/Datafinal1.2/Fbave.txt", Fb0)
-# writedlm("/Users/suzan/Desktop/Datafinal1.2/Allave.txt", Allave)
-writedlm("/Users/suzan/Desktop/Datafinal1.2/betaave.txt", betaave)
