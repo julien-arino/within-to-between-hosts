@@ -2,153 +2,12 @@ library(deSolve)
 library(parallel)
 library(lubridate)
 library(sensitivity)
-library(ggplot2)
 library(randtoolbox)
-library(latex2exp)
-# For a little bit of fun
-# library(xkcd)
-# library(extrafont)
-# download.file("http://simonsoftware.se/other/xkcd.ttf",
-#              dest="xkcd.ttf", mode="wb")
 
 source("functions_all.R")
 
-rhs_within_host_deSolve = function(t, x, p) {
-  # Set stuff that doesn't change
-  avo=6.02214e23
-  MM_F = 19000
-  R_F_T = 1000
-  R_F_I = 1300
-  A_F = as.numeric((MM_F/avo) *
-                     (R_F_I+R_F_T) *
-                     (1/5000)*(10^9*1e12))
-  V0 = 1
-  S0 = 0.16
-  I0 = 0
-  R0 = 0 
-  # Rest of the right hand side
-  with(as.list(c(x, p)),{
-    # Variables are (in order) V,S,I,R,D,F_U,F_B
-    # So to get the lagvalue values...
-    if (t<tau_I) {
-      V_t = V0
-      S_t = S0
-      I_t = 0
-      R_t = 0
-    } else {
-      V_t = lagvalue(t-tau_I,1)
-      S_t = lagvalue(t-tau_I,2)
-      I_t = lagvalue(t-tau_I,3)
-      R_t = lagvalue(t-tau_I,4)
-    }
-    dV = p*I-d_V*V
-    dS = lambda_S*(1-(S+I+D+R)/S_max)*S-beta*S*V
-    dI = beta*S_t*V_t*(1-F_B/(epsilon_FI+F_B))*A_I-d_I*I
-    dR = lambda_S*(1-(S+I+D+R)/S_max)*R +
-      beta*S_t*V_t*(F_B/(epsilon_FI+F_B))*A_R
-    dD = d_I*I-d_D*D
-    dF_U = psi_F_prod+p_FI*I/(I+eta_FI) - 
-      k_lin_f*F_U-k_B_F*((T_star+I)*A_F-F_B)*F_U+k_U_F*F_B
-    dF_B = -k_int_f*F_B+k_B_F*((T_star+I)*A_F-F_B)*F_U-k_U_F*F_B
-    dA_I = delta*A_I*(I_t-I)
-    dA_R = delta*A_R*(R_t-R)
-    return(list(c(dV, dS, dI, dR, dD, dF_U, dF_B,dA_I,dA_R)))
-  })
-}
-
-# Given a patient index idx, a parameters data frame patients and 
-# initial conditions IC, run the simulation of the within host model for
-# this patient
-# Return only the indicators of that patient (V_max, etc.)
-run_one_patient_indicators = function(idx = 1, 
-                                      patients, 
-                                      IC) {
-  writeLines(paste0("patient index = ", idx))
-  params_tmp = patients[which(patients$ID == idx),]
-  params_tmp = add_IC_to_params(params_tmp, IC)
-  times <- c(seq(0, ceiling(params_tmp$tau_I), by = 0.01), 
-             seq(ceiling(params_tmp$tau_I), 200, by = 0.1))
-  tmp <- dede(y = IC, 
-               times = times, 
-               func = rhs_within_host_deSolve, 
-               parms = params_tmp)
-  OUT = list()
-  OUT$V_max = max(tmp[, "V"])
-  OUT$F_U_max = max(tmp[, "F_U"])
-  OUT$F_B_max = max(tmp[, "F_B"])
-  OUT$A_I_max = max(tmp[, "A_I"])
-  OUT$A_R_max = max(tmp[, "A_R"])
-  OUT$T_max_V = times[which.max(tmp[, "V"])]
-  OUT$T_max_F_U = times[which.max(tmp[, "F_U"])]
-  OUT$T_max_F_B = times[which.max(tmp[, "F_B"])]
-  OUT$T_max_A_I = times[which.max(tmp[, "A_I"])]
-  OUT$T_max_A_R = times[which.max(tmp[, "A_R"])]
-  return(OUT)
-}
-
-# Create response for all computed indicators, returning a data frame for each
-# different point in parameter space provided as argument.
-value_indicators = function(params_change, 
-                            params_fixed, 
-                            t_f = 200,
-                            ncpus = 60,
-                            parallel = TRUE) {
-  writeLines("Finalising parameters data frame")
-  col_names = colnames(params_change)[2:dim(params_change)[2]]
-  col_names_fixed = names(params_fixed)
-  col_names_fixed = setdiff(col_names_fixed, col_names)
-  for (i in 1:length(col_names_fixed)) {
-    params_change[[col_names_fixed[i]]] = params_fixed[[col_names_fixed[i]]]
-  }
-  # Indices for this batch
-  patients_idx = 1:dim(params_change)[1]
-  if (parallel) {
-    # RUN IN PARALLEL
-    writeLines("Setting up cluster")
-    # Detect number of cores
-    no_cores <- detectCores()
-    if (no_cores > 124) {
-      # Detect rich person's problem. 
-      # (Could also recompile R setting the number of sockets higher than the 
-      # default... not done here.)
-      no_cores = 124
-    }
-    # Initiate cluster with parts shared across all batches
-    cl <- makeCluster(no_cores)
-    # Export needed variables
-    clusterEvalQ(cl,{
-      library(deSolve)
-    })
-    clusterExport(cl,
-                  c("run_one_patient_indicators",
-                    "add_IC_to_params",
-                    "rhs_within_host_deSolve",
-                    "IC"),
-                  envir = .GlobalEnv)
-    # Run computation in parallel
-    writeLines("Starting simulations in parallel")
-    COHORT = 
-      parLapply(cl = cl, 
-                X = patients_idx,
-                fun = function(x) 
-                  run_one_patient_indicators(idx = x,
-                                             patients = params_change,
-                                             IC = IC))
-    # Stop cluster
-    stopCluster(cl)
-  } else {
-    # Run computation sequentially
-    writeLines("Going old school, running sequentially (debugging, probably)")
-    COHORT = lapply(X = patients_idx,
-                    FUN = function(x) 
-                      run_one_patient_indicators(idx = x,
-                                                 patients = params_change,
-                                                 IC = IC))
-  }
-  # We now need to transform the cohort (list) into a data frame
-  writeLines("Assembling results")
-  COHORT = as.data.frame(as.matrix(do.call(rbind, COHORT)))
-}
+OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
+OUTPUT_LOCAL = "/home/jarino/OUTPUT_USB/within-to-between-hosts"
 
 pars.df = data.frame(params = 
                        c("beta",
@@ -193,7 +52,7 @@ pars.df$min = tmp[,1]
 pars.df$max = tmp[,2]
 
 # Number of patients in the virtual cohort (sample size for the sensitivity)
-N = 100000
+N = 500
 
 # To use sensitivity::parameterSets, we need to convert the data frame to a list
 pars.list = list()
@@ -211,48 +70,52 @@ pars.sobol = as.data.frame(pars.sobol)
 pars.sobol = cbind(1:dim(pars.sobol)[1], pars.sobol)
 colnames(pars.sobol) = c("ID", pars.df$params)
 
-# Set all parameters (including ones we don't change)
+# Set all parameters (including ones we don't change, if any)
 params_all = set_parameters()
 # The initial values of the state variables:
 IC = set_IC()
-# Generate virtual cohort. Do it in one go, even if we split sims, so that any
-# scheme (LHS, etc.) applies to the entire cohort, not each batch of patients.
-# tmp_df = generate_params_patients(n = N, params = params_all)
-# Compute indicators for each patient
-vals = value_indicators (params_change = pars.sobol, params_fixed = params_all)
-# Compute the correlation between the indicators and the parameters
-writeLines("Computing partial rank correlations - V_max")
-tmp = as.numeric(vals$V_max)
-x_V_max= pcc(pars.sobol[,2:dim(pars.sobol)[2]], tmp,
-             rank = TRUE, semi = FALSE)
-ggplot(x_V_max)
-writeLines("Computing partial rank correlations - F_U_max")
-tmp = as.numeric(vals$F_U_max)
-x_F_U_max = pcc(pars.sobol[,2:dim(pars.sobol)[2]], tmp,
-                rank = TRUE, semi = FALSE)
-ggplot(x_F_U_max)
-writeLines("Computing partial rank correlations - F_B_max")
-tmp = as.numeric(vals$F_B_max)
-x_F_B_max = pcc(pars.sobol[,2:dim(pars.sobol)[2]], tmp,
-                rank = TRUE, semi = FALSE)
-ggplot(x_F_B_max)
-writeLines("Computing partial rank correlations - T_max_V")
-tmp = as.numeric(vals$T_max_V)
-x_T_max_V = pcc(pars.sobol[,2:dim(pars.sobol)[2]], tmp,
-               rank = TRUE, semi = FALSE)
-ggplot(x_T_max_V)
-writeLines("Computing partial rank correlations - T_max_F_U")
-tmp = as.numeric(vals$T_max_F_U)
-x_T_max_F_U = pcc(pars.sobol[,2:dim(pars.sobol)[2]], tmp,
-                  rank = TRUE, semi = FALSE)
-ggplot(x_T_max_F_U)
-writeLines("Computing partial rank correlations - T_max_F_B")
-tmp = as.numeric(vals$T_max_F_B)
-x_T_max_F_B = pcc(pars.sobol[,2:dim(pars.sobol)[2]], tmp,
-                  rank = TRUE, semi = FALSE)
-ggplot(x_T_max_F_B)
+
+# Compute indicators for each patient in the virtual cohort.
+# Can be split runs to avoid overloading RAM if too many patients.
+# Weight of sims in RAM may lead to explosion of RAM usage (or swapping). Set
+# a maximum number of individuals to be simulated at once.
+max_patients_per_batch = 300
+# Number of batches needed to reach cohort size
+nb_batches = ceiling(N / max_patients_per_batch)
+# The current time, so files have a common name
+curr_TD = format(now(tzone = "UTC"), "%Y_%m_%d-%H_%M_%S")
+# Run each batch, save it, clean up..
+for (b in 1:nb_batches) {
+  writeLines(paste0("Starting batch ", b, " out of ", nb_batches))
+  tictoc::tic()
+  # The current batch
+  idx_start_batch = (b - 1) * max_patients_per_batch + 1
+  idx_end_batch = min(b * max_patients_per_batch, N)
+  tmp.sobol = pars.sobol[idx_start_batch:idx_end_batch,]
+  # Run current batch
+  vals = value_indicators(params_change = tmp.sobol, params_fixed = params_all)
+  tictoc::toc()
+  # Save current batch
+  writeLines("Saving results")
+  saveRDS(vals, 
+          file = sprintf("%s/sensi_P%07d_DT%s_part-%03d-of-%03d.Rds",
+                         OUTPUT_LOCAL,
+                         N, 
+                         curr_TD,
+                         b, nb_batches))
+}
+
+
+writeLines("Computing partial rank correlations")
+x_V_max = compute_PRCC(vals$V_max, pars.sobol[,2:dim(pars.sobol)[2]])
+x_F_U_max = compute_PRCC(vals$F_U_max, pars.sobol[,2:dim(pars.sobol)[2]])
+x_F_B_max = compute_PRCC(vals$F_B_max, pars.sobol[,2:dim(pars.sobol)[2]])
+x_T_max_V = compute_PRCC(vals$T_max_V, pars.sobol[,2:dim(pars.sobol)[2]])
+x_T_max_F_U = compute_PRCC(vals$T_max_F_U, pars.sobol[,2:dim(pars.sobol)[2]])
+x_T_max_F_B = compute_PRCC(vals$T_max_F_B, pars.sobol[,2:dim(pars.sobol)[2]])
 # Combine values for aggregate plots. All values, then by type
-PRCC = data.frame(
+PRCC = list()
+PRCC$all = data.frame(
   names = names(pars.list),
   V_max = x_V_max$PRCC,
   F_U_max = x_F_U_max$PRCC,
@@ -261,6 +124,7 @@ PRCC = data.frame(
   T_max_F_U = x_T_max_F_U$PRCC,
   T_max_F_B = x_T_max_F_B$PRCC
 )
+<<<<<<< HEAD
 colnames(PRCC) = c("names", "V_max", "F_U_max", "F_B_max", "T_max_V", "T_max_F_U", "T_max_F_B")
 PRCC_values = PRCC[,c("names", "V_max", "F_U_max", "F_B_max")]
 PRCC_times = PRCC[,c("names", "T_max_V", "T_max_F_U", "T_max_F_B")]
@@ -351,3 +215,9 @@ ggplot(data = PRCC_times, aes(names, value, col = variable)) +
 ggsave(filename = "FIGS/sensitivities-PRCC-times.png",
        width = 20, height = 15, units = "cm")
 
+=======
+colnames(PRCC$all) = c("names", "V_max", "F_U_max", "F_B_max", "T_max_V", "T_max_F_U", "T_max_F_B")
+PRCC$values = PRCC$all[,c("names", "V_max", "F_U_max", "F_B_max")]
+PRCC$times = PRCC$all[,c("names", "T_max_V", "T_max_F_U", "T_max_F_B")]
+# Save the results
+>>>>>>> 3a125980efa3956d2d275ef3de280500c319b2b4

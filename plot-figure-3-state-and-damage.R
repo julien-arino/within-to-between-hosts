@@ -27,13 +27,14 @@ p_damage = ggplot(df) +
            alpha=.2, fill='red') + 
   annotate('text',
            x = time_range[2]/2, y = - 92.5, label = "Dead patients") +
-  geom_ribbon(aes(x = time, ymin = lower, ymax = upper), fill="grey", alpha = 0.5) +
-  geom_line(aes(x = time, y = line), colour = "dodgerblue4", size = 1.5) +
+  geom_ribbon(aes(x = time, ymin = -upper, ymax = -lower), fill="grey", alpha = 0.5) +
+  geom_line(aes(x = time, y = -line), colour = "dodgerblue4", size = 1.5) +
   xlim(time_range) +
   xlab("Time (days)") +
   ylab(TeX("Percentage $\\Psi$ of tissue damage")) +
   ggtitle("Lung tissue damage") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_minimal()
   
 # Plot the viral load
 to_plot = "V"
@@ -45,7 +46,8 @@ p_viral_load = ggplot(df) +
   labs(x = "") +
   ylab(TeX("$\\log_{10}$(copies/ml)")) +
   ggtitle("Viral load") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_minimal()
 
 # Plot the number of infected cells
 to_plot = "I"
@@ -57,7 +59,8 @@ p_infected = ggplot(df) +
   labs(x = "") +
   ylab(TeX("$10^8$ cell/ml")) +
   ggtitle("Infected cells") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_minimal()
 
 # Plot the bound IFN
 # (Function from https://stackoverflow.com/questions/10762287/how-can-i-format-axis-labels-with-exponents-with-ggplot2-and-scales)
@@ -77,7 +80,8 @@ p_bound_IF = ggplot(df) +
   ylab("pg/ml") +
   scale_y_continuous(label = scientific_10) +
   ggtitle("Bound IFN") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_minimal()
 
 # Plot the unbound IFN
 to_plot = "F_U"
@@ -89,7 +93,8 @@ p_unbound_IF = ggplot(df) +
   xlab("Time (days)") +
   ylab("pg/ml") +
   ggtitle("Unbound IFN") +
-  theme(plot.title = element_text(hjust = 0.5))
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme_minimal()
 
 # Set up figure
 pp = ggarrange(p_damage,
@@ -100,6 +105,8 @@ pp = ggarrange(p_damage,
                widths = c(1, 1.5))
 pp
 ggsave(filename = "FIGS/figure-3-state-and-damage.png",
+       width = 20, height = 15, units = "cm")
+ggsave(filename = "FIGS/figure-3-state-and-damage.pdf",
        width = 20, height = 15, units = "cm")
 
 
