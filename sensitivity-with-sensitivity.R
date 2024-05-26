@@ -330,9 +330,8 @@ ggplot(data = PRCC_values, aes(names, value, col = variable)) +
   labs(color="Indicator") +
   scale_x_discrete(labels = x_labels[order_PRCC_values],
                    limits = names(pars.list)[order_PRCC_values]) +
-  theme(legend.position = c(0.9,0.9)) +
-  #theme_xkcd()
-  theme_minimal()
+  theme_minimal() + 
+  theme(legend.position = c(0.9,0.9))
 ggsave(filename = "FIGS/sensitivities-PRCC-values.png",
        width = 20, height = 15, units = "cm")
 # Plot the times
@@ -347,8 +346,8 @@ ggplot(data = PRCC_times, aes(names, value, col = variable)) +
   labs(color="Indicator") +
   scale_x_discrete(labels = x_labels[order_PRCC_times],
                    limits = names(pars.list)[order_PRCC_times]) +
-  theme(legend.position = c(0.9,0.9)) +
-  theme_minimal()
+  theme_minimal() +
+  theme(legend.position = c(0.9,0.9))
 ggsave(filename = "FIGS/sensitivities-PRCC-times.png",
        width = 20, height = 15, units = "cm")
 
