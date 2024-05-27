@@ -19,8 +19,10 @@ if (grepl("node", Sys.info()["nodename"])) {
 }
 
 # Load the file. Let's do the latest one for now..
-cohort = readRDS(sprintf("%s/sim_P0100000_DT20240526-225526_merged.Rds",
-                      OUTPUT_LOCAL))
+file_name_base = "sim_P0100000_DT20240526-225526"
+cohort = 
+  readRDS(sprintf("%s/%s_merged.Rds",
+                  OUTPUT_LOCAL, file_name_base))
 COHORT = cohort$cohort
 
 ###
@@ -217,3 +219,9 @@ for (s in sort(unique(SUMMARIES$lung_loss$outcome))) {
   SUMMARIES$V_fct_FB[[s]]$mean = apply(tmp_values_FB, 1, mean)
 }
 
+saveRDS(STATE_VARS, file = sprintf("%s/%s_state-vars.Rds",
+                                  OUTPUT_LOCAL, 
+                                  file_name_base))
+saveRDS(SUMMARIES, file = sprintf("%s/%s_summaries.Rds",
+                                  OUTPUT_LOCAL, 
+                                  file_name_base))

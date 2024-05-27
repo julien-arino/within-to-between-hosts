@@ -114,16 +114,18 @@ ggsave(filename = "FIGS/hospitalisations.pdf",
        width = 20, height = 15, units = "cm")
 
 # Plot both distributions
-df1 = data.frame(value = SUMMARIES$time_of_death,
-                 Events = rep("Deaths", 
-                            length(SUMMARIES$time_of_death)))
-df2 = data.frame(value = SUMMARIES$time_of_recovery,
-                 Events = rep("Recoveries", 
-                            length(SUMMARIES$time_of_recovery)))
+df1 = 
+  data.frame(value = SUMMARIES$time_of_death,
+             Events = rep("Deaths", 
+                          length(SUMMARIES$time_of_death)))
+df2 = 
+  data.frame(value = SUMMARIES$time_of_recovery,
+             Events = rep("Recoveries", 
+                          length(SUMMARIES$time_of_recovery)))
 df = rbind(df1, df2)
 df.mean <- plyr::ddply(df, "Events", 
                        plyr::summarise, 
-                       rating.mean=mean(value))
+                       rating.mean = mean(value))
 ggplot(df, aes(x = value, fill = Events)) + 
   geom_density(alpha=.3)+
   xlim(0,30) +

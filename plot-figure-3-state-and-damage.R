@@ -11,7 +11,45 @@ pos_legend = c(0.7,0.6)
 
 # Plot the damage
 to_plot = "Phi"
-df <- format_df(time = STATE_VARS$time, data = SUMMARIES[[to_plot]])
+df <- format_df(time = STATE_VARS$time, 
+                data = SUMMARIES[[to_plot]])
+# Plot the negative version or the positive one
+if (TRUE) {
+  p_damage = ggplot(df) +
+    annotate('rect', 
+             xmin = 0, 
+             xmax = time_range[2], 
+             ymin = 75, ymax = 85, 
+             alpha=.2, fill='orange') + 
+    annotate('text',
+             x = time_range[2]/2, 
+             y = 80,
+             label = "ICU patients") +
+    annotate('rect', 
+             xmin = 0, 
+             xmax = time_range[2], 
+             ymin = 85, ymax = 100, 
+             alpha=.2, fill='red') + 
+    annotate('text',
+             x = time_range[2]/2, 
+             y = 92.5, 
+             label = "Dead patients") +
+    geom_ribbon(aes(x = time, 
+                    ymin = lower, 
+                    ymax = upper), 
+                fill="grey", 
+                alpha = 0.5) +
+    geom_line(aes(x = time, 
+                  y = line), 
+              colour = "dodgerblue4", 
+              size = 1.5) +
+    xlim(time_range) +
+    xlab("Time (days)") +
+    ylab(TeX("Percentage $\\Psi$ of tissue damage")) +
+    ggtitle("Lung tissue damage") +
+    theme(plot.title = element_text(hjust = 0.5)) +
+    theme_minimal()
+} else {
 p_damage = ggplot(df) +
   annotate('rect', 
            xmin = 0, 
@@ -19,29 +57,48 @@ p_damage = ggplot(df) +
            ymin = -85, ymax = -75, 
            alpha=.2, fill='orange') + 
   annotate('text',
-           x = time_range[2]/2, y = - 80, label = "ICU patients") +
+           x = time_range[2]/2, 
+           y = - 80,
+           label = "ICU patients") +
   annotate('rect', 
            xmin = 0, 
            xmax = time_range[2], 
            ymin = -100, ymax = -85, 
            alpha=.2, fill='red') + 
   annotate('text',
-           x = time_range[2]/2, y = - 92.5, label = "Dead patients") +
-  geom_ribbon(aes(x = time, ymin = -upper, ymax = -lower), fill="grey", alpha = 0.5) +
-  geom_line(aes(x = time, y = -line), colour = "dodgerblue4", size = 1.5) +
+           x = time_range[2]/2, 
+           y = - 92.5, 
+           label = "Dead patients") +
+  geom_ribbon(aes(x = time, 
+                  ymin = -upper, 
+                  ymax = -lower), 
+              fill="grey", 
+              alpha = 0.5) +
+  geom_line(aes(x = time, 
+                y = -line), 
+            colour = "dodgerblue4", 
+            size = 1.5) +
   xlim(time_range) +
   xlab("Time (days)") +
   ylab(TeX("Percentage $\\Psi$ of tissue damage")) +
   ggtitle("Lung tissue damage") +
   theme(plot.title = element_text(hjust = 0.5)) +
   theme_minimal()
-  
+}
+
 # Plot the viral load
 to_plot = "V"
 df <- format_df(time = STATE_VARS$time, data = SUMMARIES[[to_plot]])
 p_viral_load = ggplot(df) +
-  geom_ribbon(aes(x = time, ymin = lower, ymax = upper), fill="grey", alpha=0.5) +
-  geom_line(aes(x = time, y = line), colour = "dodgerblue4", size = 1.5) +
+  geom_ribbon(aes(x = time, 
+                  ymin = lower, 
+                  ymax = upper), 
+              fill="grey", 
+              alpha=0.5) +
+  geom_line(aes(x = time, 
+                y = line), 
+            colour = "dodgerblue4", 
+            size = 1.5) +
   xlim(time_range) +
   labs(x = "") +
   ylab(TeX("$\\log_{10}$(copies/ml)")) +
