@@ -65,9 +65,11 @@ if (PARALLEL) {
   writeLines("We're running sequentially!")
 }
 
+# Record date-time at start to have common file name
+date_time_start = 
+  format(now(tzone = "UTC"), "%Y%m%d-%H%M%S")
+# Run for all the batches
 for (b in 1:nb_batches) {
-  date_time_start = 
-    format(now(tzone = "UTC"), "%Y%m%d-%H%M%S")
   writeLines(paste0("Starting batch ", b, " out of ", nb_batches))
   tictoc::tic()
   # Take the patients for this batch
