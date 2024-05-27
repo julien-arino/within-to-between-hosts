@@ -7,7 +7,7 @@ library(randtoolbox)
 source("functions_all.R")
 
 OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
-OUTPUT_LOCAL = "/home/jarino/OUTPUT_USB/within-to-between-hosts"
+OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/within-to-between-hosts"
 
 pars.df = data.frame(params = 
                        c("beta",
@@ -77,8 +77,8 @@ IC = set_IC()
 
 # Compute indicators for each patient in the virtual cohort.
 # Can be split runs to avoid overloading RAM if too many patients.
-# Weight of sims in RAM may lead to explosion of RAM usage (or swapping). Set
-# a maximum number of individuals to be simulated at once.
+# Weight of sims in RAM may lead to explosion of RAM usage (or swapping). 
+# Set a maximum number of individuals to be simulated at once.
 max_patients_per_batch = 300
 # Number of batches needed to reach cohort size
 nb_batches = ceiling(N / max_patients_per_batch)
@@ -124,7 +124,7 @@ PRCC$all = data.frame(
   T_max_F_U = x_T_max_F_U$PRCC,
   T_max_F_B = x_T_max_F_B$PRCC
 )
-<<<<<<< HEAD
+
 colnames(PRCC) = c("names", "V_max", "F_U_max", "F_B_max", "T_max_V", "T_max_F_U", "T_max_F_B")
 PRCC_values = PRCC[,c("names", "V_max", "F_U_max", "F_B_max")]
 PRCC_times = PRCC[,c("names", "T_max_V", "T_max_F_U", "T_max_F_B")]
@@ -215,9 +215,7 @@ ggplot(data = PRCC_times, aes(names, value, col = variable)) +
 ggsave(filename = "FIGS/sensitivities-PRCC-times.png",
        width = 20, height = 15, units = "cm")
 
-=======
 colnames(PRCC$all) = c("names", "V_max", "F_U_max", "F_B_max", "T_max_V", "T_max_F_U", "T_max_F_B")
 PRCC$values = PRCC$all[,c("names", "V_max", "F_U_max", "F_B_max")]
 PRCC$times = PRCC$all[,c("names", "T_max_V", "T_max_F_U", "T_max_F_B")]
 # Save the results
->>>>>>> 3a125980efa3956d2d275ef3de280500c319b2b4

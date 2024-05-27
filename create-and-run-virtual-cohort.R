@@ -14,7 +14,7 @@ PARALLEL = TRUE
 # a maximum number of individuals to be simulated at once.
 max_patients_per_batch = 20000
 # Number of patients in the virtual cohort
-N = 1000000
+N = 100000
 # Number of sims needed to reach N
 nb_batches = ceiling(N / max_patients_per_batch)
 
@@ -66,6 +66,8 @@ if (PARALLEL) {
 }
 
 for (b in 1:nb_batches) {
+  date_time_start = 
+    format(now(tzone = "UTC"), "%Y%m%d-%H%M%S")
   writeLines(paste0("Starting batch ", b, " out of ", nb_batches))
   tictoc::tic()
   # Take the patients for this batch
@@ -81,16 +83,18 @@ for (b in 1:nb_batches) {
     COHORT = 
       parLapply(cl = cl, 
                 X = patients_idx_this_batch,
-                fun = function(x) run_one_patient(idx = x,
-                                                  patients = patients,
-                                                  IC = IC))
+                fun = function(x) 
+                  run_one_patient(idx = x,
+                                  patients = patients,
+                                  IC = IC))
   } else {
     # RUN SEQUENTIALLY
     writeLines("Going old school (debugging, probably)")
     COHORT = lapply(X = patients_idx_this_batch,
-                    FUN = function(x) run_one_patient(idx = x,
-                                                      patients = patients,
-                                                      IC = IC))
+                    FUN = function(x) 
+                      run_one_patient(idx = x,
+                                      patients = patients,
+                                      IC = IC))
   }
   tictoc::toc()
   
@@ -106,7 +110,7 @@ for (b in 1:nb_batches) {
           file = sprintf("%s/sim_P%07d_DT%s_part-%03d-of-%03d.Rds",
                          OUTPUT_LOCAL,
                          N, 
-                         format(now(tzone = "UTC"), "%Y_%m_%d-%H_%M_%S"),
+                         date_time_start,
                          b, nb_batches))
   # Clean up to avoid a run with previous run in RAM
   rm(COHORT)
