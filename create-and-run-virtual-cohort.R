@@ -42,7 +42,7 @@ writeLines("Starting computations")
 if (PARALLEL) {
   # RUN IN PARALLEL
   # Detect number of cores
-  no_cores <- detectCores()-10
+  no_cores <- detectCores()-1
   if (no_cores > 124) {
     # Detect rich person's problem. 
     # (Could also recompile R setting the number of sockets higher than the 
