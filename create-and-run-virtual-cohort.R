@@ -5,16 +5,16 @@ library(lubridate)
 source("functions_all.R")
 
 OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
-OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/within-to-between-hosts"
+OUTPUT_LOCAL = "/home/jarino/OUTPUT-local/within-to-between-hosts"
 
 # Run parallel?
-PARALLEL = FALSE
+PARALLEL = TRUE
 
 # Weight of sims in RAM may lead to explosion of RAM usage (or swapping). Set
 # a maximum number of individuals to be simulated at once.
-max_patients_per_batch = 5000
+max_patients_per_batch = 1000
 # Number of patients in the virtual cohort
-N = 100000
+N = 1000000
 # Number of sims needed to reach N
 nb_batches = ceiling(N / max_patients_per_batch)
 
