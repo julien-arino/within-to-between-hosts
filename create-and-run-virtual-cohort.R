@@ -8,11 +8,11 @@ OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
 OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/within-to-between-hosts"
 
 # Run parallel?
-PARALLEL = TRUE
+PARALLEL = FALSE
 
 # Weight of sims in RAM may lead to explosion of RAM usage (or swapping). Set
 # a maximum number of individuals to be simulated at once.
-max_patients_per_batch = 20000
+max_patients_per_batch = 5000
 # Number of patients in the virtual cohort
 N = 100000
 # Number of sims needed to reach N
@@ -42,7 +42,7 @@ writeLines("Starting computations")
 if (PARALLEL) {
   # RUN IN PARALLEL
   # Detect number of cores
-  no_cores <- detectCores()
+  no_cores <- detectCores()-10
   if (no_cores > 124) {
     # Detect rich person's problem. 
     # (Could also recompile R setting the number of sockets higher than the 
