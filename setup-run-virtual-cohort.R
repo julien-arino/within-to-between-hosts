@@ -93,57 +93,83 @@ if (PARALLEL) {
   writeLines("We're running sequentially!")
 }
 
-# Run for all the batches
-for (b in 1:nb_batches) {
-  writeLines(paste0("Starting batch ", b, " out of ", nb_batches))
-  tictoc::tic()
-  # Take the patients for this batch
-  patients = patients_df[[b]]
-  # Indices for this batch
-  patients_idx_this_batch = patients_idx[[b]]
-  if (PARALLEL) {
-    # RUN IN PARALLEL, set parameters specific to this batch.
-    clusterExport(cl,
-                  c("patients"),
-                  envir = .GlobalEnv)
-    # Run computation
-    COHORT = 
-      parLapply(cl = cl, 
-                X = patients_idx_this_batch,
-                fun = function(x) 
-                  run_one_patient(idx = x,
-                                  patients = patients,
-                                  IC = IC))
-  } else {
-    # RUN SEQUENTIALLY
-    writeLines("Going old school (debugging, probably)")
-    COHORT = lapply(X = patients_idx_this_batch,
-                    FUN = function(x) 
-                      run_one_patient(idx = x,
-                                      patients = patients,
-                                      IC = IC))
-  }
-  tictoc::toc()
-  
-  # Start preparing the save variable
-  SAVE = list()
-  SAVE$parameters = patients
-  # Add IC and results to save variable
-  SAVE$IC = IC
-  SAVE$cohort = COHORT
-  
-  writeLines("Saving results")
-  saveRDS(SAVE, 
-          file = sprintf("%s/sim-%s-%s-%s-part-%03d-of-%03d.Rds",
-                         LOCAL_OUTPUT,
-                         params_files$cohort_size_str[dim(params_files)[1]], 
-                         params_files$date[dim(params_files)[1]], 
-                         params_files$time[dim(params_files)[1]],
-                         b, nb_batches))
-  # Clean up to avoid a run with previous run in RAM
-  rm(COHORT)
-  rm(SAVE)
-}
 
-# Stop cluster
-stopCluster(cl)
+# Are we resuming an ongoing (interrupted) computation
+# Pattern of the result files, if any
+pattern = sprintf("sim-%s-%s-%s-part-",
+                  params_files$cohort_size_str[dim(params_files)[1]], 
+                  params_files$date[dim(params_files)[1]], 
+                  params_files$time[dim(params_files)[1]])
+# Get list of stuff we have already done (saved locally)
+done_files = data.frame(
+  files = list.files(LOCAL_OUTPUT, pattern)
+)
+if (dim(done_files)[1]>0) {
+  tmp = strsplit(done_files$files, "-")
+  done_files$part = as.numeric(unlist(lapply(tmp, function(x) x[6])))
+  if (max(done_files$part)<nb_batches) {
+    start = max(done_files$part)+1
+    RUN_SIMS = TRUE
+  } else {
+    RUN_SIMS = FALSE
+  }
+} else {
+  start = 1
+  RUN_SIMS = TRUE
+}
+if (RUN_SIMS) {
+  # Run for all the batches
+  for (b in start:nb_batches) {
+    writeLines(paste0("Starting batch ", b, " out of ", nb_batches))
+    tictoc::tic()
+    # Take the patients for this batch
+    patients = patients_df[[b]]
+    # Indices for this batch
+    patients_idx_this_batch = patients_idx[[b]]
+    if (PARALLEL) {
+      # RUN IN PARALLEL, set parameters specific to this batch.
+      clusterExport(cl,
+                    c("patients"),
+                    envir = .GlobalEnv)
+      # Run computation
+      COHORT = 
+        parLapply(cl = cl, 
+                  X = patients_idx_this_batch,
+                  fun = function(x) 
+                    run_one_patient(idx = x,
+                                    patients = patients,
+                                    IC = IC))
+    } else {
+      # RUN SEQUENTIALLY
+      writeLines("Going old school (debugging, probably)")
+      COHORT = lapply(X = patients_idx_this_batch,
+                      FUN = function(x) 
+                        run_one_patient(idx = x,
+                                        patients = patients,
+                                        IC = IC))
+    }
+    tictoc::toc()
+    
+    # Start preparing the save variable
+    SAVE = list()
+    SAVE$parameters = patients
+    # Add IC and results to save variable
+    SAVE$IC = IC
+    SAVE$cohort = COHORT
+    
+    writeLines("Saving results")
+    saveRDS(SAVE, 
+            file = sprintf("%s/sim-%s-%s-%s-part-%03d-of-%03d.Rds",
+                           LOCAL_OUTPUT,
+                           params_files$cohort_size_str[dim(params_files)[1]], 
+                           params_files$date[dim(params_files)[1]], 
+                           params_files$time[dim(params_files)[1]],
+                           b, nb_batches))
+    # Clean up to avoid a run with previous run in RAM
+    rm(COHORT)
+    rm(SAVE)
+  }
+  
+  # Stop cluster
+  stopCluster(cl)
+}
