@@ -72,4 +72,4 @@ betaave2 = [(u[1], 1.2*(((39581.1*u[7]+0.424384)^2))/((39581.1*u[7]+0.424384)^2+
 
 ###
 using DelimitedFiles
-# writedlm("/Users/suzan/Desktop/Datafinal1.2/Vave.txt", V0)
+writedlm("Vave.txt", V0)
