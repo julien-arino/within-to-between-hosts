@@ -34,6 +34,6 @@ SAVE$IC = IC
 
 # Save the results
 saveRDS(SAVE,
-        file = sprintf("%s/params_P%07d_%s.Rds",
+        file = sprintf("%s/params-P%07d-%s.Rds",
                        NAS_small_OUTPUT,
                        N, date_time_start))

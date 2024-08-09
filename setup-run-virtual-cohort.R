@@ -1,30 +1,58 @@
+# Run the virtual cohort
+
 library(deSolve)
 library(parallel)
-library(lubridate)
 
 source("functions_all.R")
 
-OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
-OUTPUT_LOCAL = "/home/jarino/OUTPUT-local/within-to-between-hosts"
+# Directory where the parameters are located, typically not synced to GitHub
+# but on local NAS for sharing between nodes.
+NAS_small_OUTPUT = "/home/jarino/NAS-small-OUTPUT/within-to-between-hosts"
+
+# Directory where the local results are located, typically not synced to GitHub.
+LOCAL_OUTPUT = "/home/jarino/LOCAL-OUTPUT/within-to-between-hosts"
 
 # Run parallel?
-PARALLEL = TRUE
+PARALLEL = FALSE
+
+# Find a parameter file to process on the NAS
+params_files = data.frame(
+  file_name = list.files(path = NAS_small_OUTPUT,
+                          pattern = glob2rx("params*.Rds"))
+)
+tmp = strsplit(params_files$file_name, "-")
+params_files$cohort_size_str = 
+  unlist(lapply(tmp, 
+                function(x) x[2]))
+params_files$cohort_size = 
+  as.numeric(gsub("P", "", params_files$cohort_size_str))
+params_files$date = 
+  unlist(lapply(tmp, 
+                function(x) x[3]))
+params_files$time = 
+  unlist(lapply(tmp, 
+                function(x) x[4]))
+params_files$time = gsub(".Rds", "", params_files$time)
+
+# Load the parameters from the NAS
+# For now, for simplicity, do the most recent
+params_tmp = readRDS(
+  sprintf("%s/%s",
+          NAS_small_OUTPUT,
+          params_files$file_name[dim(params_files)[1]])
+)
+# Set general parameters and (common) initial conditions
+params_df_tmp = params_tmp$parameters
+IC = params_tmp$IC
 
 # Weight of sims in RAM may lead to explosion of RAM usage (or swapping). Set
 # a maximum number of individuals to be simulated at once.
-max_patients_per_batch = 1000
+max_patients_per_batch = 500
 # Number of patients in the virtual cohort
-N = 1000000
+N = params_files$cohort_size[dim(params_files)[1]]
 # Number of sims needed to reach N
 nb_batches = ceiling(N / max_patients_per_batch)
 
-# Set general parameters and (common) initial conditions
-params = set_parameters()
-IC = set_IC()
-
-# Generate virtual cohort. Do it in one go, even if we split sims, so that any
-# scheme (LHS, etc.) applies to the entire cohort, not each batch of patients.
-tmp_df = generate_params_patients(n = N, params = params)
 # Needed for the parallel call
 tmp_idx = 1:N
 # Now prepare batches
@@ -33,7 +61,7 @@ patients_idx = list()
 for (b in 1:nb_batches) {
   start_current_batch = (b-1)*max_patients_per_batch+1
   end_current_batch = b*max_patients_per_batch
-  patients_df[[b]] = tmp_df [start_current_batch:end_current_batch,]
+  patients_df[[b]] = params_df_tmp[start_current_batch:end_current_batch,]
   patients_idx[[b]] = tmp_idx[start_current_batch:end_current_batch]
 }
 
@@ -65,9 +93,6 @@ if (PARALLEL) {
   writeLines("We're running sequentially!")
 }
 
-# Record date-time at start to have common file name
-date_time_start = 
-  format(now(tzone = "UTC"), "%Y%m%d-%H%M%S")
 # Run for all the batches
 for (b in 1:nb_batches) {
   writeLines(paste0("Starting batch ", b, " out of ", nb_batches))
@@ -109,10 +134,11 @@ for (b in 1:nb_batches) {
   
   writeLines("Saving results")
   saveRDS(SAVE, 
-          file = sprintf("%s/sim_P%07d_DT%s_part-%03d-of-%03d.Rds",
-                         OUTPUT_LOCAL,
-                         N, 
-                         date_time_start,
+          file = sprintf("%s/sim-%s-%s-%s-part-%03d-of-%03d.Rds",
+                         LOCAL_OUTPUT,
+                         params_files$cohort_size_str[dim(params_files)[1]], 
+                         params_files$date[dim(params_files)[1]], 
+                         params_files$time[dim(params_files)[1]],
                          b, nb_batches))
   # Clean up to avoid a run with previous run in RAM
   rm(COHORT)
