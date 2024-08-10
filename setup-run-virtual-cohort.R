@@ -171,5 +171,7 @@ if (RUN_SIMS) {
   }
   
   # Stop cluster
-  stopCluster(cl)
+  if (PARALLEL) {
+    stopCluster(cl)
+  }
 }
