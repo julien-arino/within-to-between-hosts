@@ -1,4 +1,5 @@
-# This script creates a virtual cohort of individuals and runs simulations
+# This script creates a set of parameter values for individuals, varying
+# all parameters according to a Sobol sequence, and runs simulations
 # for each individual in parallel, saving the results in various formats.
 # The script calls on R to create the cohort parameters and saves results as 
 # Rds files for later exploitation in R.
@@ -8,8 +9,8 @@ using Dates
 using Distributed
 using Serialization
 using Printf  # Import Printf for @sprintf
-using CSV     # Import the CSV package for reading/writing CSV files
-using RCall   # Import RCall for interacting with R
+using CSV # Import the CSV package for reading/writing CSV files
+using RCall  # Import RCall for interacting with R
 
 # Some of the output files can be quite large, so we include the option
 # to save them on a large capacity disk (e.g., a NAS) if available.
@@ -41,17 +42,24 @@ SAVE_CSV = false
 # "maxima" = save only the maxima and their time of occurrence
 # "select_variables" = select variables to save
 # "all" = save all variables
-type_output = "select_variables"
+type_output = "maxima"
 
 # Number of individuals in the virtual cohort
 N = 1_000_000
 
-# Set general parameters and (common) initial conditions
-params = set_parameters()
+# Generate the sample in R
+@rput N  # Send the Julia object to R
+R"""
+source("/home/jarino/github/within-to-between-hosts/CODE/prepare-sample-for-sensitivity.R")
+"""
+@rget individuals  # Get the sample from R
+
+# Print the dimension of pars.sobol
+println("individuals size: ", size(individuals))
+
 IC = set_IC()
 
-# Generate virtual cohort
-individuals = generate_params_individuals(params, N)
+# Set the individual indices
 individuals_idx = 1:N
 
 # Run computation sequentially for all individuals
@@ -59,25 +67,18 @@ println("Starting computation for all $N individuals")
 start_time = time()
 
 if PARALLEL
-    # Prepare parallel processing environment. In case julia was not started with multiple 
-    # processes, add some here. 
-    # For large CPU counts, we add two thirds of the CPUs.
-    # For smaller ones, we leave two free.
+    # Prepare parallel processing environment
     if nprocs() < 2
         if Sys.CPU_THREADS >= 64
-            addprocs(max(2, Int(round(Sys.CPU_THREADS * 2 / 3))))
+            addprocs(max(2, Int(round(Sys.CPU_THREADS / 2))))
         else
             addprocs(max(2, Sys.CPU_THREADS - 2))
         end
     end
     # Ensure all workers have the required functions and modules
-    @everywhere using DifferentialEquations  # Import DifferentialEquations
+    @everywhere using DifferentialEquations  # Import the DifferentialEquations package
     @everywhere using Serialization
     @everywhere include("functions-all.jl")
-
-    # Ensure all workers have the required variables
-    @everywhere IC = $IC
-    @everywhere params = $params
 end
 
 # Run computation
@@ -98,7 +99,7 @@ elapsed_time = time() - start_time
 println("Computation completed in $(elapsed_time) seconds")
 
 # Record date-time for unique file naming (capture current time for each run)
-# Note: Julia Dates tokens are case-sensitive -> m=month, M=minute, S=second
+# Note: use UTC to avoid issues with compute nodes with time set incorrectly
 date_time_start = Dates.format(now(UTC), "yyyymmdd-HHMMSS")
 
 # Start preparing the save variable
@@ -112,15 +113,15 @@ SAVE[:cohort] = COHORT
 # Only save if SAVE_JLS is true
 if SAVE_JLS
     println("Saving results as JLS")
-    save_path = joinpath(OUTPUT, @sprintf("sim_P%07d_DT%s_%s.jls", N, date_time_start, type_output))
+    save_path = joinpath(OUTPUT, @sprintf("sensitivity_P%07d_DT%s_%s.jls", N, date_time_start, type_output))
     serialize(save_path, SAVE)
     println("Results saved to $save_path")
 end
 
 ## Save the results as an Rds file
-save_path_rds = joinpath(OUTPUT, @sprintf("sim_P%07d_DT%s_%s.Rds", N, date_time_start, type_output))
-@rput SAVE          # Send the Julia object to R
-@rput save_path_rds # Send the absolute path to R (now guaranteed absolute)
+save_path_rds = joinpath(OUTPUT, @sprintf("sensitivity_P%07d_DT%s_%s.Rds", N, date_time_start, type_output))
+@rput SAVE  # Send the Julia object to R
+@rput save_path_rds  # Send the absolute path to R
 R"""
 saveRDS(SAVE, file = save_path_rds)
 """
@@ -130,7 +131,7 @@ println("Results saved to $save_path_rds")
 # Only save if SAVE_CSV is true
 if SAVE_CSV
     println("Saving results as CSV")
-    save_path_csv = joinpath(OUTPUT, @sprintf("sim_P%07d_DT%s_%s.csv", N, date_time_start, type_output))
+    save_path_csv = joinpath(OUTPUT, @sprintf("sensitivity_P%07d_DT%s_%s.csv", N, date_time_start, type_output))
 
     # Prepare the appropriate DataFrame based on the type of output
     if type_output == "select_variables"

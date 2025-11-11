@@ -124,10 +124,10 @@ function add_IC_to_params(params, IC)
 end
 
 ##
-## generate_params_individuals
+## generate_params_cohort
 ##
-# Generate parameters for individuals
-function generate_params_individuals(params, n = 1000)
+# Generate parameters for individuals in the virtual cohort
+function generate_params_cohort(params, n = 1000)
     names_params = keys(params)
     idx_stddev = filter(x -> occursin("_stddev", string(x)), names_params)  # Convert Symbol to String
     params_with_stddev = map(x -> replace(string(x), "_stddev" => ""), collect(idx_stddev))  # Convert Set to Array
@@ -161,17 +161,6 @@ end
 function history_function(t, p)
     return IC  # Always return the initial conditions
 end
-
-# # Define a custom callable struct for the history function
-# struct HistoryFunction
-#     IC::Vector{Float64}
-# end
-
-# # Make the struct callable
-# function (hf::HistoryFunction)(t::Float64)
-#     # Return the initial conditions for all state variables
-#     return hf.IC
-# end
 
 ##
 ## run_one_individual
