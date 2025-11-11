@@ -18,7 +18,7 @@ using Distributed
 ## rhs_within_host_ODE
 ##
 # The right-hand side of the within-host ODE
-function rhs_within_host!(du, u, h, pp, t)
+function rhs_within_host_ODE!(du, u, pp, t)
     V, S, I, R, D, F_U, F_B, A_I, A_R = u
     p, τ_I, V0, S0, λ_S, S_max, β, d_V, d_I, d_D, ψ_F_prod, p_FI, η_FI, k_lin_f, k_int_f, k_B_F, T_star, k_U_F, δ, ε_FI, A_F = pp
 
@@ -174,11 +174,11 @@ end
 # end
 
 ##
-## run_one_patient
+## run_one_individual
 ##
-# Simulate the within-host model for one patient
-function run_one_patient(idx, individuals, IC; type_output = "solution")
-    # Extract patient-specific parameters
+# Simulate the within-host model for one individual
+function run_one_individual(idx, individuals, IC; type_output = "solution")
+    # Extract individual-specific parameters
     params_tmp = individuals[idx, :]
     params_tmp = add_IC_to_params(params_tmp, IC)
 
@@ -285,9 +285,9 @@ function value_indicators(params_change, params_fixed; t_f = 200, ncpus = 60, pa
     individuals_idx = 1:size(params_change, 1)
     if parallel
         addprocs(ncpus)
-        results = pmap(idx -> run_one_patient_indicators(idx, params_change, params_fixed), individuals_idx)
+        results = pmap(idx -> run_one_individual_indicators(idx, params_change, params_fixed), individuals_idx)
     else
-        results = map(idx -> run_one_patient_indicators(idx, params_change, params_fixed), individuals_idx)
+        results = map(idx -> run_one_individual_indicators(idx, params_change, params_fixed), individuals_idx)
     end
     return results
 end

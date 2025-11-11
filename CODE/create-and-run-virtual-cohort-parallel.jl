@@ -11,12 +11,19 @@ using Printf  # Import Printf for @sprintf
 using CSV     # Import the CSV package for reading/writing CSV files
 using RCall   # Import RCall for interacting with R
 
-# Some of the output files can be quite large, so we include  the option 
+# Some of the output files can be quite large, so we include the option
 # to save them on a large capacity disk (e.g., a NAS) if available.
 OUTPUT_NAS = "/mnt/NAS-small-OUTPUT/within-to-between-hosts/"
-OUTPUT_LOCAL = "../OUTPUT/"
-# Select the output path based on knowledge of the environment
+# Use absolute paths so that RCall (which may have a different
+# working directory context) can reliably find output files.
+SCRIPT_DIR = @__DIR__  # Directory containing this script
+OUTPUT_LOCAL = normpath(joinpath(SCRIPT_DIR, "..", "OUTPUT"))
+
+# Select the output path based on knowledge of available disk space.
 OUTPUT = OUTPUT_LOCAL
+
+# Ensure the output directory exists (both Julia & R save operations rely on it).
+mkpath(OUTPUT)
 
 # Load external functions
 include("functions-all.jl")
@@ -47,9 +54,6 @@ IC = set_IC()
 individuals = generate_params_individuals(params, N)
 individuals_idx = 1:N
 
-# Record date-time at start to have common file name
-date_time_start = Dates.format(now(UTC), "yyyyMMdd-HHmmss")
-
 # Run computation sequentially for all individuals
 println("Starting computation for all $N individuals")
 start_time = time()
@@ -57,10 +61,11 @@ start_time = time()
 if PARALLEL
     # Prepare parallel processing environment. In case julia was not started with multiple 
     # processes, add some here. 
-    # For large CPU counts, we add half of the CPUs, for smaller ones, we leave two free.
+    # For large CPU counts, we add two thirds of the CPUs.
+    # For smaller ones, we leave two free.
     if nprocs() < 2
         if Sys.CPU_THREADS >= 64
-            addprocs(max(2, Int(round(Sys.CPU_THREADS / 2))))
+            addprocs(max(2, Int(round(Sys.CPU_THREADS * 2 / 3))))
         else
             addprocs(max(2, Sys.CPU_THREADS - 2))
         end
@@ -77,9 +82,9 @@ end
 
 # Run computation
 COHORT = if PARALLEL
-    pmap(x -> run_one_patient(x, individuals, IC; type_output = type_output), individuals_idx)
+    pmap(x -> run_one_individual(x, individuals, IC; type_output = type_output), individuals_idx)
 else
-    map(x -> run_one_patient(x, individuals, IC; type_output = type_output), individuals_idx)
+    map(x -> run_one_individual(x, individuals, IC; type_output = type_output), individuals_idx)
 end
 
 # Close the cluster if parallel processing was used
@@ -91,6 +96,10 @@ end
 # Print elapsed time
 elapsed_time = time() - start_time
 println("Computation completed in $(elapsed_time) seconds")
+
+# Record date-time for unique file naming (capture current time for each run)
+# Note: Julia Dates tokens are case-sensitive -> m=month, M=minute, S=second
+date_time_start = Dates.format(now(UTC), "yyyymmdd-HHMMSS")
 
 # Start preparing the save variable
 SAVE = Dict()
@@ -110,8 +119,8 @@ end
 
 ## Save the results as an Rds file
 save_path_rds = joinpath(OUTPUT, @sprintf("sim_P%07d_DT%s_%s.Rds", N, date_time_start, type_output))
-@rput SAVE  # Send the Julia object to R
-@rput save_path_rds  # Send the absolute path to R
+@rput SAVE          # Send the Julia object to R
+@rput save_path_rds # Send the absolute path to R (now guaranteed absolute)
 R"""
 saveRDS(SAVE, file = save_path_rds)
 """
