@@ -1,6 +1,6 @@
-##################
+###################
 ## FUNCTIONS_ALL.jl
-##################
+###################
 #
 # This file contains all functions used in the code.
 #
@@ -15,10 +15,32 @@ using Distributed
 @everywhere using Distributed
 
 ##
-## rhs_within_host
+## rhs_within_host_ODE
+##
+# The right-hand side of the within-host ODE
+function rhs_within_host!(du, u, h, pp, t)
+    V, S, I, R, D, F_U, F_B, A_I, A_R = u
+    p, τ_I, V0, S0, λ_S, S_max, β, d_V, d_I, d_D, ψ_F_prod, p_FI, η_FI, k_lin_f, k_int_f, k_B_F, T_star, k_U_F, δ, ε_FI, A_F = pp
+
+    du[1] = p * I - d_V * V
+    du[2] = λ_S * (1 - (S + I + D + R) / S_max) * S - β * S * V
+    du[3] = β * S * V * (1 - F_B / (ε_FI + F_B)) * A_I - d_I * I
+    du[4] = λ_S * (1 - (S + I + D + R) / S_max) * R +
+            β * S * V * (F_B / (ε_FI + F_B)) * A_R
+    du[5] = d_I * I - d_D * D
+    du[6] = ψ_F_prod + p_FI * I / (I + η_FI) -
+            k_lin_f * F_U - k_B_F * ((T_star + I) * A_F - F_B) * F_U + k_U_F * F_B
+    du[7] = -k_int_f * F_B + k_B_F * ((T_star + I) * A_F - F_B) * F_U - k_U_F * F_B
+    du[8] = δ * A_I * (I - I)
+    du[9] = δ * A_R * (R - R)
+end
+
+##
+## rhs_within_host_DDE
+## (The original model used DDEs; this function is kept for reference)
 ##
 # The right-hand side of the within-host DDE
-function rhs_within_host!(du, u, h, pp, t)
+function rhs_within_host_DDE!(du, u, h, pp, t)
     V, S, I, R, D, F_U, F_B, A_I, A_R = u
     p, τ_I, V0, S0, λ_S, S_max, β, d_V, d_I, d_D, ψ_F_prod, p_FI, η_FI, k_lin_f, k_int_f, k_B_F, T_star, k_U_F, δ, ε_FI, A_F = pp
 
@@ -163,17 +185,22 @@ function run_one_patient(idx, individuals, IC; type_output = "solution")
     # Convert DataFrameRow to a vector of parameter values
     params_vector = collect(values(params_tmp))
 
-    # Define the lag
-    lag = params_tmp[:τ_I]
-
     # Define the time span
     tspan = (0.0, 200.0)
 
-    # Set the integration method
-    integrator = MethodOfSteps(Rodas5())
+    ## The original model used DDEs; here we use ODEs for simplicity, but the DDE code
+    ## is kept for reference.
+    # # Define the lag
+    # lag = params_tmp[:τ_I]
+    # # Set the integration method
+    # integrator = MethodOfSteps(Rodas5())
+    # # Define the DDE problem
+    # prob = DDEProblem(rhs_within_host!, history_function, tspan, params_vector; constant_lags = [lag])
 
-    # Define the DDE problem
-    prob = DDEProblem(rhs_within_host!, history_function, tspan, params_vector; constant_lags = [lag])
+    # Set the integration method
+    integrator = Rodas5()
+    # Define the ODE problem
+    prob = ODEProblem(rhs_within_host_ODE!, IC, tspan, params_vector)
 
     # --- Nonnegativity callback defined locally ---
     condition_nonneg(u, t, integrator) = any(x -> x < 0, u)

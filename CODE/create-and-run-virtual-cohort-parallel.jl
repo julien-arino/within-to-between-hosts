@@ -55,8 +55,9 @@ println("Starting computation for all $N individuals")
 start_time = time()
 
 if PARALLEL
-    # Prepare parallel processing environment. In case of julia was not started
-    # with multiple processes, add some here. For large CPU counts, we add half of the CPUs, for smaller ones, we leave two free.
+    # Prepare parallel processing environment. In case julia was not started with multiple 
+    # processes, add some here. 
+    # For large CPU counts, we add half of the CPUs, for smaller ones, we leave two free.
     if nprocs() < 2
         if Sys.CPU_THREADS >= 64
             addprocs(max(2, Int(round(Sys.CPU_THREADS / 2))))
