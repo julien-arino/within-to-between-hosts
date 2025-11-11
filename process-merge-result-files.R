@@ -10,7 +10,7 @@ OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/within-to-between-hosts"
 list_files = 
   data.frame(name = list.files(
     path = sprintf("%s",
-                   OUTPUT_LOCAL),
+                   NAS),
     pattern = glob2rx("*.Rds"))
   )
 list_files = list_files %>%
@@ -34,9 +34,9 @@ for (dt in unique(list_files$date_time)) {
   for (f in tmp_files$name) {
     writeLines(paste("  Processing", f))
     if (f == tmp_files$name[1]) {
-      cohort = readRDS(sprintf("%s/%s", OUTPUT_LOCAL, f))
+      cohort = readRDS(sprintf("%s/%s", NAS, f))
     } else {
-      tmp = readRDS(sprintf("%s/%s", OUTPUT_LOCAL, f))
+      tmp = readRDS(sprintf("%s/%s", NAS, f))
       cohort$cohort = append(cohort$cohort, tmp$cohort)
       cohort$parameters = rbind(cohort$parameters, tmp$parameters)
     }
