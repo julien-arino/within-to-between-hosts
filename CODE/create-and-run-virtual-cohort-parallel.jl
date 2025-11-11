@@ -44,7 +44,7 @@ params = set_parameters()
 IC = set_IC()
 
 # Generate virtual cohort
-individuals = generate_params_patients(params, N)
+individuals = generate_params_individuals(params, N)
 individuals_idx = 1:N
 
 # Record date-time at start to have common file name
@@ -93,7 +93,7 @@ println("Computation completed in $(elapsed_time) seconds")
 
 # Start preparing the save variable
 SAVE = Dict()
-SAVE[:parameters] = patients
+SAVE[:parameters] = individuals
 # Add IC and results to save variable
 SAVE[:IC] = IC
 SAVE[:cohort] = COHORT

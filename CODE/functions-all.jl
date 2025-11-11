@@ -102,10 +102,10 @@ function add_IC_to_params(params, IC)
 end
 
 ##
-## generate_params_patients
+## generate_params_individuals
 ##
-# Generate parameters for patients
-function generate_params_patients(params, n = 1000)
+# Generate parameters for individuals
+function generate_params_individuals(params, n = 1000)
     names_params = keys(params)
     idx_stddev = filter(x -> occursin("_stddev", string(x)), names_params)  # Convert Symbol to String
     params_with_stddev = map(x -> replace(string(x), "_stddev" => ""), collect(idx_stddev))  # Convert Set to Array
@@ -155,9 +155,9 @@ end
 ## run_one_patient
 ##
 # Simulate the within-host model for one patient
-function run_one_patient(idx, patients, IC; type_output = "solution")
+function run_one_patient(idx, individuals, IC; type_output = "solution")
     # Extract patient-specific parameters
-    params_tmp = patients[idx, :]
+    params_tmp = individuals[idx, :]
     params_tmp = add_IC_to_params(params_tmp, IC)
 
     # Convert DataFrameRow to a vector of parameter values
@@ -255,12 +255,12 @@ function value_indicators(params_change, params_fixed; t_f = 200, ncpus = 60, pa
     col_names = names(params_change)[2:end]
     col_names_fixed = setdiff(names(params_fixed), col_names)
 
-    patients_idx = 1:size(params_change, 1)
+    individuals_idx = 1:size(params_change, 1)
     if parallel
         addprocs(ncpus)
-        results = pmap(idx -> run_one_patient_indicators(idx, params_change, params_fixed), patients_idx)
+        results = pmap(idx -> run_one_patient_indicators(idx, params_change, params_fixed), individuals_idx)
     else
-        results = map(idx -> run_one_patient_indicators(idx, params_change, params_fixed), patients_idx)
+        results = map(idx -> run_one_patient_indicators(idx, params_change, params_fixed), individuals_idx)
     end
     return results
 end
