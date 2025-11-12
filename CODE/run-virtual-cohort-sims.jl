@@ -43,14 +43,14 @@ SAVE_CSV = false
 type_output = "select_variables"
 
 # Number of individuals in the virtual cohort
-N = 1_000_000
+N = 1_000
 
 # Set general parameters and (common) initial conditions
 params = set_parameters()
 IC = set_IC()
 
 # Generate virtual cohort
-individuals = generate_params_individuals(params, N)
+individuals = generate_params_cohort(params, N)
 individuals_idx = 1:N
 
 # Run computation sequentially for all individuals
@@ -58,8 +58,8 @@ println("Starting computation for all $N individuals")
 start_time = time()
 
 if PARALLEL
-    # Prepare parallel processing environment. In case julia was not started with multiple 
-    # processes, add some here. 
+    # Prepare parallel processing environment. 
+    # In case julia was not started with multiple processes, add some here. 
     # For large CPU counts, we add two thirds of the CPUs.
     # For smaller ones, we leave two free.
     if nprocs() < 2
@@ -99,6 +99,11 @@ println("Computation completed in $(elapsed_time) seconds")
 # Record date-time for unique file naming (capture current time for each run)
 # Note: use UTC to avoid issues with compute nodes with time set incorrectly
 date_time_start = Dates.format(now(UTC), "yyyymmdd-HHMMSS")
+
+# Compute R0 for each individual and add as a column
+println("Computing R0 for each individual in the cohort...")
+compute_R0_cohort!(individuals)
+println("R0 computation completed")
 
 # Start preparing the save variable
 SAVE = Dict()
