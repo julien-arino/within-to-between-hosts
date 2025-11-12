@@ -6,8 +6,8 @@
 
 set -euo pipefail
 
-SRC_DIR="$HOME/github/within-to-between-hosts/OUTPUT/"
-DST_DIR="/mnt/NAS-small-OUTPUT/within-to-between-hosts"
+SRC_DIR="$HOME/github/within-to-between-hosts/FIGS/"
+DST_DIR="$HOME/github/overleaf-within-to-between-hosts-new/FIGS"
 
 # Verify source exists
 if [ ! -d "$SRC_DIR" ]; then
