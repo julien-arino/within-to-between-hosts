@@ -308,6 +308,15 @@ function value_indicators(params_change, params_fixed; t_f = 200, ncpus = 60, pa
 
     individuals_idx = 1:size(params_change, 1)
     if parallel
+        # Remove any pre-existing workers to avoid credential/cookie mismatches
+        if nprocs() > 1
+            println("Removing existing workers before addprocs (nprocs=$(nprocs()))...")
+            try
+                rmprocs(workers())
+            catch e
+                @warn "Failed to remove existing workers in value_indicators" exception=(e, catch_backtrace())
+            end
+        end
         addprocs(ncpus)
         results = pmap(idx -> run_one_individual_indicators(idx, params_change, params_fixed), individuals_idx)
     else

@@ -43,7 +43,7 @@ SAVE_CSV = false
 type_output = "select_variables"
 
 # Number of individuals in the virtual cohort
-N = 1_000
+N = 1_000_000
 
 # Set general parameters and (common) initial conditions
 params = set_parameters()
@@ -58,7 +58,22 @@ println("Starting computation for all $N individuals")
 start_time = time()
 
 if PARALLEL
-    # Prepare parallel processing environment. 
+    # Prepare parallel processing environment.
+
+    # If there are pre-existing workers attached to this Julia session, remove
+    # them first. Leftover workers from prior runs or other masters can try to
+    # reconnect with a different cookie and trigger "Invalid connection
+    # credentials sent by remote." Remove workers owned by this session so we
+    # start with a clean slate.
+    if nprocs() > 1
+        println("Found existing workers (nprocs=$(nprocs())). Removing them to avoid stale/invalid connections...")
+        try
+            rmprocs(workers())
+        catch e
+            @warn "Failed to remove existing workers" exception=(e, catch_backtrace())
+        end
+    end
+
     # In case julia was not started with multiple processes, add some here. 
     # For large CPU counts, we add two thirds of the CPUs.
     # For smaller ones, we leave two free.
@@ -68,6 +83,7 @@ if PARALLEL
         else
             addprocs(max(2, Sys.CPU_THREADS - 2))
         end
+        println("Done setting up $(nprocs()) workers. Moving on to distribute variables...")
     end
     # Ensure all workers have the required functions and modules
     @everywhere using DifferentialEquations  # Import DifferentialEquations

@@ -75,6 +75,15 @@ start_time = time()
 
 if PARALLEL
     # Prepare parallel processing environment. 
+    # Clean up any previously attached workers to avoid mismatched connection cookies
+    if nprocs() > 1
+        println("Cleaning up pre-existing workers (nprocs=$(nprocs())) before spawning new ones...")
+        try
+            rmprocs(workers())
+        catch e
+            @warn "Failed to remove existing workers in run-sensitivity-analysis-sims" exception=(e, catch_backtrace())
+        end
+    end
     # In case julia was not started with multiple processes, add some here. 
     # For large CPU counts, we add two thirds of the CPUs.
     # For smaller ones, we leave two free.
