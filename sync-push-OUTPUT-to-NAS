@@ -19,6 +19,7 @@ fi
 mkdir -p "$DST_DIR"
 
 # Perform the sync (preserve attributes, copy recursively, show progress)
-rsync -av --delete --progress "$SRC_DIR" "$DST_DIR/"
+# Note: do NOT use --delete so files present only on the destination are preserved.
+rsync -av --progress "$SRC_DIR" "$DST_DIR/"
 
 echo "Sync completed: $SRC_DIR -> $DST_DIR"
