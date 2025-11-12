@@ -47,10 +47,15 @@ type_output = "maxima"
 # Number of individuals in the virtual cohort
 N = 1_000_000
 
-# Generate the sample in R
-@rput N  # Send the Julia object to R
+# Build the absolute path to the R script to use
+r_script_path = joinpath(SCRIPT_DIR, "prepare-sample-for-sensitivity.R")
+
+## Generate the sample in R
+# Send the Julia objects to R
+@rput N r_script_path 
+# Source the R script to generate the sample
 R"""
-source("/home/jarino/github/within-to-between-hosts/CODE/prepare-sample-for-sensitivity.R")
+source(r_script_path)
 """
 @rget individuals  # Get the sample from R
 
