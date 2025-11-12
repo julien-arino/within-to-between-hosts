@@ -1,8 +1,6 @@
 library(sensitivity)
 library(randtoolbox)
 
-source("/home/jarino/github/overleaf-within-to-between-hosts-new/CODE/functions-all.R")
-
 # Use the same order as in plot-sensitivity-from-julia.R
 cols <- c(
   "λ_S",

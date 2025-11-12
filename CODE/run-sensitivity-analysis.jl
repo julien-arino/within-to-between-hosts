@@ -47,14 +47,16 @@ type_output = "maxima"
 # Number of individuals in the virtual cohort
 N = 1_000_000
 
-# Build the absolute path to the R script to use
+# Build the absolute path to the R scripts to use
+r_functions_path = joinpath(SCRIPT_DIR, "functions-all.R")
 r_script_path = joinpath(SCRIPT_DIR, "prepare-sample-for-sensitivity.R")
 
 ## Generate the sample in R
 # Send the Julia objects to R
-@rput N r_script_path 
+@rput N r_functions_path r_script_path
 # Source the R script to generate the sample
 R"""
+source(r_functions_path)
 source(r_script_path)
 """
 @rget individuals  # Get the sample from R
