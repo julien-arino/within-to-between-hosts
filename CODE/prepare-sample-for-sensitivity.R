@@ -1,5 +1,16 @@
+# Set up the sample for the sensitivity analysis
+
 library(sensitivity)
 library(randtoolbox)
+
+# Some of the stuff should be done by julia but can be
+# run here instead to debug
+if (FALSE) {
+  # Number of individuals in the sensitivity analysis
+  N = 1000000
+  # Source functions file
+  source("functions-all.R")
+}
 
 # Use the same order as in plot-sensitivity-from-julia.R
 cols <- c(
@@ -50,9 +61,6 @@ tmp = matrix(c(
 pars_df$min = tmp[,1]
 pars_df$max = tmp[,2]
 
-# Number of patients in the virtual cohort (sample size for the sensitivity)
-# N = 500
-
 # To use sensitivity::parameterSets, we need to convert the data frame to a list
 pars_list = list()
 for (i in 1:dim(pars_df)[1]) {
@@ -76,8 +84,8 @@ avo <- 6.02214e23
 # R_F_I <- 1300.0
 # A_F <- (MM_F / avo) * (R_F_I + R_F_T) * (1 / 5000) * (10^9 * 1e12)
 
-# Add these columns to pars_sobol to create patients
-patients <- cbind(
+# Add these columns to pars_sobol to create individuals
+individuals <- cbind(
   pars_sobol,
   avo = rep(avo, nrow(pars_sobol))
   # MM_F = rep(MM_F, nrow(pars_sobol)),
@@ -85,9 +93,9 @@ patients <- cbind(
   # R_F_I = rep(R_F_I, nrow(pars_sobol)),
   # A_F = rep(A_F, nrow(pars_sobol))
 )
-# Add initial condition columns to patients
-patients <- cbind(
-  patients,
+# Add initial condition columns to individuals
+individuals <- cbind(
+  individuals,
   V0 = rep(IC[1], nrow(pars_sobol)),
   S0 = rep(IC[2], nrow(pars_sobol)),
   I0 = rep(IC[3], nrow(pars_sobol)),
@@ -95,4 +103,8 @@ patients <- cbind(
 )
 
 # Cleanup before returning to julia
-rm(list = c("pars_sobol", "pars_list", "pars_df", "IC", "avo", "MM_F", "R_F_T", "R_F_I", "A_F"))
+rm(list = c("pars_sobol", 
+            "pars_list", 
+            "pars_df", 
+            "IC", 
+            "avo"))
