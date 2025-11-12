@@ -11,6 +11,7 @@ using Statistics
 using DataFrames
 using Distributions
 using Distributed
+using Roots
 
 @everywhere using Distributed
 
@@ -80,13 +81,19 @@ function set_parameters()
         :d_D => 8.0,
         :τ_I => 0.17,
         :β => 0.3,
+        :β_stddev => 0.1994,
         :d_V => 8.4,
+        :d_V_stddev => 0.67,
         :p => 394.0,
+        :p_stddev => 158.65,
         :k_U_F => 6.072,
         :p_FI => 2.8235,
+        :p_FI_stddev => 1.8741,
         :ψ_F_prod => 0.25,
         :k_B_F => 0.0107,
+        :k_B_F_stddev => 0.01,  # Estimated based on parameter range [0.001, 0.05] pattern; Jenner et al. 2021 ref [54] Sheahan et al. 2020
         :k_lin_f => 16.635,
+        :k_lin_f_stddev => 2.49,
         :k_int_f => 16.968,
         :ε_FI => 2e-4,
         :η_FI => 0.022328,
@@ -128,29 +135,57 @@ end
 ##
 # Generate parameters for individuals in the virtual cohort
 function generate_params_cohort(params, n = 1000)
-    names_params = keys(params)
-    idx_stddev = filter(x -> occursin("_stddev", string(x)), names_params)  # Convert Symbol to String
-    params_with_stddev = map(x -> replace(string(x), "_stddev" => ""), collect(idx_stddev))  # Convert Set to Array
-
-    OUT = DataFrame()
-    for curr_col in names_params
-        if !(curr_col in params_with_stddev)
-            OUT[!, curr_col] = fill(params[curr_col], n)  # Use [!, column] syntax
-        else
-            mean_val = params[curr_col]
-            stddev_val = params[Symbol(string(curr_col) * "_stddev")]  # Convert back to Symbol
-            OUT[!, curr_col] = rand(Normal(mean_val, 3 * stddev_val), n)  # Use [!, column] syntax
-            OUT[!, curr_col] = map(x -> max(x, mean_val), OUT[!, curr_col])  # Use [!, column] syntax
+    # Step 1: Extract stddev parameters and create params_varying_stddev
+    all_keys = collect(keys(params))
+    stddev_keys = filter(x -> occursin("_stddev", string(x)), all_keys)
+    
+    params_varying_stddev = Dict()
+    for key in stddev_keys
+        # Remove "_stddev" suffix from the key name
+        new_key = Symbol(replace(string(key), "_stddev" => ""))
+        params_varying_stddev[new_key] = params[key]
+    end
+    
+    # Step 2: Create params_varying_mean (corresponding mean values)
+    params_varying_mean = Dict()
+    for key in keys(params_varying_stddev)
+        params_varying_mean[key] = params[key]
+    end
+    
+    # Step 3: Create params_fixed (everything else, excluding _stddev entries)
+    varying_param_names = keys(params_varying_mean)
+    params_fixed = Dict()
+    for key in all_keys
+        # Include if it's not a varying parameter and not a _stddev entry
+        if !(key in varying_param_names) && !occursin("_stddev", string(key))
+            params_fixed[key] = params[key]
         end
     end
-
-    # Add initial condition columns
-    OUT[!, :V0] = fill(params[:V0], n)
-    OUT[!, :S0] = fill(params[:S0], n)
-    OUT[!, :I0] = fill(params[:I0], n)
-    OUT[!, :R0] = fill(params[:R0], n)
-
-    OUT[!, :ID] = 1:n  # Use [!, column] syntax
+    
+    # Step 4: Build the output DataFrame
+    OUT = DataFrame()
+    
+    # Add fixed parameters (same value for all individuals)
+    for (key, val) in params_fixed
+        OUT[!, key] = fill(val, n)
+    end
+    
+    # Add varying parameters (sampled from Normal distribution)
+    for key in keys(params_varying_mean)
+        mean_val = params_varying_mean[key]
+        stddev_val = params_varying_stddev[key]
+        
+        # Sample with symmetric variation and a scaling factor of 1 on the provided stddev
+        OUT[!, key] = rand(Normal(mean_val, 1 * stddev_val), n)
+        
+        # Enforce non-negativity with a small minimum to avoid numerical issues
+        min_val = max(1e-10, mean_val * 0.001)  # At least 0.1% of mean value
+        OUT[!, key] = map(x -> max(x, min_val), OUT[!, key])
+    end
+    
+    # Add ID column
+    OUT[!, :ID] = 1:n
+    
     return OUT
 end
 
@@ -280,3 +315,71 @@ function value_indicators(params_change, params_fixed; t_f = 200, ncpus = 60, pa
     end
     return results
 end
+
+
+# Compute virus-free equilibrium value of F_U (unbound IFN)
+# Solves: ψ_F_prod - k_lin_f*F_U = k_int_f * (k_B_F * T_star * A_F * F_U) / (k_U_F + F_U)
+function equilibrium_FU(params)
+    ψ_F_prod = params[:ψ_F_prod]
+    k_lin_f  = params[:k_lin_f]
+    k_int_f  = params[:k_int_f]
+    k_B_F    = params[:k_B_F]
+    T_star   = params[:T_star]
+    A_F      = params[:A_F]
+    k_U_F    = params[:k_U_F]
+
+    f(FU) = ψ_F_prod - k_lin_f*FU - k_int_f * (k_B_F * T_star * A_F * FU) / (k_U_F + FU)
+    FU_root = find_zero(f, (0.0, 1e3), Bisection())  # search in positive range
+    return FU_root
+end
+
+# Compute F_U factor in R0 formula
+function F_U_factor(FU, params)
+    ε_FI   = params[:ε_FI]
+    k_U_F  = params[:k_U_F]
+    A_F    = params[:A_F]
+    T_star = params[:T_star]
+    k_B_F  = params[:k_B_F]
+    numerator = ε_FI * (FU + k_U_F)
+    denominator = FU * A_F * T_star * k_B_F + ε_FI * (FU + k_U_F)
+    return numerator / denominator
+end
+
+# Compute R0
+function reproduction_number(params)
+    FU = equilibrium_FU(params)
+    Ffac = F_U_factor(FU, params)
+    p    = params[:p]
+    β    = params[:β]
+    Smax = params[:S_max]
+    dI   = params[:d_I]
+    dV   = params[:d_V]
+    R0 = p * β * Smax * Ffac / (dI * dV)
+    return R0
+end
+
+##
+## compute_R0_cohort
+##
+# Compute R0 for each individual in the cohort DataFrame
+# and add it as a new column
+function compute_R0_cohort!(individuals::DataFrame)
+    n = nrow(individuals)
+    R0_values = zeros(n)
+    
+    for i in 1:n
+        # Extract parameters for individual i as a Dict-like object
+        params_i = individuals[i, :]
+        R0_values[i] = reproduction_number(params_i)
+    end
+    
+    # Add R0 column to the DataFrame
+    individuals[!, :R0_within] = R0_values
+    return individuals
+end
+
+# Example usage of R0 (uncomment to test):
+# include("functions-all.jl")
+# params = set_parameters()
+# println("Equilibrium F_U: ", equilibrium_FU(params))
+# println("R0: ", reproduction_number(params))
