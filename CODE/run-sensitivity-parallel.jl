@@ -1,0 +1,154 @@
+using Dates
+using Distributed
+using Serialization
+using Printf  # Import Printf for @sprintf
+using CSV # Import the CSV package for reading/writing CSV files
+using RCall  # Import RCall for interacting with R
+
+# Set the output directory
+OUTPUT = "OUTPUT/"
+
+# Load external functions
+include("functions-all.jl")
+
+# Run parallel?
+PARALLEL = true
+
+# Save as jls?
+SAVE_JLS = false
+
+# Save as CSV?
+SAVE_CSV = false
+
+## Type of output
+# "maxima" = save only the maxima and their time of occurrence
+# "select_variables" = select variables to save
+# "all" = save all variables
+type_output = "maxima"
+
+# Number of patients in the virtual cohort
+N = 1_000
+
+# Generate the sample in R
+@rput N  # Send the Julia object to R
+R"""
+source("/home/jarino/github/overleaf-within-to-between-hosts-new/CODE/prepare-sample-for-sensitivity.R")
+"""
+@rget patients  # Get the sample from R
+
+# Print the dimension of pars.sobol
+println("patients size: ", size(patients))
+
+IC = set_IC()
+
+# Set the patient indices
+patients_idx = 1:N
+
+# Record date-time at start to have common file name
+date_time_start = Dates.format(now(UTC), "yyyyMMdd-HHmmss")
+
+# Run computation sequentially for all patients
+println("Starting computation for all $N patients")
+start_time = time()
+
+if PARALLEL
+    # Prepare parallel processing environment
+    if nprocs() < 2
+        if Sys.CPU_THREADS >= 64
+            addprocs(max(2, Int(round(Sys.CPU_THREADS / 2))))
+        else
+            addprocs(max(2, Sys.CPU_THREADS - 2))
+        end
+    end
+    # Ensure all workers have the required functions and modules
+    @everywhere using DifferentialEquations  # Import the DifferentialEquations package
+    @everywhere using Serialization
+    @everywhere include("functions-all.jl")
+end
+
+# Record date-time at start to have common file name
+date_time_start = Dates.format(now(UTC), "yyyyMMdd-HHmmss")
+
+# Run computation
+COHORT = if PARALLEL
+    pmap(x -> run_one_patient(x, patients, IC; type_output = type_output), patients_idx)
+else
+    map(x -> run_one_patient(x, patients, IC; type_output = type_output), patients_idx)
+end
+
+# Close the cluster if parallel processing was used
+if PARALLEL
+    println("Shutting down workers...")
+    rmprocs(workers())  # Remove all worker processes
+end
+
+# Print elapsed time
+elapsed_time = time() - start_time
+println("Computation completed in $(elapsed_time) seconds")
+
+# Start preparing the save variable
+SAVE = Dict()
+SAVE[:parameters] = patients
+# Add IC and results to save variable
+SAVE[:IC] = IC
+SAVE[:cohort] = COHORT
+
+## Save the results as a JLS file
+# Only save if SAVE_JLS is true
+if SAVE_JLS
+    println("Saving results as JLS")
+    save_path = joinpath(OUTPUT, @sprintf("sim_P%07d_DT%s_%s.jls", N, date_time_start, type_output))
+    serialize(save_path, SAVE)
+    println("Results saved to $save_path")
+end
+
+## Save the results as an Rds file
+save_path_rds = joinpath(OUTPUT, @sprintf("sim_P%07d_DT%s_%s.Rds", N, date_time_start, type_output))
+@rput SAVE  # Send the Julia object to R
+@rput save_path_rds  # Send the absolute path to R
+R"""
+saveRDS(SAVE, file = save_path_rds)
+"""
+println("Results saved to $save_path_rds")
+
+## Save the results as a CSV file
+# Only save if SAVE_CSV is true
+if SAVE_CSV
+    println("Saving results as CSV")
+    save_path_csv = joinpath(OUTPUT, @sprintf("sim_P%07d_DT%s_%s.csv", N, date_time_start, type_output))
+
+    # Prepare the appropriate DataFrame based on the type of output
+    if type_output == "select_variables"
+        # Prepare a long-format DataFrame for selected variables
+        long_table = DataFrame(sim_nb = Int[], time = Float64[], F_B = Float64[], F_U = Float64[], I = Float64[], V = Float64[])
+
+        for (sim_nb, result) in enumerate(COHORT)
+            times = result[:time]
+            F_B = result[:F_B]
+            F_U = result[:F_U]
+            I = result[:I]
+            V = result[:V]
+
+            # Append rows for this simulation
+            append!(long_table, DataFrame(sim_nb = fill(sim_nb, length(times)), time = times, F_B = F_B, F_U = F_U, I = I, V = V))
+        end
+
+    elseif type_output == "maxima"
+        # Prepare a DataFrame for maxima
+        long_table = DataFrame(sim_nb = Int[], variable = String[], value = Float64[])
+
+        for (sim_nb, result) in enumerate(COHORT)
+            for (var, value) in result
+                append!(long_table, DataFrame(sim_nb = [sim_nb], variable = [string(var)], value = [value]))
+            end
+        end
+
+    else
+        error("Unknown type_output: $type_output")
+    end
+
+    # Save the DataFrame as a CSV
+    CSV.write(save_path_csv, long_table)
+
+    println("Results saved to $save_path_csv")
+end
