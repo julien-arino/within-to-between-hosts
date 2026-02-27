@@ -4,6 +4,7 @@
 #
 # This file contains most functions used in the code.
 #
+library(deSolve)
 
 ##
 ## rhs_within_host_deSolve
@@ -149,7 +150,7 @@ add_IC_to_params <- function(params, IC) {
 # given and generate a table with sampled values of these parameters,
 # regular values of the others, as well as initial conditions.
 # This way, we have all that's needed for the cohort.
-generate_params_patients <- function(params, n = 1000) {
+generate_params_individuals <- function(params, n = 1000) {
   # The whole list of parameters, including values of std dev for some
   names_params <- names(params)
   # Which are the parameters that contain std dev information
@@ -216,14 +217,11 @@ generate_params_patients <- function(params, n = 1000) {
 }
 
 
-# Given a patient index idx, a parameters data frame patients and
+# Given a individual parameters list params_tmp and
 # initial conditions IC, run the simulation of the within host model for
-# this patient
-run_one_patient <- function(idx = 1,
-                            patients,
-                            IC) {
-  # writeLines(paste0("patient index = ", idx))
-  params_tmp <- patients[which(patients$ID == idx), ]
+# this individual
+run_one_individual <- function(params_tmp,
+                               IC) {
   params_tmp <- add_IC_to_params(params_tmp, IC)
   times <- c(
     seq(0, 1, by = 0.01),
@@ -239,15 +237,15 @@ run_one_patient <- function(idx = 1,
 }
 
 
-# Given a patient index idx, a parameters data frame patients and
+# Given a individual index idx, a parameters data frame individuals and
 # initial conditions IC, run the simulation of the within host model for
-# this patient
-# Return only the indicators of that patient (V_max, etc.)
-run_one_patient_indicators <- function(idx = 1,
-                                       patients,
-                                       IC) {
-  writeLines(paste0("patient index = ", idx))
-  params_tmp <- patients[which(patients$ID == idx), ]
+# this individual
+# Return only the indicators of that individual (V_max, etc.)
+run_one_individual_indicators <- function(idx = 1,
+                                          individuals,
+                                          IC) {
+  writeLines(paste0("individual index = ", idx))
+  params_tmp <- individuals[which(individuals$ID == idx), ]
   params_tmp <- add_IC_to_params(params_tmp, IC)
   times <- c(
     seq(0, 1, by = 0.01),
@@ -303,7 +301,7 @@ value_indicators <- function(params_change,
     params_change[[col_names_fixed[i]]] <- params_fixed[[col_names_fixed[i]]]
   }
   # Indices for this batch
-  patients_idx <- 1:dim(params_change)[1]
+  individuals_idx <- 1:dim(params_change)[1]
   if (parallel) {
     # RUN IN PARALLEL
     writeLines("Setting up cluster")
@@ -325,7 +323,7 @@ value_indicators <- function(params_change,
       c(
         "rhs_within_host_deSolve_some_pars_fixed",
         "add_IC_to_params",
-        "run_one_patient_indicators",
+        "run_one_individual_indicators",
         "IC"
       ),
       envir = .GlobalEnv
@@ -335,11 +333,11 @@ value_indicators <- function(params_change,
     COHORT <-
       parLapply(
         cl = cl,
-        X = patients_idx,
+        X = individuals_idx,
         fun = function(x) {
-          run_one_patient_indicators(
+          run_one_individual_indicators(
             idx = x,
-            patients = params_change,
+            individuals = params_change,
             IC = IC
           )
         }
@@ -350,11 +348,11 @@ value_indicators <- function(params_change,
     # Run computation sequentially
     writeLines("Going old school, running sequentially (debugging, probably)")
     COHORT <- lapply(
-      X = patients_idx,
+      X = individuals_idx,
       FUN = function(x) {
-        run_one_patient_indicators(
+        run_one_individual_indicators(
           idx = x,
-          patients = params_change,
+          individuals = params_change,
           IC = IC
         )
       }
@@ -539,7 +537,10 @@ reproduction_number <- function(params) {
 
 # Compute R0 for each individual in the cohort dataframe
 compute_R0_cohort <- function(individuals) {
-  R0_values <- apply(individuals, 1, reproduction_number)
+  R0_values <- numeric(nrow(individuals))
+  for (i in seq_len(nrow(individuals))) {
+    R0_values[i] <- reproduction_number(individuals[i, ])
+  }
   individuals$R0_within <- R0_values
   return(individuals)
 }
@@ -610,4 +611,57 @@ summarySEwithin <- function(data = NULL, measurevar, betweenvars = NULL, withinv
 
   # Combine the un-normed means with the normed results
   merge(datac, ndatac)
+}
+
+# ---- Compute disease severity (Ψ_i) and classification ----
+compute_severity <- function(out, S_max) {
+  out <- as.data.frame(out)
+  Psi <- 100 * (S_max - (out$S + out$R)) / S_max
+  Psi_max <- max(Psi, na.rm = TRUE)
+  if (Psi_max >= 85) {
+    status <- "dead"
+  } else if (Psi_max >= 75) {
+    status <- "ICU"
+  } else {
+    status <- "rest"
+  }
+  t_ICU <- ifelse(any(Psi >= 75), out$time[which(Psi >= 75)[1]], NA)
+  t_death <- ifelse(any(Psi >= 85), out$time[which(Psi >= 85)[1]], NA)
+  return(list(
+    Psi = Psi,
+    Psi_max = Psi_max,
+    status = status,
+    t_ICU = t_ICU,
+    t_death = t_death
+  ))
+}
+
+# ---- Extract maxima and time-to-max indicators ----
+extract_max_indicators <- function(params_tmp, IC = set_IC()) {
+  out <- tryCatch(run_one_individual(params_tmp = params_tmp, IC = IC), error = function(e) NULL)
+  if (is.null(out)) {
+    return(data.frame(
+      V_max = NA_real_, F_U_max = NA_real_, F_B_max = NA_real_,
+      t_V_max = NA_real_, t_F_U_max = NA_real_, t_F_B_max = NA_real_
+    ))
+  }
+
+  out <- as.data.frame(out)
+
+  V_max <- max(out$V, na.rm = TRUE)
+  F_U_max <- max(out$F_U, na.rm = TRUE)
+  F_B_max <- max(out$F_B, na.rm = TRUE)
+
+  t_V_max <- out$time[which.max(out$V)]
+  t_F_U_max <- out$time[which.max(out$F_U)]
+  t_F_B_max <- out$time[which.max(out$F_B)]
+
+  data.frame(
+    V_max = as.numeric(V_max),
+    F_U_max = as.numeric(F_U_max),
+    F_B_max = as.numeric(F_B_max),
+    t_V_max = as.numeric(t_V_max),
+    t_F_U_max = as.numeric(t_F_U_max),
+    t_F_B_max = as.numeric(t_F_B_max)
+  )
 }

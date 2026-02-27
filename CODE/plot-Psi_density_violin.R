@@ -5,9 +5,9 @@ library(qs)
 # --- Load data ---
 cohort_df <- qread("OUTPUT_clo/cohort_results_truncated.qs")
 
-# --- One Psi_max per patient ---
-patient_summary <- cohort_df %>%
-  group_by(patient_id, status) %>%
+# --- One Psi_max per individual ---
+individual_summary <- cohort_df %>%
+  group_by(individual_id, status) %>%
   summarise(Psi_max = max(Psi), .groups = "drop")
 
 # --- Thresholds we want to compare ---
@@ -16,7 +16,7 @@ xi_values <- c(85, 90, 95)
 # --- Build cumulative groups ---
 psi_groups <- bind_rows(
   lapply(xi_values, function(th) {
-    patient_summary %>%
+    individual_summary %>%
       filter(Psi_max >= th) %>%
       mutate(xi_group = factor(th, levels = xi_values))   # << simplicité
   })

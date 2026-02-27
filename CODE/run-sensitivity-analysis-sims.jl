@@ -49,7 +49,7 @@ N = 10
 
 # Build the absolute path to the R scripts to use
 r_functions_path = joinpath(SCRIPT_DIR, "functions-all.R")
-r_script_path = joinpath(SCRIPT_DIR, "prepare-sample-for-sensitivity.R")
+r_script_path = joinpath(SCRIPT_DIR, "create-sample-for-sensitivity.R")
 
 ## Generate the sample in R
 # Send the Julia objects to R

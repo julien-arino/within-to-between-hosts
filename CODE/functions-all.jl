@@ -338,3 +338,31 @@ end
 # params = set_parameters()
 # println("Equilibrium F_U: ", equilibrium_FU(params))
 # println("R0: ", reproduction_number(params))
+
+# ---- Compute disease severity (Ψ_i) and classification ----
+function compute_severity(out_dict::Dict, S_max::Float64)
+    Psi = 100 .* (S_max .- (out_dict[:S] .+ out_dict[:R])) ./ S_max
+    Psi_max = maximum(Psi)
+    
+    status = if Psi_max >= 85
+        "dead"
+    elseif Psi_max >= 75
+        "ICU"
+    else
+        "rest"
+    end
+    
+    idx_ICU = findfirst(>=(75), Psi)
+    t_ICU = isnothing(idx_ICU) ? NaN : out_dict[:time][idx_ICU]
+    
+    idx_death = findfirst(>=(85), Psi)
+    t_death = isnothing(idx_death) ? NaN : out_dict[:time][idx_death]
+    
+    return Dict(
+        :Psi => Psi,
+        :Psi_max => Psi_max,
+        :status => status,
+        :t_ICU => t_ICU,
+        :t_death => t_death
+    )
+end
