@@ -9,6 +9,7 @@ using Serialization
 using Printf  # Import Printf for @sprintf
 using CSV     # Import the CSV package for reading/writing CSV files
 using RCall   # Import RCall for interacting with R
+using DataFrames # Import DataFrames
 
 # Some of the output files can be quite large, so we include the option
 # to save them on a large capacity disk (e.g., a NAS) if available.
@@ -43,7 +44,7 @@ SAVE_CSV = false
 type_output = "select_variables"
 
 # Number of individuals in the virtual cohort
-N = 1_000_000
+N = 100 # CHANGED: Lowered from 1,000,000 to 100 for verification testing
 
 # Set general parameters and (common) initial conditions
 params = set_parameters()
@@ -88,6 +89,7 @@ if PARALLEL
     # Ensure all workers have the required functions and modules
     @everywhere using DifferentialEquations  # Import DifferentialEquations
     @everywhere using Serialization
+    @everywhere using DataFrames
     @everywhere include("functions-all.jl")
 
     # Ensure all workers have the required variables

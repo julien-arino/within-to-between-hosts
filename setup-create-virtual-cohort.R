@@ -6,7 +6,7 @@
 library(lubridate)
 
 # Read in file with all functions used
-source("functions_all.R")
+source("functions-all.R")
 
 # Set directory where the results are located, typically not synced to GitHub
 # but available on local NAS for sharing between nodes.

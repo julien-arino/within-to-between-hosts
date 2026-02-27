@@ -45,7 +45,7 @@ SAVE_CSV = false
 type_output = "maxima"
 
 # Number of individuals in the virtual cohort
-N = 1_000_000
+N = 10
 
 # Build the absolute path to the R scripts to use
 r_functions_path = joinpath(SCRIPT_DIR, "functions-all.R")

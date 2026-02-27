@@ -1,6 +1,6 @@
 library(ODEsensitivity)
 
-source("functions_all.R")
+source("functions-all.R")
 
 rhs_within_host_deSolve = function(t, x, p) {
   # Set stuff that doesn't change

@@ -4,7 +4,7 @@ library(lubridate)
 library(sensitivity)
 library(randtoolbox)
 
-source("functions_all.R")
+source("functions-all.R")
 
 OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
 OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/within-to-between-hosts"

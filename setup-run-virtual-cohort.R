@@ -3,7 +3,7 @@
 library(deSolve)
 library(parallel)
 
-source("functions_all.R")
+source("functions-all.R")
 
 # Directory where the parameters are located, typically not synced to GitHub
 # but on local NAS for sharing between nodes.
