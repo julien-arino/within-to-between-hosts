@@ -172,11 +172,7 @@ if SAVE_QS
     @rput save_path_qs  # Send the absolute path to R
     R"""
     if(!requireNamespace("qs2", quietly=TRUE)) {
-        if(!requireNamespace("qs", quietly=TRUE)) {
-            warning("Neither 'qs2' nor 'qs' packages are installed in R. Cannot save in qs format.")
-        } else {
-            qs::qsave(SAVE, file = save_path_qs)
-        }
+        warning("'qs2' package is not installed in R. Cannot save in qs format.")
     } else {
         qs2::qs_save(SAVE, file = save_path_qs)
     }

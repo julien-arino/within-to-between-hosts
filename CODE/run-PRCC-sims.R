@@ -22,11 +22,11 @@ source("functions-all.R") # contains extract_max_indicators()
 default_params <- set_parameters()
 IC <- set_IC()
 
-OUTPUT_clo <- file.path(getwd(), "OUTPUT_clo")
-FIGS_clo <- file.path(getwd(), "FIGS_clo")
+OUTPUT <- file.path(getwd(), "OUTPUT")
+FIGS <- file.path(getwd(), "FIGS")
 
-dir.create(OUTPUT_clo, showWarnings = FALSE, recursive = TRUE)
-dir.create(FIGS_clo, showWarnings = FALSE, recursive = TRUE)
+dir.create(OUTPUT, showWarnings = FALSE, recursive = TRUE)
+dir.create(FIGS, showWarnings = FALSE, recursive = TRUE)
 
 
 # ------------------------------------------------------------
@@ -105,7 +105,7 @@ stopifnot(all(c("V_max", "F_U_max", "F_B_max", "t_V_max", "t_F_U_max", "t_F_B_ma
 # ------------------------------------------------------------
 # 6. Save data for PRCC computation
 # ------------------------------------------------------------
-library(qs)
+library(qs2)
 
 sim_data <- list(
   X = X,
@@ -113,10 +113,10 @@ sim_data <- list(
   param_names = param_names
 )
 
-qsave(sim_data, file.path(OUTPUT_clo, "PRCC_sim_results.qs"))
+qs_save(sim_data, file.path(OUTPUT, "PRCC_sim_results.qs"))
 
 # ------------------------------------------------------------
 # 7. Clean-up
 # ------------------------------------------------------------
 future::plan(sequential)
-cat("✅ Parallel simulations for PRCC finished. Results saved in OUTPUT_clo/PRCC_sim_results.qs.\n")
+cat("✅ Parallel simulations for PRCC finished. Results saved in OUTPUT/PRCC_sim_results.qs.\n")

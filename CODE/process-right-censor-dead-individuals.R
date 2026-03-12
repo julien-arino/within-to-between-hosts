@@ -14,10 +14,10 @@
 # ==============================================================================
 
 library(dplyr)
-library(qs)
+library(qs2)
 
 # Load the non-truncated dataset
-cohort_df <- qread("OUTPUT_clo/cohort_results.qs")
+cohort_df <- qs_read("OUTPUT/cohort_results.qs")
 
 # 1️⃣ Summary per individual: Psi_max, t_max, computed status
 summary_df <- cohort_df %>%
@@ -50,9 +50,8 @@ cohort_truncated <- cohort_truncated %>%
   )
 
 # 5️⃣ Save truncated data
-qsave(cohort_truncated,
-  "OUTPUT_clo/cohort_results_truncated.qs",
-  preset = "balanced"
+qs_save(cohort_truncated,
+  "OUTPUT/cohort_results_truncated.qs"
 )
 
 cat("✅ Saved: cohort_results_truncated.qs\n")

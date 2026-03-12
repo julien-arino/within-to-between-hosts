@@ -4,7 +4,7 @@ library(furrr)
 library(future)
 library(patchwork)
 library(purrr)
-library(qs)
+library(qs2)
 # ------------------------------------------------------------
 # 1. Model
 # ------------------------------------------------------------
@@ -77,9 +77,9 @@ cat("Combining results...\n")
 cohort_df <- list_rbind(results)
 
 # cat("Saving cohort results (gzip compression)...\n")
-# saveRDS(cohort_df, "OUTPUT_clo/cohort_results.rds", compress = "gzip")
+# saveRDS(cohort_df, "OUTPUT/cohort_results.rds", compress = "gzip")
 
-qsave(cohort_df, "OUTPUT_clo/cohort_results.qs", preset = "balanced")
+qs_save(cohort_df, "OUTPUT/cohort_results.qs")
 
 
 # cat("✅ Data successfully saved.\n")
@@ -158,7 +158,7 @@ qsave(cohort_df, "OUTPUT_clo/cohort_results.qs", preset = "balanced")
 # right_side <- (p2 | p3) / (p4 | p5)
 # combined <- p1 | right_side + plot_layout(widths = c(0.8, 2.2))
 #
-# ggsave("FIGS_clo/simulate_cohort.png",
+# ggsave("FIGS/simulate_cohort.png",
 #        plot = combined, width = 20, height = 15, units = "cm", dpi = 300)
 #
 # print(combined)

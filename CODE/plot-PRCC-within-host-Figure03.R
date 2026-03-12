@@ -8,19 +8,19 @@ suppressPackageStartupMessages({
     library(ggplot2)
     library(reshape2)
     library(latex2exp)
-    library(qs)
+    library(qs2)
 })
 
-OUTPUT_clo <- file.path(getwd(), "OUTPUT_clo")
-FIGS_clo <- file.path(getwd(), "FIGS_clo")
+OUTPUT <- file.path(getwd(), "OUTPUT")
+FIGS <- file.path(getwd(), "FIGS")
 
-dir.create(FIGS_clo, showWarnings = FALSE, recursive = TRUE)
+dir.create(FIGS, showWarnings = FALSE, recursive = TRUE)
 
 # Load data
-prcc_data <- qread(file.path(OUTPUT_clo, "PRCC_results.qs"))
+prcc_data <- qs_read(file.path(OUTPUT, "PRCC_results.qs"))
 PRCC_vals <- prcc_data$PRCC_vals
 PRCC_times <- prcc_data$PRCC_times
-PRCC_global <- read.csv(file.path(OUTPUT_clo, "PRCC_global_summary.csv"))
+PRCC_global <- read.csv(file.path(OUTPUT, "PRCC_global_summary.csv"))
 
 # ------------------------------------------------------------
 # 8. Plot configuration
@@ -103,7 +103,11 @@ P_max <- ggplot() +
 
 print(P_max)
 ggsave(
-    filename = file.path(FIGS_clo, "PRCC_values.png"),
+    filename = file.path(FIGS, "PRCC_values.png"),
+    plot = P_max, width = 25, height = 15, units = "cm", dpi = 300
+)
+ggsave(
+    filename = file.path(FIGS, "PRCC_values.pdf"),
     plot = P_max, width = 25, height = 15, units = "cm", dpi = 300
 )
 
@@ -156,17 +160,46 @@ P_tmax <- ggplot() +
 
 print(P_tmax)
 ggsave(
-    filename = file.path(FIGS_clo, "PRCC_values_times.png"),
+    filename = file.path(FIGS, "PRCC_values_times.png"),
+    plot = P_tmax, width = 25, height = 15, units = "cm", dpi = 300
+)
+ggsave(
+    filename = file.path(FIGS, "PRCC_values_times.pdf"),
     plot = P_tmax, width = 25, height = 15, units = "cm", dpi = 300
 )
 
 # ------------------------------------------------------------
 # 10b. Global summed PRCC plot (values + times)
 # ------------------------------------------------------------
-# Plot simple global influence figure (LaTeX labels)
-P_global <- ggplot(PRCC_global, aes(x = reorder(names, -sum_total), y = sum_total)) +
-    geom_line(group = 1, color = "blue", size = 1) +
-    geom_point(color = "blue", size = 3) +
+param_ordered_g <- PRCC_global$names
+
+# Background categories (same style as others)
+param_bg_global <- data.frame(
+    name = param_ordered_g,
+    xmin = seq_along(param_ordered_g) - 0.5,
+    xmax = seq_along(param_ordered_g) + 0.5,
+    ymin = 0,
+    ymax = max(PRCC_global$sum_total, na.rm = TRUE) * 1.05,
+    category = ifelse(param_ordered_g %in% cat_cell, "Cell",
+        ifelse(param_ordered_g %in% cat_viral, "Viral",
+            ifelse(param_ordered_g %in% cat_immune, "Immune", "Immune")
+        )
+    )
+)
+
+PRCC_global$names <- factor(PRCC_global$names, levels = param_ordered_g)
+
+P_global <- ggplot() +
+    geom_rect(
+        data = param_bg_global, aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = category),
+        alpha = bg_alpha, color = NA, show.legend = TRUE
+    ) +
+    scale_fill_manual(values = cat_bg_colors, name = "Category") +
+    geom_point(
+        data = PRCC_global,
+        aes(x = names, y = sum_total),
+        color = "blue", size = 3
+    ) +
     scale_x_discrete(labels = x_labels) +
     theme_minimal(base_size = 14) +
     labs(
@@ -175,6 +208,7 @@ P_global <- ggplot(PRCC_global, aes(x = reorder(names, -sum_total), y = sum_tota
         title = "Global Influence of Parameters"
     ) +
     theme(
+        legend.position = "right",
         axis.text.x = element_text(angle = 0, hjust = 1),
         panel.grid.major.x = element_blank(),
         plot.title = element_text(face = "bold")
@@ -183,9 +217,14 @@ P_global <- ggplot(PRCC_global, aes(x = reorder(names, -sum_total), y = sum_tota
 print(P_global)
 
 ggsave(
-    filename = file.path(FIGS_clo, "PRCC_global.png"),
+    filename = file.path(FIGS, "PRCC_global.png"),
+    plot = P_global,
+    width = 25, height = 15, units = "cm", dpi = 300
+)
+ggsave(
+    filename = file.path(FIGS, "PRCC_global.pdf"),
     plot = P_global,
     width = 25, height = 15, units = "cm", dpi = 300
 )
 
-cat("\n✅ Global PRCC plot saved:", file.path(FIGS_clo, "PRCC_global.png"), "\n")
+cat("\n✅ Global PRCC plot saved:", file.path(FIGS, "PRCC_global.pdf"), "\n")

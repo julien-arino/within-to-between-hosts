@@ -3,14 +3,14 @@
 # Plot with mean ± SD ribbon + q10 and q90 lines + LEGEND
 # ICU do not contribute when Psi > 75
 # ============================================================
-library(qs)
+library(qs2)
 library(ggplot2)
 library(dplyr)
 
 SHOW_TITLES <- FALSE
 
 # 1) Load the cohort data
-cohort_df <- qread("OUTPUT_clo/cohort_results_truncated.qs")
+cohort_df <- qs_read("OUTPUT/cohort_results_truncated.qs")
 
 # 2) Hill function
 compute_beta_hat <- function(V, alpha = 16.422, k_v = 7.49) {
@@ -44,7 +44,7 @@ beta_overall <- cohort_df %>%
   )
 
 # Save for future plots
-qsave(beta_overall, "OUTPUT_clo/beta_overall_ICU_isolation.qs", preset = "balanced")
+qs_save(beta_overall, "OUTPUT/beta_overall_ICU_isolation.qs")
 
 # 5) Plot
 p_beta_hat <- ggplot(beta_overall, aes(x = time)) +
@@ -90,7 +90,7 @@ p_beta_hat <- ggplot(beta_overall, aes(x = time)) +
   )
 
 # 6) Save
-ggsave("FIGS_clo/beta_hat_overall_ICU_iso.png",
+ggsave("FIGS/beta_hat_overall_ICU_iso.png",
        plot = p_beta_hat, width = 15, height = 10, units = "cm", dpi = 300)
 
 ggsave(

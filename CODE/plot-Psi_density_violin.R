@@ -1,9 +1,9 @@
 library(ggplot2)
 library(dplyr)
-library(qs)
+library(qs2)
 
 # --- Load data ---
-cohort_df <- qread("OUTPUT_clo/cohort_results_truncated.qs")
+cohort_df <- qs_read("OUTPUT/cohort_results_truncated.qs")
 
 # --- One Psi_max per individual ---
 individual_summary <- cohort_df %>%

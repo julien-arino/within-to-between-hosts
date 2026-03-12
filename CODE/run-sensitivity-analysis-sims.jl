@@ -41,12 +41,7 @@ SAVE_CSV = false
 # Save as Rds?
 SAVE_RDS = false
 
-# Save as qs (using R's qs2/qs package)?
-# Beware:
-# - R must be installed and available in the PATH, with libraries qs2 (preferably) or qs installed
-# - RCall must be installed so julia can call R
-# - This copies the SAVE variable to R, so if SAVE is large, this will be slow and likely to fail if RAM
-#   is insufficient.
+# Save as qs?
 SAVE_QS = true
 
 ## Type of output
@@ -185,11 +180,7 @@ if SAVE_QS
     @rput save_path_qs  # Send the absolute path to R
     R"""
     if(!requireNamespace("qs2", quietly=TRUE)) {
-        if(!requireNamespace("qs", quietly=TRUE)) {
-            warning("Neither 'qs2' nor 'qs' packages are installed in R. Cannot save in qs format.")
-        } else {
-            qs::qsave(SAVE, file = save_path_qs)
-        }
+        warning("'qs2' package is not installed in R. Cannot save in qs format.")
     } else {
         qs2::qs_save(SAVE, file = save_path_qs)
     }

@@ -7,14 +7,14 @@ suppressPackageStartupMessages({
   library(ggplot2)
   library(dplyr)
   library(patchwork)
-  library(qs)
+  library(qs2)
   library(scales)
 })
 
 # ------------------------------------------------------------
 # 1️⃣ Load truncated cohort
 # ------------------------------------------------------------
-cohort_df <- qread("OUTPUT_clo/cohort_results_truncated.qs")
+cohort_df <- qs_read("OUTPUT/cohort_results_truncated.qs")
 cat("Loaded:", nrow(cohort_df), "rows\n")
 
 

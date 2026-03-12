@@ -29,11 +29,7 @@ println("Loading latest result file: $latest_file")
 if endswith(latest_file, ".qs")
     R"""
     if(!requireNamespace("qs2", quietly=TRUE)) {
-        if(!requireNamespace("qs", quietly=TRUE)) {
-            stop("Neither 'qs2' nor 'qs' packages are installed in R.")
-        } else {
-            save_data <- qs::qread($latest_file)
-        }
+        stop("'qs2' package is not installed in R.")
     } else {
         save_data <- qs2::qs_read($latest_file)
     }

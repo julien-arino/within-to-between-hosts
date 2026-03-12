@@ -1,4 +1,4 @@
-# process-virtual-cohort.jl
+## process-virtual-cohort.jl
 # Processes output files from run-virtual-cohort-sims.jl and computes the
 # various tau times defined in the manuscript.
 
@@ -25,11 +25,7 @@ println("Loading latest result file: $latest_file")
 if endswith(latest_file, ".qs")
     R"""
     if(!requireNamespace("qs2", quietly=TRUE)) {
-        if(!requireNamespace("qs", quietly=TRUE)) {
-            stop("Neither 'qs2' nor 'qs' packages are installed in R.")
-        } else {
-            save_data <- qs::qread($latest_file)
-        }
+        stop("'qs2' package is not installed in R.")
     } else {
         save_data <- qs2::qs_read($latest_file)
     }
@@ -87,19 +83,19 @@ function compute_tau_for_individual_idx(i, data, S_P_0=2000.0)
     time_pts = data[:time]
     Psi = data[:Psi]
     V = data[:V]
-    
+
     # Preallocate returns: [tau_Psi_max, tau_h_start, tau_h_end, tau_d, tau_c, tau_r, tau_V_max, R0_P2P]
     res = fill(NaN, 8)
     res[8] = 0.0
-    
+
     # ------------------- #
     # Eq 2.2 / Eq 5.2     #
     # ------------------- #
-    
+
     Psi_max_val = maximum(Psi)
     Psi_max_idx = argmax(Psi)
     res[1] = time_pts[Psi_max_idx] # tau_Psi_max
-    
+
     # ------------------- #
     # Eq 5.3 (Hospital)   #
     # ------------------- #
@@ -108,25 +104,25 @@ function compute_tau_for_individual_idx(i, data, S_P_0=2000.0)
         res[2] = time_pts[h_indices[1]]   # tau_h_start
         res[3] = time_pts[h_indices[end]] # tau_h_end
     end
-    
+
     # ------------------- #
     # Eq 5.4 (Death)      #
     # ------------------- #
     if Psi_max_val >= xi_d
-       d_idx = findfirst(x -> (x >= xi_d && x ≈ Psi_max_val), Psi)
-       if d_idx !== nothing
-           res[4] = time_pts[d_idx] # tau_d
-           res[3] = NaN             # tau_h_end = NaN if dead
-       end
+        d_idx = findfirst(x -> (x >= xi_d && x ≈ Psi_max_val), Psi)
+        if d_idx !== nothing
+            res[4] = time_pts[d_idx] # tau_d
+            res[3] = NaN             # tau_h_end = NaN if dead
+        end
     end
-    
+
     # ------------------- #
     # Eq 5.5 (V_max)      #
     # ------------------- #
     V_max_val = maximum(V)
     V_max_idx = argmax(V)
     res[7] = time_pts[V_max_idx] # tau_V_max
-    
+
     # ------------------- #
     # Eq 5.7 (Start Inf)  #
     # ------------------- #
@@ -134,7 +130,7 @@ function compute_tau_for_individual_idx(i, data, S_P_0=2000.0)
     if c_idx !== nothing
         res[5] = time_pts[c_idx] # tau_c
     end
-    
+
     # ------------------- #
     # Eq 5.8 (End Inf)    #
     # ------------------- #
@@ -146,12 +142,12 @@ function compute_tau_for_individual_idx(i, data, S_P_0=2000.0)
             res[6] = time_pts[r_idx] # tau_r
         end
     end
-    
+
     # ------------------- #
     # Eq R0_P             #
     # ------------------- #
     tau_end = min(isnan(res[6]) ? Inf : res[6], isnan(res[4]) ? Inf : res[4])
-    
+
     if isinf(tau_end)
         end_idx = length(time_pts)
     else
@@ -160,24 +156,24 @@ function compute_tau_for_individual_idx(i, data, S_P_0=2000.0)
             end_idx = length(time_pts)
         end
     end
-    
+
     # Trapezoidal numerical integration up to tau_end
     integ_val = 0.0
     for j in 1:(end_idx-1)
         dt = time_pts[j+1] - time_pts[j]
         integ_val += 0.5 * dt * (beta_i(V[j]) + beta_i(V[j+1]))
     end
-    
+
     res[8] = S_P_0 * integ_val
-    
+
     return res
 end
 
 using Distributed
 
-if N >= 50000 
+if N >= 50000
     println("N >= 50,000. Configuring distributed processing...")
-    
+
     # Remove existing workers if any to prevent stale connections
     if nprocs() > 1
         println("Found existing workers (nprocs=$(nprocs())). Removing them...")
@@ -187,7 +183,7 @@ if N >= 50000
             @warn "Failed to remove existing workers" exception = (e, catch_backtrace())
         end
     end
-    
+
     # Add workers based on available CPUs
     if Sys.CPU_THREADS >= 64
         addprocs(max(2, Int(round(Sys.CPU_THREADS * 2 / 3))))
@@ -195,16 +191,16 @@ if N >= 50000
         addprocs(max(2, Sys.CPU_THREADS - 2))
     end
     println("Done setting up $(nprocs()) workers. Moving on to distribute parameters...")
-    
+
     @everywhere begin
         using OrderedCollections
-        
+
         # Distribute the computation function and thresholds to all workers
         const xi_h_w = $xi_h
         const xi_d_w = $xi_d
         const xi_c_w = $xi_c
         const xi_r_w = $xi_r
-        
+
         const alpha_i_w = 16.422
         const k_i_w = 7.49
 
@@ -214,53 +210,53 @@ if N >= 50000
             end
             return 1.0 / (1.0 + (k_i_w / V)^alpha_i_w)
         end
-        
+
         function compute_tau_for_individual_idx(data, S_P_0=2000.0)
             time_pts = data[:time]
             Psi = data[:Psi]
             V = data[:V]
-            
+
             res = fill(NaN, 8)
             res[8] = 0.0
-            
+
             Psi_max_val = maximum(Psi)
             Psi_max_idx = argmax(Psi)
             res[1] = time_pts[Psi_max_idx]
-            
+
             h_indices = findall(>=(xi_h_w), Psi)
             if !isempty(h_indices)
-                res[2] = time_pts[h_indices[1]]   
-                res[3] = time_pts[h_indices[end]] 
+                res[2] = time_pts[h_indices[1]]
+                res[3] = time_pts[h_indices[end]]
             end
-            
+
             if Psi_max_val >= xi_d_w
-               d_idx = findfirst(x -> (x >= xi_d_w && x ≈ Psi_max_val), Psi)
-               if d_idx !== nothing
-                   res[4] = time_pts[d_idx] 
-                   res[3] = NaN             
-               end
+                d_idx = findfirst(x -> (x >= xi_d_w && x ≈ Psi_max_val), Psi)
+                if d_idx !== nothing
+                    res[4] = time_pts[d_idx]
+                    res[3] = NaN
+                end
             end
-            
+
             V_max_val = maximum(V)
             V_max_idx = argmax(V)
-            res[7] = time_pts[V_max_idx] 
-            
+            res[7] = time_pts[V_max_idx]
+
             c_idx = findfirst(>=(xi_c_w), V)
             if c_idx !== nothing
-                res[5] = time_pts[c_idx] 
+                res[5] = time_pts[c_idx]
             end
-            
+
             if isnan(res[4])
                 post_peak_indices = (V_max_idx+1):length(V)
                 r_offset = findfirst(<=(xi_r_w), @view V[post_peak_indices])
                 if r_offset !== nothing
                     r_idx = post_peak_indices[1] + r_offset - 1
-                    res[6] = time_pts[r_idx] 
+                    res[6] = time_pts[r_idx]
                 end
             end
-            
+
             tau_end = min(isnan(res[6]) ? Inf : res[6], isnan(res[4]) ? Inf : res[4])
-            
+
             if isinf(tau_end)
                 end_idx = length(time_pts)
             else
@@ -269,62 +265,62 @@ if N >= 50000
                     end_idx = length(time_pts)
                 end
             end
-            
+
             integ_val = 0.0
             for j in 1:(end_idx-1)
                 dt = time_pts[j+1] - time_pts[j]
                 integ_val += 0.5 * dt * (beta_i_w(V[j]) + beta_i_w(V[j+1]))
             end
-            
+
             res[8] = S_P_0 * integ_val
-            
+
             return res
         end
     end
 
     println("Processing $(N) individuals in parallel...")
-    
+
     # We build an array of pairs/tuples containing just the pieces needed 
     # for each worker to run smoothly without sending the entire `cohort` memory.
     inputs = [(cohort[i][:vars]) for i in 1:N]
-    
+
     # Run the computation in parallel
     results = pmap(inputs) do data
         compute_tau_for_individual_idx(data)
     end
-    
+
     # Unpack the results
     for i in 1:N
         res = results[i]
         tau_Psi_max[i] = res[1]
         tau_h_start[i] = res[2]
-        tau_h_end[i]   = res[3]
-        tau_d[i]       = res[4]
-        tau_c[i]       = res[5]
-        tau_r[i]       = res[6]
-        tau_V_max[i]   = res[7]
-        R0_P2P[i]      = res[8]
+        tau_h_end[i] = res[3]
+        tau_d[i] = res[4]
+        tau_c[i] = res[5]
+        tau_r[i] = res[6]
+        tau_V_max[i] = res[7]
+        R0_P2P[i] = res[8]
     end
-    
+
     # Shut down workers
     println("Shutting down workers...")
     rmprocs(workers())
-    
+
 else
     println("Running sequentially...")
     for i in 1:N
         data = cohort[i][:vars]
-        
+
         res = compute_tau_for_individual_idx(i, data)
-        
+
         tau_Psi_max[i] = res[1]
         tau_h_start[i] = res[2]
-        tau_h_end[i]   = res[3]
-        tau_d[i]       = res[4]
-        tau_c[i]       = res[5]
-        tau_r[i]       = res[6]
-        tau_V_max[i]   = res[7]
-        R0_P2P[i]      = res[8]
+        tau_h_end[i] = res[3]
+        tau_d[i] = res[4]
+        tau_c[i] = res[5]
+        tau_r[i] = res[6]
+        tau_V_max[i] = res[7]
+        R0_P2P[i] = res[8]
     end
 end
 
@@ -337,11 +333,11 @@ out_df[!, :R0_P2P] = R0_P2P
 # Note: The manuscript specifies xi_h=75% and xi_d=85% for severity, and V>=4.5 for transmission
 out_df[!, :tau_Psi_max] = tau_Psi_max
 out_df[!, :tau_h_start] = tau_h_start
-out_df[!, :tau_h_end]   = tau_h_end
-out_df[!, :tau_d]       = tau_d
-out_df[!, :tau_c]       = tau_c
-out_df[!, :tau_r]       = tau_r
-out_df[!, :tau_V_max]   = tau_V_max
+out_df[!, :tau_h_end] = tau_h_end
+out_df[!, :tau_d] = tau_d
+out_df[!, :tau_c] = tau_c
+out_df[!, :tau_r] = tau_r
+out_df[!, :tau_V_max] = tau_V_max
 
 # Extract the original maximums natively tracked during the ODE solver run back in `run-virtual-cohort-sims.jl`
 out_df[!, :max_V] = [cohort[i][:maxima][:max_V] for i in 1:N]
