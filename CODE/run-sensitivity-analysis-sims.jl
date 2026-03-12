@@ -2,7 +2,7 @@
 # all parameters according to a Sobol sequence, and runs simulations
 # for each individual in parallel, saving the results in various formats.
 # The script calls on R to create the cohort parameters and saves results as 
-# Rds files for later exploitation in R.
+# Rds or qs files for later exploitation in R.
 
 # Load required packages
 using Dates
@@ -56,7 +56,7 @@ SAVE_QS = true
 type_output = "maxima"
 
 # Number of individuals in the virtual cohort
-N = 10
+N = 1_000_000
 
 # Build the absolute path to the R scripts to use
 r_functions_path = joinpath(SCRIPT_DIR, "functions-all.R")
@@ -92,7 +92,7 @@ if PARALLEL
         try
             rmprocs(workers())
         catch e
-            @warn "Failed to remove existing workers in run-sensitivity-analysis-sims" exception=(e, catch_backtrace())
+            @warn "Failed to remove existing workers in run-sensitivity-analysis-sims" exception = (e, catch_backtrace())
         end
     end
     # In case julia was not started with multiple processes, add some here. 
@@ -113,9 +113,9 @@ end
 
 # Run computation
 COHORT = if PARALLEL
-    pmap(x -> run_one_individual(x, individuals, IC; type_output = type_output), individuals_idx)
+    pmap(x -> run_one_individual(x, individuals, IC; type_output=type_output), individuals_idx)
 else
-    map(x -> run_one_individual(x, individuals, IC; type_output = type_output), individuals_idx)
+    map(x -> run_one_individual(x, individuals, IC; type_output=type_output), individuals_idx)
 end
 
 # Close the cluster if parallel processing was used
@@ -206,7 +206,7 @@ if SAVE_CSV
     # Prepare the appropriate DataFrame based on the type of output
     if type_output == "select_variables"
         # Prepare a long-format DataFrame for selected variables
-        long_table = DataFrame(sim_nb = Int[], time = Float64[], F_B = Float64[], F_U = Float64[], I = Float64[], V = Float64[])
+        long_table = DataFrame(sim_nb=Int[], time=Float64[], F_B=Float64[], F_U=Float64[], I=Float64[], V=Float64[])
 
         for (sim_nb, result) in enumerate(COHORT)
             times = result[:time]
@@ -216,16 +216,16 @@ if SAVE_CSV
             V = result[:V]
 
             # Append rows for this simulation
-            append!(long_table, DataFrame(sim_nb = fill(sim_nb, length(times)), time = times, F_B = F_B, F_U = F_U, I = I, V = V))
+            append!(long_table, DataFrame(sim_nb=fill(sim_nb, length(times)), time=times, F_B=F_B, F_U=F_U, I=I, V=V))
         end
 
     elseif type_output == "maxima"
         # Prepare a DataFrame for maxima
-        long_table = DataFrame(sim_nb = Int[], variable = String[], value = Float64[])
+        long_table = DataFrame(sim_nb=Int[], variable=String[], value=Float64[])
 
         for (sim_nb, result) in enumerate(COHORT)
             for (var, value) in result
-                append!(long_table, DataFrame(sim_nb = [sim_nb], variable = [string(var)], value = [value]))
+                append!(long_table, DataFrame(sim_nb=[sim_nb], variable=[string(var)], value=[value]))
             end
         end
 
