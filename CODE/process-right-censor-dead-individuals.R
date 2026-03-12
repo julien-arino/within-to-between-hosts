@@ -16,8 +16,22 @@
 library(dplyr)
 library(qs2)
 
+# ------------------------------------------------------------
+# 0) Automatically find the latest cohort_P* file
+# ------------------------------------------------------------
+output_dir <- file.path(getwd(), "OUTPUT")
+files <- list.files(output_dir, pattern = "^cohort_P.*\\.qs$", full.names = TRUE)
+
+if (length(files) == 0) {
+  stop("No cohort_P... file found in ", output_dir)
+}
+
+# Sort by modification time to get the newest one if multiple exist
+latest_file <- files[which.max(file.mtime(files))]
+cat("Loading newest cohort results:", basename(latest_file), "\n")
+
 # Load the non-truncated dataset
-cohort_df <- qs_read("OUTPUT/cohort_results.qs")
+cohort_df <- qs_read(latest_file)
 
 # 1️⃣ Summary per individual: Psi_max, t_max, computed status
 summary_df <- cohort_df %>%

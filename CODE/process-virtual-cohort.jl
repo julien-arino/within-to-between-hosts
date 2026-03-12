@@ -370,3 +370,107 @@ using CSV
 out_path = joinpath(OUTPUT_DIR, "process-virtual-cohort-results.csv")
 CSV.write(out_path, out_df)
 println("Saved successfully to $out_path")
+
+# Save as qs file with "-times" suffix
+base_name = splitext(basename(latest_file))[1]
+out_path_qs = joinpath(OUTPUT_DIR, base_name * "-times.qs")
+println("\nSaving updated DataFrame out as $out_path_qs ...")
+@rput out_df
+@rput out_path_qs
+R"""
+if(!requireNamespace("qs2", quietly=TRUE)) {
+    warning("'qs2' package is not installed in R. Cannot save in qs format.")
+} else {
+    qs2::qs_save(out_df, file = out_path_qs)
+}
+"""
+println("Saved successfully to $out_path_qs")
+
+# ------------------------------------------------------------
+# Format and Save Truncated Cohort Data
+# ------------------------------------------------------------
+println("\nConstructing and saving the right-censored cohort dataset (truncated at death)...")
+
+# We want roughly these columns: time, V, I, F_U, F_B, Psi, individual_id, status, Psi_max, t_max
+n_total_rows = sum(length(cohort[i][:vars][:time]) for i in 1:N)
+# Preallocate slightly larger than we'll need because we'll crop some out
+all_time = Vector{Float64}(undef, n_total_rows)
+all_V = Vector{Float64}(undef, n_total_rows)
+all_I = Vector{Float64}(undef, n_total_rows)
+all_F_U = Vector{Float64}(undef, n_total_rows)
+all_F_B = Vector{Float64}(undef, n_total_rows)
+all_Psi = Vector{Float64}(undef, n_total_rows)
+
+all_individual_id = Vector{Int}(undef, n_total_rows)
+all_status = Vector{String}(undef, n_total_rows)
+all_Psi_max = Vector{Float64}(undef, n_total_rows)
+all_t_max = Vector{Float64}(undef, n_total_rows)
+
+row_idx = 1
+for i in 1:N
+    data = cohort[i][:vars]
+    pts = length(data[:time])
+    
+    # Calculate patient status natively
+    c_Psi_max = out_df[i, :max_Psi] # Actually we didn't compute max_Psi in out_df, let's just recalculate it simply
+    c_Psi_max = maximum(data[:Psi])
+    c_t_max = data[:time][argmax(data[:Psi])]
+    
+    c_status = "Mild"
+    if c_Psi_max >= xi_d
+       c_status = "Dead"
+    elseif c_Psi_max >= xi_h
+       c_status = "ICU"
+    end
+    
+    c_tau_d = tau_d[i]
+    
+    for j in 1:pts
+        # Truncate strictly at time of death
+        if !isnan(c_tau_d) && data[:time][j] > c_tau_d
+           continue
+        end
+        
+        all_time[row_idx] = data[:time][j]
+        all_V[row_idx] = data[:V][j]
+        all_I[row_idx] = data[:I][j]
+        all_F_U[row_idx] = data[:F_U][j]
+        all_F_B[row_idx] = data[:F_B][j]
+        all_Psi[row_idx] = data[:Psi][j]
+        
+        all_individual_id[row_idx] = i
+        all_status[row_idx] = c_status
+        all_Psi_max[row_idx] = c_Psi_max
+        all_t_max[row_idx] = c_t_max
+        
+        row_idx += 1
+    end
+end
+
+# Crop down to exact length filled
+idx_end = row_idx - 1
+cohort_censored_df = DataFrame(
+    time = all_time[1:idx_end],
+    V = all_V[1:idx_end],
+    I = all_I[1:idx_end],
+    F_U = all_F_U[1:idx_end],
+    F_B = all_F_B[1:idx_end],
+    Psi = all_Psi[1:idx_end],
+    individual_id = all_individual_id[1:idx_end],
+    status = all_status[1:idx_end],
+    Psi_max = all_Psi_max[1:idx_end],
+    t_max = all_t_max[1:idx_end]
+)
+
+out_truncated_qs = joinpath(OUTPUT_DIR, replace(base_name, "cohort_" => "cohort-censored_") * ".qs")
+
+@rput cohort_censored_df
+@rput out_truncated_qs
+R"""
+if(!requireNamespace("qs2", quietly=TRUE)) {
+    warning("'qs2' package is not installed in R. Cannot save truncated data.")
+} else {
+    qs2::qs_save(cohort_censored_df, file = out_truncated_qs)
+}
+"""
+println("✅ Saved right-censored cohort successfully to $out_truncated_qs")

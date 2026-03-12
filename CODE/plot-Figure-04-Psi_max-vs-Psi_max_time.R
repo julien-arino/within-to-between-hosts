@@ -16,22 +16,25 @@ library(qs2)
 dir.create("OUTPUT", showWarnings = FALSE, recursive = TRUE)
 dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
 
-COHORT_TRUNC_FILE <- "OUTPUT/cohort_results_truncated.qs"
-PARAMS_FILE <- "OUTPUT/process-virtual-cohort-results.csv"
+output_dir <- file.path(getwd(), "OUTPUT")
+
+# 1a) Find latest truncated cohort qs file
+cohort_files <- list.files(output_dir, pattern = "cohort_results_truncated\\.qs$", full.names = TRUE)
+if (length(cohort_files) == 0) stop("Cannot find cohort file: cohort_results_truncated.qs in ", output_dir)
+COHORT_TRUNC_FILE <- cohort_files[which.max(file.mtime(cohort_files))]
+
+# 1b) Find latest process-virtual-cohort-results CSV file
+params_files <- list.files(output_dir, pattern = "process-virtual-cohort-results\\.csv$", full.names = TRUE)
+if (length(params_files) == 0) stop("Cannot find patient parameter file: process-virtual-cohort-results.csv in ", output_dir)
+PARAMS_FILE <- params_files[which.max(file.mtime(params_files))]
 
 # ---------------------------
 # 1) Load data
 # ---------------------------
-if (!file.exists(COHORT_TRUNC_FILE)) {
-  stop("Cannot find cohort file: ", COHORT_TRUNC_FILE)
-}
-cat("Loading cohort:", COHORT_TRUNC_FILE, "\n")
+cat("Loading cohort:", basename(COHORT_TRUNC_FILE), "\n")
 cohort_df <- qs_read(COHORT_TRUNC_FILE)
 
-if (!file.exists(PARAMS_FILE)) {
-  stop("Cannot find patient parameter file: ", PARAMS_FILE)
-}
-cat("Loading patients params:", PARAMS_FILE, "\n")
+cat("Loading patients params:", basename(PARAMS_FILE), "\n")
 params_df <- read.csv(PARAMS_FILE)
 
 # ---------------------------
