@@ -6,6 +6,9 @@
 .RData
 .RDataTmp
 
+# Rds files to avoid oversized files
+OUTPUT/*.Rds
+
 # User-specific files
 .Ruserdata
 

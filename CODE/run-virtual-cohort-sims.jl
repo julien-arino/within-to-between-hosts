@@ -40,11 +40,12 @@ SAVE_CSV = false
 ## Type of output
 # "maxima" = save only the maxima and their time of occurrence
 # "select_variables" = select variables to save
+# "vars_and_max" = save selected variables and maximum values
 # "all" = save all variables
-type_output = "select_variables"
+type_output = "vars_and_max"
 
 # Number of individuals in the virtual cohort
-N = 100 # CHANGED: Lowered from 1,000,000 to 100 for verification testing
+N = 1_000_000
 
 # Set general parameters and (common) initial conditions
 params = set_parameters()
@@ -71,7 +72,7 @@ if PARALLEL
         try
             rmprocs(workers())
         catch e
-            @warn "Failed to remove existing workers" exception=(e, catch_backtrace())
+            @warn "Failed to remove existing workers" exception = (e, catch_backtrace())
         end
     end
 
@@ -99,9 +100,9 @@ end
 
 # Run computation
 COHORT = if PARALLEL
-    pmap(x -> run_one_individual(x, individuals, IC; type_output = type_output), individuals_idx)
+    pmap(x -> run_one_individual(x, individuals, IC; type_output=type_output), individuals_idx)
 else
-    map(x -> run_one_individual(x, individuals, IC; type_output = type_output), individuals_idx)
+    map(x -> run_one_individual(x, individuals, IC; type_output=type_output), individuals_idx)
 end
 
 # Close the cluster if parallel processing was used
@@ -157,27 +158,46 @@ if SAVE_CSV
     # Prepare the appropriate DataFrame based on the type of output
     if type_output == "select_variables"
         # Prepare a long-format DataFrame for selected variables
-        long_table = DataFrame(sim_nb = Int[], time = Float64[], F_B = Float64[], F_U = Float64[], I = Float64[], V = Float64[])
+        long_table = DataFrame(sim_nb=Int[], time=Float64[], Psi=Float64[], F_B=Float64[], F_U=Float64[], I=Float64[], V=Float64[])
 
         for (sim_nb, result) in enumerate(COHORT)
             times = result[:time]
+            Psi = result[:Psi]
             F_B = result[:F_B]
             F_U = result[:F_U]
             I = result[:I]
             V = result[:V]
 
             # Append rows for this simulation
-            append!(long_table, DataFrame(sim_nb = fill(sim_nb, length(times)), time = times, F_B = F_B, F_U = F_U, I = I, V = V))
+            append!(long_table, DataFrame(sim_nb=fill(sim_nb, length(times)), time=times, Psi=Psi, F_B=F_B, F_U=F_U, I=I, V=V))
         end
 
     elseif type_output == "maxima"
         # Prepare a DataFrame for maxima
-        long_table = DataFrame(sim_nb = Int[], variable = String[], value = Float64[])
+        long_table = DataFrame(sim_nb=Int[], variable=String[], value=Float64[])
 
         for (sim_nb, result) in enumerate(COHORT)
             for (var, value) in result
-                append!(long_table, DataFrame(sim_nb = [sim_nb], variable = [string(var)], value = [value]))
+                push!(long_table, (sim_nb, string(var), value))
             end
+        end
+
+    elseif type_output == "vars_and_max"
+        # Since CSV requires a single flat table, we'll store the 'selected_variables' part in this CSV
+        # Alternatively, if both are needed in CSV format, we can save two separate CSV files.
+        # But for now, we'll save the vars in the main CSV. The Rds file inherently supports nested structures out-of-the-box.
+        long_table = DataFrame(sim_nb=Int[], time=Float64[], Psi=Float64[], F_B=Float64[], F_U=Float64[], I=Float64[], V=Float64[])
+
+        for (sim_nb, result) in enumerate(COHORT)
+            times = result[:vars][:time]
+            Psi = result[:vars][:Psi]
+            F_B = result[:vars][:F_B]
+            F_U = result[:vars][:F_U]
+            I = result[:vars][:I]
+            V = result[:vars][:V]
+
+            # Append rows for this simulation
+            append!(long_table, DataFrame(sim_nb=fill(sim_nb, length(times)), time=times, Psi=Psi, F_B=F_B, F_U=F_U, I=I, V=V))
         end
 
     else
