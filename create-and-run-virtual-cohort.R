@@ -4,15 +4,15 @@ library(lubridate)
 
 source("functions_all.R")
 
-OUTPUT_NAS = "/home/jarino/OUTPUT_NAS_small/within-to-between-hosts"
-OUTPUT_LOCAL = "/home/jarino/OUTPUT_local/within-to-between-hosts"
+OUTPUT_NAS = "/home/jarino/OUTPUT-NAS-small/within-to-between-hosts"
+OUTPUT_LOCAL = "/home/jarino/OUTPUT-local/within-to-between-hosts"
 
 # Run parallel?
-PARALLEL = FALSE
+PARALLEL = TRUE
 
 # Weight of sims in RAM may lead to explosion of RAM usage (or swapping). Set
 # a maximum number of individuals to be simulated at once.
-max_patients_per_batch = 5000
+max_patients_per_batch = 2000
 # Number of patients in the virtual cohort
 N = 100000
 # Number of sims needed to reach N
@@ -42,7 +42,7 @@ writeLines("Starting computations")
 if (PARALLEL) {
   # RUN IN PARALLEL
   # Detect number of cores
-  no_cores <- detectCores()-10
+  no_cores <- detectCores()-1
   if (no_cores > 124) {
     # Detect rich person's problem. 
     # (Could also recompile R setting the number of sockets higher than the 
@@ -69,7 +69,7 @@ if (PARALLEL) {
 date_time_start = 
   format(now(tzone = "UTC"), "%Y%m%d-%H%M%S")
 # Run for all the batches
-for (b in 1:nb_batches) {
+for (b in 27:nb_batches) {
   writeLines(paste0("Starting batch ", b, " out of ", nb_batches))
   tictoc::tic()
   # Take the patients for this batch
