@@ -13,14 +13,14 @@ library(deSolve)
 rhs_within_host_deSolve <- function(t, x, p) {
   with(as.list(c(x, p)), {
     dV <- p * I - d_V * V
-    dS <- lambda_S * (1 - (S + I + D + R) / S_max) * S - beta * S * V
-    dI <- beta * S * V * (1 - F_B / (epsilon_FI + F_B)) - d_I * I
+    dS <- lambda_S * (1 - (S + I + D + R) / S_max) * S - beta_V * S * V
+    dI <- beta_V * S * V * (1 - F_B / (epsilon_FI + F_B)) - d_I * I
     dR <- lambda_S * (1 - (S + I + D + R) / S_max) * R +
-      beta * S * V * (F_B / (epsilon_FI + F_B))
+      beta_V * S * V * (F_B / (epsilon_FI + F_B))
     dD <- d_I * I - d_D * D
     dF_U <- psi_F_prod + p_FI * I / (I + eta_FI) -
-      k_lin_f * F_U - k_B_F * ((c_star + I) * ϕ_F - F_B) * F_U + k_U_F * F_B
-    dF_B <- -k_int_f * F_B + k_B_F * ((c_star + I) * ϕ_F - F_B) * F_U - k_U_F * F_B
+      k_lin_f * F_U - k_B_F * ((c_star + I) * a_F - F_B) * F_U + k_U_F * F_B
+    dF_B <- -k_int_f * F_B + k_B_F * ((c_star + I) * a_F - F_B) * F_U - k_U_F * F_B
     return(list(c(dV, dS, dI, dR, dD, dF_U, dF_B)))
   })
 }
@@ -37,7 +37,7 @@ rhs_within_host_deSolve_some_pars_fixed <- function(t, x, p) {
   MM_F <- 19000
   R_F_T <- 1000
   R_F_I <- 1300
-  ϕ_F <- as.numeric((MM_F / avo) *
+  a_F <- as.numeric((MM_F / avo) *
     (R_F_I + R_F_T) *
     (1 / 5000) * (10^9 * 1e12))
   V0 <- 4.5
@@ -47,14 +47,14 @@ rhs_within_host_deSolve_some_pars_fixed <- function(t, x, p) {
   # Rest of the right hand side
   with(as.list(c(x, p)), {
     dV <- p * I - d_V * V
-    dS <- lambda_S * (1 - (S + I + D + R) / S_max) * S - beta * S * V
-    dI <- beta * S * V * (1 - F_B / (epsilon_FI + F_B)) - d_I * I
+    dS <- lambda_S * (1 - (S + I + D + R) / S_max) * S - beta_V * S * V
+    dI <- beta_V * S * V * (1 - F_B / (epsilon_FI + F_B)) - d_I * I
     dR <- lambda_S * (1 - (S + I + D + R) / S_max) * R +
-      beta * S * V * (F_B / (epsilon_FI + F_B))
+      beta_V * S * V * (F_B / (epsilon_FI + F_B))
     dD <- d_I * I - d_D * D
     dF_U <- psi_F_prod + p_FI * I / (I + eta_FI) -
-      k_lin_f * F_U - k_B_F * ((c_star + I) * ϕ_F - F_B) * F_U + k_U_F * F_B
-    dF_B <- -k_int_f * F_B + k_B_F * ((c_star + I) * ϕ_F - F_B) * F_U - k_U_F * F_B
+      k_lin_f * F_U - k_B_F * ((c_star + I) * a_F - F_B) * F_U + k_U_F * F_B
+    dF_B <- -k_int_f * F_B + k_B_F * ((c_star + I) * a_F - F_B) * F_U - k_U_F * F_B
     return(list(c(dV, dS, dI, dR, dD, dF_U, dF_B)))
   })
 }
@@ -102,8 +102,8 @@ set_parameters <- function() {
     S_max = 0.16,
     d_I = 0.1,
     d_D = 8,
-    beta = 0.3,
-    beta_stddev = 0.1994,
+    beta_V = 0.3,
+    beta_V_stddev = 0.1994,
     d_V = 8.4,
     d_V_stddev = 0.67,
     p = 394,
@@ -126,7 +126,7 @@ set_parameters <- function() {
     R_F_I = 1300
   )
   params <- c(params,
-    ϕ_F = as.numeric(
+    a_F = as.numeric(
       (params["MM_F"] / params["avo"]) *
         (params["R_F_I"] + params["R_F_T"]) *
         (1 / 5000) * (10^9 * 1e12)
@@ -501,11 +501,11 @@ equilibrium_F <- function(params) {
   k_int_f <- params[["k_int_f"]]
   k_B_F <- params[["k_B_F"]]
   c_star <- params[["c_star"]]
-  phi_F <- params[["ϕ_F"]]
+  a_F <- params[["a_F"]]
   k_U_F <- params[["k_U_F"]]
 
   a_0 <- -psi_F_prod - k_U_F * psi_F_prod / k_int_f
-  a_1 <- k_lin_f + k_B_F * (c_star * phi_F - psi_F_prod / k_int_f) + k_U_F * k_lin_f / k_int_f
+  a_1 <- k_lin_f + k_B_F * (c_star * a_F - psi_F_prod / k_int_f) + k_U_F * k_lin_f / k_int_f
   a_2 <- k_B_F * k_lin_f / k_int_f
 
   FU <- (-a_1 + sqrt(a_1^2 - 4 * a_2 * a_0)) / (2 * a_2)
@@ -526,12 +526,12 @@ reproduction_number <- function(params) {
   theta0 <- theta_zero(eq_F$FB, params)
 
   p <- params[["p"]]
-  beta <- params[["beta"]]
+  beta_V <- params[["beta_V"]]
   S_max <- params[["S_max"]]
   d_I <- params[["d_I"]]
   d_V <- params[["d_V"]]
 
-  R0 <- p * beta * S_max * theta0 / (d_I * d_V)
+  R0 <- p * beta_V * S_max * theta0 / (d_I * d_V)
   return(R0)
 }
 

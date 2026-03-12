@@ -18,7 +18,7 @@ cols <- c(
   "S_max",
   "d_I",
   "d_D",
-  "β",
+  "β_V",
   "d_V",
   "p",
   "k_U_F",
@@ -30,7 +30,7 @@ cols <- c(
   "ε_FI",
   "η_FI",
   "c_star",
-  "ϕ_F"
+  "a_F"
 )
 
 pars_df <- data.frame(params = cols)
@@ -40,7 +40,7 @@ tmp <- matrix(c(
   0.1, 0.2, # S_max
   0.05, 0.15, # d_I
   3, 15, # d_D
-  0.1, 0.5, # β
+  0.1, 0.5, # β_V
   5, 15, # d_V
   100, 800, # p
   2, 10, # k_U_F
@@ -52,7 +52,7 @@ tmp <- matrix(c(
   1e-5, 1e-3, # ε_FI
   0.001, 0.05, # η_FI
   1e-5, 1e-3, # c_star
-  0.1, 0.2 # ϕ_F
+  0.1, 0.2 # a_F
 ), nc = 2, byrow = TRUE)
 pars_df$min <- tmp[, 1]
 pars_df$max <- tmp[, 2]
@@ -80,7 +80,7 @@ avo <- 6.02214e23
 # MM_F <- 19000.0
 # R_F_T <- 1000.0
 # R_F_I <- 1300.0
-# ϕ_F <- (MM_F / avo) * (R_F_I + R_F_T) * (1 / 5000) * (10^9 * 1e12)
+# a_F <- (MM_F / avo) * (R_F_I + R_F_T) * (1 / 5000) * (10^9 * 1e12)
 
 # Add these columns to pars_sobol to create individuals
 individuals <- cbind(
@@ -89,7 +89,7 @@ individuals <- cbind(
   # MM_F = rep(MM_F, nrow(pars_sobol)),
   # R_F_T = rep(R_F_T, nrow(pars_sobol)),
   # R_F_I = rep(R_F_I, nrow(pars_sobol)),
-  # ϕ_F = rep(ϕ_F, nrow(pars_sobol))
+  # a_F = rep(a_F, nrow(pars_sobol))
 )
 # Add initial condition columns to individuals
 individuals <- cbind(

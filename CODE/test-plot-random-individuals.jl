@@ -1,4 +1,7 @@
-# plot-random-individuals.jl
+## plot-random-individuals.jl
+# This script selects a random subset of individuals from a cohort simulation
+# and plots their viral load and tissue damage over time.
+# This is intended only for debugging purposes.
 
 using RCall
 using Glob
@@ -9,20 +12,38 @@ using Plots
 SCRIPT_DIR = @__DIR__
 OUTPUT_DIR = normpath(joinpath(SCRIPT_DIR, "..", "OUTPUT"))
 
-# Find the latest Rds file 
-rds_files = glob("*.Rds", OUTPUT_DIR)
-if isempty(rds_files)
-    error("No .Rds result files found in $OUTPUT_DIR")
+# Set the number of individuals to plot (near the top so easy to find)
+NUM_TO_PLOT = 1_000
+
+# Find the latest results file (either qs or Rds)
+result_files = vcat(glob("*.qs", OUTPUT_DIR), glob("*.Rds", OUTPUT_DIR))
+if isempty(result_files)
+    error("No .qs or .Rds result files found in $OUTPUT_DIR")
 end
 
-# Get the latest Rds file by modification time
-latest_rds = sort(rds_files, by=mtime, rev=true)[1]
-println("Loading latest result file: $latest_rds")
+# Get the latest file by modification time
+latest_file = sort(result_files, by=mtime, rev=true)[1]
+println("Loading latest result file: $latest_file")
 
-# Load the Rds file via RCall into a Julia object
-R"""
-save_data <- readRDS($latest_rds)
-"""
+# Load the file via RCall into a Julia object based on extension
+if endswith(latest_file, ".qs")
+    R"""
+    if(!requireNamespace("qs2", quietly=TRUE)) {
+        if(!requireNamespace("qs", quietly=TRUE)) {
+            stop("Neither 'qs2' nor 'qs' packages are installed in R.")
+        } else {
+            save_data <- qs::qread($latest_file)
+        }
+    } else {
+        save_data <- qs2::qs_read($latest_file)
+    }
+    """
+else
+    R"""
+    save_data <- readRDS($latest_file)
+    """
+end
+
 SAVE = rcopy(R"save_data")
 
 # Extract the cohort simulation results
@@ -31,7 +52,7 @@ N = length(cohort)
 
 println("Loaded results for cohort of size: $N")
 
-num_to_plot = min(500, N)
+num_to_plot = min(NUM_TO_PLOT, N)
 random_indices = randperm(N)[1:num_to_plot]
 
 println("Plotting $num_to_plot random individuals...")

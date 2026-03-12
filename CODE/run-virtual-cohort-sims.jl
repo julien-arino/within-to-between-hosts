@@ -37,6 +37,12 @@ SAVE_JLS = false
 # Save as CSV?
 SAVE_CSV = false
 
+# Save as Rds?
+SAVE_RDS = false
+
+# Save as qs (using R's qs2/qs package)?
+SAVE_QS = true
+
 ## Type of output
 # "maxima" = save only the maxima and their time of occurrence
 # "select_variables" = select variables to save
@@ -105,12 +111,6 @@ else
     map(x -> run_one_individual(x, individuals, IC; type_output=type_output), individuals_idx)
 end
 
-# Close the cluster if parallel processing was used
-if PARALLEL
-    println("Shutting down workers...")
-    rmprocs(workers())  # Remove all worker processes
-end
-
 # Print elapsed time
 elapsed_time = time() - start_time
 println("Computation completed in $(elapsed_time) seconds")
@@ -141,16 +141,51 @@ if SAVE_JLS
 end
 
 ## Save the results as an Rds file
-save_path_rds = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s_%s.Rds", N, date_time_start, type_output))
-@rput SAVE          # Send the Julia object to R
-@rput save_path_rds # Send the absolute path to R (now guaranteed absolute)
-R"""
-saveRDS(SAVE, file = save_path_rds)
-"""
-println("Results saved to $save_path_rds")
+# Only save if SAVE_RDS is true
+# Beware:
+# - R must be installed and available in the PATH
+# - RCall must be installed so julia can call R
+# - This copies the SAVE variable to R, so if SAVE is large, this will be slow and likely to fail if RAM
+#   is insufficient.
+if SAVE_RDS
+    println("Saving results as Rds (via RCall)")
+    save_path_rds = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s_%s.Rds", N, date_time_start, type_output))
+    @rput SAVE          # Send the Julia object to R
+    @rput save_path_rds # Send the absolute path to R (now guaranteed absolute)
+    R"""
+    saveRDS(SAVE, file = save_path_rds)
+    """
+    println("Results saved to $save_path_rds")
+end
+
+## Save the results as a qs file (faster than Rds)
+# Only save if SAVE_QS is true
+# Beware:
+# - R must be installed and available in the PATH, with libraries qs2 (preferably) or qs installed
+# - RCall must be installed so julia can call R
+# - This copies the SAVE variable to R, so if SAVE is large, this will be slow and likely to fail if RAM
+#   is insufficient.
+if SAVE_QS
+    println("Saving results as QS (via RCall)")
+    save_path_qs = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s_%s.qs", N, date_time_start, type_output))
+    @rput SAVE          # Send the Julia object to R
+    @rput save_path_qs  # Send the absolute path to R
+    R"""
+    if(!requireNamespace("qs2", quietly=TRUE)) {
+        if(!requireNamespace("qs", quietly=TRUE)) {
+            warning("Neither 'qs2' nor 'qs' packages are installed in R. Cannot save in qs format.")
+        } else {
+            qs::qsave(SAVE, file = save_path_qs)
+        }
+    } else {
+        qs2::qs_save(SAVE, file = save_path_qs)
+    }
+    """
+    println("Results saved to $save_path_qs")
+end
 
 ## Save the results as a CSV file
-# Only save if SAVE_CSV is true
+# Only save if SAVE_CSV is true (beware, this will create a _massive_ file if N is anything but small, so use for debugging only)
 if SAVE_CSV
     println("Saving results as CSV")
     save_path_csv = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s_%s.csv", N, date_time_start, type_output))
@@ -209,3 +244,18 @@ if SAVE_CSV
 
     println("Results saved to $save_path_csv")
 end
+
+# Close the cluster if parallel processing was used
+if PARALLEL
+    println("Shutting down workers...")
+    redirect_stderr(devnull) do
+        redirect_stdout(devnull) do
+            try
+                rmprocs(workers())  # Remove all worker processes
+            catch
+                # Ignore teardown warnings
+            end
+        end
+    end
+end
+
