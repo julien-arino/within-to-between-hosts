@@ -6,7 +6,7 @@ library(latex2exp)
 # download.file("http://simonsoftware.se/other/xkcd.ttf",
 #              dest="xkcd.ttf", mode="wb")
 
-source("functions_all.R")
+source("functions-all.R")
 
 # Plots of sensitivity values computed using the sensitivity package
 vals = value_indicators(params_change = pars.sobol, params_fixed = params_all)

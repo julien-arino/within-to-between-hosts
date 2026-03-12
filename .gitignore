@@ -48,4 +48,6 @@ po/*~
 # RStudio Connect folder
 rsconnect/
 
-.ipynb_checkpoints/
+# OUTPUT folder content: only keep README.md
+OUTPUT/*
+!OUTPUT/README.md

@@ -7,7 +7,7 @@
 # in RAM. It is often better to segment generation in the generation 
 # code (create-and-run-virtual-cohort.R).
 
-source("functions_all.R")
+source("functions-all.R")
 
 # Set directory where the results are located. Typically, not somewhere
 # synced to GitHub (100,000 individuals => 100 GB raw output).

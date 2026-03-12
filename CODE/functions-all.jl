@@ -1,0 +1,368 @@
+###################
+## FUNCTIONS_ALL.jl
+###################
+#
+# This file contains all functions used in the code.
+#
+
+using DifferentialEquations
+using Random
+using Statistics
+using DataFrames
+using Distributions
+using Distributed
+using Roots
+##
+## rhs_within_host_ODE
+##
+# The right-hand side of the within-host ODE
+function rhs_within_host_ODE!(du, u, pp, t)
+    V, S, I, R, D, F_U, F_B = u
+    p, τ_I, V0, S0, λ_S, S_max, β, d_V, d_I, d_D, ψ_F_prod, p_FI, η_FI, k_lin_f, k_int_f, k_B_F, c_star, k_U_F, δ, ε_FI, ϕ_F = pp
+
+    du[1] = p * I - d_V * V
+    du[2] = λ_S * (1 - (S + I + D + R) / S_max) * S - β * S * V
+    du[3] = β * S * V * (1 - F_B / (ε_FI + F_B)) - d_I * I
+    du[4] = λ_S * (1 - (S + I + D + R) / S_max) * R + β * S * V * (F_B / (ε_FI + F_B))
+    du[5] = d_I * I - d_D * D
+    du[6] = ψ_F_prod + p_FI * I / (I + η_FI) -
+            k_lin_f * F_U - k_B_F * ((c_star + I) * ϕ_F - F_B) * F_U + k_U_F * F_B
+    du[7] = -k_int_f * F_B + k_B_F * ((c_star + I) * ϕ_F - F_B) * F_U - k_U_F * F_B
+end
+
+##
+## set_IC
+##
+# Set initial conditions
+function set_IC()
+    return [4.5, 0.16, 0.0, 0.0, 0.0, 0.015, 1.1e-8]
+end
+
+##
+## set_parameters
+##
+# Set parameters
+function set_parameters()
+    params = Dict(
+        :λ_S => 0.74,
+        :S_max => 0.16,
+        :d_I => 0.1,
+        :d_D => 8.0,
+        :β => 0.3,
+        :β_stddev => 0.1994,
+        :d_V => 8.4,
+        :d_V_stddev => 0.67,
+        :p => 394.0,
+        :p_stddev => 158.65,
+        :k_U_F => 6.072,
+        :p_FI => 2.8235,
+        :p_FI_stddev => 1.8741,
+        :ψ_F_prod => 0.25,
+        :k_B_F => 0.0107,
+        :k_B_F_stddev => 0.01,  # Estimated based on parameter range [0.001, 0.05] pattern; Jenner et al. 2021 ref [54] Sheahan et al. 2020
+        :k_lin_f => 16.635,
+        :k_lin_f_stddev => 2.49,
+        :k_int_f => 16.968,
+        :ε_FI => 2e-4,
+        :η_FI => 0.022328,
+        :c_star => 1.104e-4,
+        :avo => 6.02214e23,
+        :MM_F => 19000.0,
+        :R_F_T => 1000.0,
+        :R_F_I => 1300.0
+    )
+    params[:ϕ_F] = (params[:MM_F] / params[:avo]) *
+                   (params[:R_F_I] + params[:R_F_T]) *
+                   (1 / 5000) * (10^9 * 1e12)
+
+    # Add initial condition keys
+    IC = set_IC()
+    params[:V0] = IC[1]
+    params[:S0] = IC[2]
+    params[:I0] = IC[3]
+    params[:R0] = IC[4]
+
+    return params
+end
+
+##
+## add_IC_to_params
+##
+# Add initial conditions to parameters
+function add_IC_to_params(params, IC)
+    params[:V0] = IC[1]
+    params[:S0] = IC[2]
+    params[:I0] = IC[3]
+    params[:R0] = IC[4]
+    return params
+end
+
+##
+## generate_params_cohort
+##
+# Generate parameters for individuals in the virtual cohort
+function generate_params_cohort(params, n = 1000)
+    # Step 1: Extract stddev parameters and create params_varying_stddev
+    all_keys = collect(keys(params))
+    stddev_keys = filter(x -> occursin("_stddev", string(x)), all_keys)
+    
+    params_varying_stddev = Dict()
+    for key in stddev_keys
+        # Remove "_stddev" suffix from the key name
+        new_key = Symbol(replace(string(key), "_stddev" => ""))
+        params_varying_stddev[new_key] = params[key]
+    end
+    
+    # Step 2: Create params_varying_mean (corresponding mean values)
+    params_varying_mean = Dict()
+    for key in keys(params_varying_stddev)
+        params_varying_mean[key] = params[key]
+    end
+    
+    # Step 3: Create params_fixed (everything else, excluding _stddev entries)
+    varying_param_names = keys(params_varying_mean)
+    params_fixed = Dict()
+    for key in all_keys
+        # Include if it's not a varying parameter and not a _stddev entry
+        if !(key in varying_param_names) && !occursin("_stddev", string(key))
+            params_fixed[key] = params[key]
+        end
+    end
+    
+    # Step 4: Build the output DataFrame
+    OUT = DataFrame()
+    
+    # Add fixed parameters (same value for all individuals)
+    for (key, val) in params_fixed
+        OUT[!, key] = fill(val, n)
+    end
+    
+    # Add varying parameters (sampled from Normal distribution)
+    for key in keys(params_varying_mean)
+        mean_val = params_varying_mean[key]
+        stddev_val = params_varying_stddev[key]
+        
+        # Sample with symmetric variation and a scaling factor of 1 on the provided stddev
+        OUT[!, key] = rand(Normal(mean_val, 1 * stddev_val), n)
+        
+        # Enforce non-negativity with a small minimum to avoid numerical issues
+        min_val = max(1e-10, mean_val * 0.001)  # At least 0.1% of mean value
+        OUT[!, key] = map(x -> max(x, min_val), OUT[!, key])
+    end
+    
+    # Add ID column
+    OUT[!, :ID] = 1:n
+    
+    return OUT
+end
+
+
+##
+## run_one_individual
+##
+# Simulate the within-host model for one individual
+function run_one_individual(idx, individuals, IC; type_output = "solution")
+    # Extract individual-specific parameters
+    params_tmp = individuals[idx, :]
+    params_tmp = add_IC_to_params(params_tmp, IC)
+
+    # Convert DataFrameRow to a vector of parameter values
+    params_vector = collect(values(params_tmp))
+
+    # Define the time span
+    tspan = (0.0, 200.0)
+
+
+
+    # Set the integration method
+    integrator = Rodas5()
+    # Define the ODE problem
+    prob = ODEProblem(rhs_within_host_ODE!, IC, tspan, params_vector)
+
+    # --- Nonnegativity callback defined locally ---
+    condition_nonneg(u, t, integrator) = any(x -> x < 0, u)
+    affect_nonneg!(integrator) = (integrator.u .= max.(integrator.u, 0.0))
+    nonneg_callback = DiscreteCallback(condition_nonneg, affect_nonneg!)
+    # ---------------------------------------------
+
+    # Solve the DDE problem with the nonnegativity callback
+    sol = solve(prob, integrator; callback=nonneg_callback)
+
+    # Return based on type_output
+    if type_output == "solution"
+        return sol
+    elseif type_output == "maxima"
+        return find_maxima(sol)
+    elseif type_output == "select_variables"
+        # Extract time and selected variables
+        selected_data = Dict(
+            :time => sol.t,
+            :V => sol[1, :],  # Viral load
+            :I => sol[3, :],  # Infected cells
+            :F_B => sol[7, :],  # Bound IFN
+            :F_U => sol[6, :]   # Unbound IFN
+        )
+        return selected_data
+    else
+        error("Invalid type_output: must be 'solution', 'maxima', or 'select_variables'")
+    end
+end
+
+##
+## find_maxima
+##
+# Extract maxima and their corresponding times from the solution
+function find_maxima(sol)
+    # Ensure the solution has enough data points
+    if length(sol.t) == 0
+        error("Solution has no time points")
+    end
+
+    # Extract the desired maxima and their corresponding times
+    OUT = Dict()
+    OUT[:max_V] = maximum(sol[1, :])  # Maximum viral load
+    OUT[:max_F_U] = maximum(sol[6, :])  # Maximum unbound IFN
+    OUT[:max_F_B] = maximum(sol[7, :])  # Maximum bound IFN
+
+    # Ensure indices are valid before accessing
+    OUT[:max_V_t] = sol.t[argmax(sol[1, :])]  # Time of maximum viral load
+    OUT[:max_F_U_t] = sol.t[argmax(sol[6, :])]  # Time of maximum unbound IFN
+    OUT[:max_F_B_t] = sol.t[argmax(sol[7, :])]  # Time of maximum bound IFN
+
+    return OUT
+end
+
+##
+## format_df
+##
+# Format data for plotting
+function format_df(time, data; line_plotted = "mean", lower = "2.5%", upper = "97.5%")
+    df = DataFrame(
+        time = time,
+        lower = data[:, lower],
+        line = data[:, line_plotted],
+        upper = data[:, upper]
+    )
+    return df
+end
+
+##
+## value_indicators
+##
+# Compute indicators for all parameter sets
+function value_indicators(params_change, params_fixed; t_f = 200, ncpus = 60, parallel = true)
+    println("Finalizing parameters data frame")
+    col_names = names(params_change)[2:end]
+    col_names_fixed = setdiff(names(params_fixed), col_names)
+
+    individuals_idx = 1:size(params_change, 1)
+    if parallel
+        # Remove any pre-existing workers to avoid credential/cookie mismatches
+        if nprocs() > 1
+            println("Removing existing workers before addprocs (nprocs=$(nprocs()))...")
+            try
+                rmprocs(workers())
+            catch e
+                @warn "Failed to remove existing workers in value_indicators" exception=(e, catch_backtrace())
+            end
+        end
+        addprocs(ncpus)
+        results = pmap(idx -> run_one_individual_indicators(idx, params_change, params_fixed), individuals_idx)
+    else
+        results = map(idx -> run_one_individual_indicators(idx, params_change, params_fixed), individuals_idx)
+    end
+    return results
+end
+
+
+# Compute virus-free equilibrium value of F_U (unbound IFN) and F_B (bound IFN)
+function equilibrium_F(params)
+    ψ_F_prod = params[:ψ_F_prod]
+    k_lin_f  = params[:k_lin_f]
+    k_int_f  = params[:k_int_f]
+    k_B_F    = params[:k_B_F]
+    c_star   = params[:c_star]
+    ϕ_F      = params[:ϕ_F]
+    k_U_F    = params[:k_U_F]
+
+    a_0 = -ψ_F_prod - k_U_F * ψ_F_prod / k_int_f
+    a_1 = k_lin_f + k_B_F * (c_star * ϕ_F - ψ_F_prod / k_int_f) + k_U_F * k_lin_f / k_int_f
+    a_2 = k_B_F * k_lin_f / k_int_f
+
+    FU = (-a_1 + sqrt(a_1^2 - 4 * a_2 * a_0)) / (2 * a_2)
+    FB = (ψ_F_prod - k_lin_f * FU) / k_int_f
+    return (FU, FB)
+end
+
+# Compute theta^0 in R0 formula
+function theta_zero(FB, params)
+    ε_FI = params[:ε_FI]
+    return ε_FI / (ε_FI + FB)
+end
+
+# Compute R0
+function reproduction_number(params)
+    FU, FB = equilibrium_F(params)
+    θ0 = theta_zero(FB, params)
+    p    = params[:p]
+    β    = params[:β]
+    Smax = params[:S_max]
+    dI   = params[:d_I]
+    dV   = params[:d_V]
+    R0 = p * β * Smax * θ0 / (dI * dV)
+    return R0
+end
+
+##
+## compute_R0_cohort
+##
+# Compute R0 for each individual in the cohort DataFrame
+# and add it as a new column
+function compute_R0_cohort!(individuals::DataFrame)
+    n = nrow(individuals)
+    R0_values = zeros(n)
+    
+    for i in 1:n
+        # Extract parameters for individual i as a Dict-like object
+        params_i = individuals[i, :]
+        R0_values[i] = reproduction_number(params_i)
+    end
+    
+    # Add R0 column to the DataFrame
+    individuals[!, :R0_within] = R0_values
+    return individuals
+end
+
+# Example usage of R0 (uncomment to test):
+# include("functions-all.jl")
+# params = set_parameters()
+# println("Equilibrium F_U: ", equilibrium_FU(params))
+# println("R0: ", reproduction_number(params))
+
+# ---- Compute disease severity (Ψ_i) and classification ----
+function compute_severity(out_dict::Dict, S_max::Float64)
+    Psi = 100 .* (S_max .- (out_dict[:S] .+ out_dict[:R])) ./ S_max
+    Psi_max = maximum(Psi)
+    
+    status = if Psi_max >= 85
+        "dead"
+    elseif Psi_max >= 75
+        "ICU"
+    else
+        "rest"
+    end
+    
+    idx_ICU = findfirst(>=(75), Psi)
+    t_ICU = isnothing(idx_ICU) ? NaN : out_dict[:time][idx_ICU]
+    
+    idx_death = findfirst(>=(85), Psi)
+    t_death = isnothing(idx_death) ? NaN : out_dict[:time][idx_death]
+    
+    return Dict(
+        :Psi => Psi,
+        :Psi_max => Psi_max,
+        :status => status,
+        :t_ICU => t_ICU,
+        :t_death => t_death
+    )
+end
