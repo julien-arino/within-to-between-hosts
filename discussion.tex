@@ -1,0 +1,86 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath, amssymb, geometry}
+\geometry{margin=1in}
+
+\title{Theoretical Foundations and Methodological Corrections for the Age-of-Infection Mapping}
+\author{Summary of Discussion}
+\date{\today}
+
+\begin{document}
+\maketitle
+
+\section{Theoretical Role of the Age-Dependent Functions (Draft for Section 5.1)}
+
+\textit{This section establishes the rigorous theoretical framework for mapping the virtual cohort to the macroscopic model.}
+
+Before extracting numerical estimates from the virtual cohort, it is critical to clarify the mathematical roles of the functions $\beta_P(a)$, $\gamma_P(a)$, and $\mu_P(a)$ within the population-level model \eqref{14}. This distinction fundamentally dictates how individual-level data must be aggregated to avoid severe mass-conservation errors when bridging scales.
+
+In the PDE system, the age-of-infection dependent functions fall into two categories:
+\begin{enumerate}
+    \item \textbf{Removal rates ($\gamma_P$ and $\mu_P$):} These terms appear as negative quantities in the transport equation for $i_P(t,a)$, dictating how individuals \emph{exit} the infectious compartment. Because individuals leave the infected class via two mutually exclusive pathways (recovery or death), we are operating within a \textbf{competing risks framework}. Consequently, $\gamma_P(a)$ and $\mu_P(a)$ act as \textbf{cause-specific hazard rates}. They represent the instantaneous per-capita probability of recovering or dying at infection-age $a$, \emph{conditional on the individual having survived in the infected state up to age $a$}.
+    
+    \item \textbf{Production rate ($\beta_P$):} The transmission function $\beta_P(a)$ acts solely through the boundary condition (via the force of infection $\lambda(t)$) to generate new infections. It does not remove the transmitter from the $i_P(t,a)$ compartment. Therefore, it represents the expected infectiousness of an individual at infection-age $a$, \emph{conditional on them still being actively infected}.
+\end{enumerate}
+
+A common pitfall in multiscale upscaling is to directly equate the removal rates with unconditional probability density functions (PDFs). Suppose we extracted the normalized density of recovery times $f_r(a)$ and death times $f_d(a)$ from the cohort, such that $\int_0^\infty f_r(a)da = 1$ and $\int_0^\infty f_d(a)da = 1$. If we mistakenly set $\gamma_P(a) = f_r(a)$, the fraction of individuals remaining in the infected compartment at age $a$ (assuming no mortality for a moment) would be given by the survival function:
+\begin{equation}
+    S_P(a) = \exp\left( - \int_0^a \gamma_P(s) ds \right) = \exp\left( - \int_0^a f_r(s) ds \right).
+\end{equation}
+As $a \to \infty$, the integral evaluates to 1, yielding an asymptotic survival probability of $S_P(\infty) = e^{-1} \approx 0.368$. This implies that mathematically, over 36\% of the population would remain permanently trapped in the $i_P(t,a)$ compartment, never recovering. Furthermore, if both $f_r(a)$ and $f_d(a)$ were used directly, the PDE would treat death and recovery as equally likely outcomes, completely erasing the empirical case fatality ratio of the cohort. 
+
+To ensure that the population-level model accurately reflects the cohort's dynamics and conserves mass, empirical PDFs must be transformed into true hazard rates by dividing by the dynamically declining survival function of the active cohort.
+
+\section{Methodological Corrections for Subsequent Sections}
+
+\subsection{Computing the Hazard Rates (Fix for Sections 5.2 and 5.3)}
+
+To prevent the $e^{-1}$ trap described above, Equations (10) and (11) must be updated. Let $N$ be the total size of the virtual cohort. Let $N_d$ and $N_r$ be the ultimate number of deaths and recoveries, giving probabilities $p_d = N_d/N$ and $p_r = N_r/N$. 
+
+Let $S_{cohort}(a)$ be the overall empirical survival function of the cohort (i.e., the fraction of individuals who have not yet reached their respective $\tau_i^r$ or $\tau_i^d$ at age $a$). The correct population-level hazard rates are:
+\begin{equation}
+    \mu_P(a) = \frac{p_d \cdot f_d(a)}{S_{cohort}(a)} \quad \text{and} \quad \gamma_P(a) = \frac{p_r \cdot f_r(a)}{S_{cohort}(a)}.
+\end{equation}
+
+\emph{Implementation note: In the numerical code, $S_{cohort}(a)$ approaches 0 at large $a$. To prevent division-by-zero errors in the ODE/PDE solvers, define a maximum age $a_{max}$ (e.g., when $S_{cohort} < 0.005$) and cap the hazard rates or apply a boundary condition to flush out the remaining tiny fraction of individuals.}
+
+\subsection{The Double-Discounting Trap (Fix for Section 5.4 / JA's Margin Note)}
+
+Because $\beta_P(a)$ represents transmissibility \emph{conditional} on an individual still being infected, we must carefully handle zero-transmission segments to avoid the ``double-discounting'' trap (directly addressing the margin note by JA).
+
+In the population model \eqref{14}, hospitalized patients remain inside the $i_P(t,a)$ compartment because there is no explicit `Hospital' compartment. Therefore, their zero-transmission values \textbf{must} be included in the mean to correctly pull down the population average. 
+
+However, individuals who have already recovered or died are actively removed from $i_P(t,a)$ by the PDE. If their trailing zeros are included in the empirical mean for $\beta_P(a)$, the survival penalty is applied twice: once by the artificially depressed $\beta_P(a)$ curve, and again by the shrinking $i_P(t,a)$ population it multiplies.
+
+Thus, the summary functions in Equation (12) must be calculated conditionally. Let $\mathcal{A}(a)$ be the set of active individuals at age $a$ (those for whom $a < \tau_i^r$ and $a < \tau_i^d$), and let $N_{active}(a) = |\mathcal{A}(a)|$. The mean transmissibility is:
+\begin{equation}
+    \beta_P^{\text{mean}}(a) = \frac{1}{N_{active}(a)} \sum_{i \in \mathcal{A}(a)} \beta_i(V_i(a)).
+\end{equation}
+
+\subsection{The ``Non-Transmitter'' Bug (Fix for Section 4.3.3)}
+
+In Equation (9) of the current draft, the end of the infectious period $\tau_i^r$ is defined as the time when infectiousness drops below $\xi^c$. However, for mild ``non-transmitters,'' infectiousness never crosses $\xi^c$, implying $\tau_i^c = \infty$. Consequently, Equation (9) inadvertently assigns $\tau_i^r = \infty$ to all non-transmitters. If they never mathematically recover, they will permanently inflate the $i_P(t,a)$ compartment. 
+
+Biological recovery $\tau_i^r$ should instead be defined by the \textbf{viral load} $V_i(a)$ dropping below a clearance threshold (e.g., $10^{-1}$ copies/ml). This guarantees a finite recovery time for every surviving individual.
+
+\subsection{The Mathematical Payoff (Revision for Appendix D.2)}
+
+By adopting the conditional hazard and conditional mean formulations above, a remarkable mathematical cancellation occurs that fundamentally validates the upscaling methodology. 
+
+In Appendix D.1, the basic reproduction number for the PDE (ignoring natural demographic mortality $d_P$ over the short course of infection) is:
+\begin{equation}
+    \mathcal{R}_0^P = S_0 \int_0^\infty \beta_P(a) \exp\left[-\int_0^a (\gamma_P(\xi) + \mu_P(\xi)) d\xi \right] da.
+\end{equation}
+By definition of our empirical hazard rates, the exponential survival term evaluates exactly to the cohort survival function, $S_{cohort}(a) = N_{active}(a) / N_{total}$. Substituting our conditional mean $\beta_P^{\text{mean}}(a)$ yields:
+\begin{equation}
+    \mathcal{R}_0^P = S_0 \int_0^\infty \left( \frac{\sum_{i \in \mathcal{A}(a)} \beta_i(a)}{N_{active}(a)} \right) \times \left( \frac{N_{active}(a)}{N_{total}} \right) da.
+\end{equation}
+Assuming $S_0 \approx N_{total}$ at the disease-free equilibrium, the $N_{active}(a)$ terms beautifully cancel out:
+\begin{equation}
+    \mathcal{R}_0^P = \int_0^\infty \sum_{i \in \mathcal{A}(a)} \beta_i(a) \, da.
+\end{equation}
+This proves that the reproduction number of the PDE is \textit{analytically identical} to the unconditional average reproduction number of the virtual cohort. 
+
+Consequently, the artificial scaling factor $k = \mathcal{R}_0^{\text{target}} / \mathcal{R}_0^P$ introduced in Appendix D.2 should no longer be strictly necessary (save for minor numerical integration artifacts). The model organically bridges the scales, conserving transmission potential from first principles.
+
+\end{document}
