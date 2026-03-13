@@ -6,13 +6,16 @@ using RCall
 using DataFrames
 using Glob
 using Statistics
+using Printf
 
 # Default inputs
 SCRIPT_DIR = @__DIR__
 OUTPUT_DIR = normpath(joinpath(SCRIPT_DIR, "..", "OUTPUT"))
 
 # Find the latest results file (either qs or Rds)
-result_files = vcat(glob("*.qs", OUTPUT_DIR), glob("*.Rds", OUTPUT_DIR))
+result_files = vcat(glob("cohort_P*.qs", OUTPUT_DIR), glob("cohort_P*.Rds", OUTPUT_DIR))
+result_files = filter(f -> !occursin("_times", f) && !occursin("_censored", f), result_files)
+
 if isempty(result_files)
     error("No .qs or .Rds result files found in $OUTPUT_DIR")
 end
@@ -63,6 +66,7 @@ tau_c = fill(NaN, N)
 tau_r = fill(NaN, N)
 tau_V_max = fill(NaN, N)
 R0_P2P = fill(0.0, N)
+Psi_max = fill(NaN, N)
 
 println("Computing tau values for each individual...")
 
@@ -84,8 +88,8 @@ function compute_tau_for_individual_idx(i, data, S_P_0=2000.0)
     Psi = data[:Psi]
     V = data[:V]
 
-    # Preallocate returns: [tau_Psi_max, tau_h_start, tau_h_end, tau_d, tau_c, tau_r, tau_V_max, R0_P2P]
-    res = fill(NaN, 8)
+    # Preallocate returns: [tau_Psi_max, tau_h_start, tau_h_end, tau_d, tau_c, tau_r, tau_V_max, R0_P2P, Psi_max_val]
+    res = fill(NaN, 9)
     res[8] = 0.0
 
     # ------------------- #
@@ -95,6 +99,7 @@ function compute_tau_for_individual_idx(i, data, S_P_0=2000.0)
     Psi_max_val = maximum(Psi)
     Psi_max_idx = argmax(Psi)
     res[1] = time_pts[Psi_max_idx] # tau_Psi_max
+    res[9] = Psi_max_val           # actual max value
 
     # ------------------- #
     # Eq 5.3 (Hospital)   #
@@ -216,12 +221,13 @@ if N >= 50000
             Psi = data[:Psi]
             V = data[:V]
 
-            res = fill(NaN, 8)
+            res = fill(NaN, 9)
             res[8] = 0.0
 
             Psi_max_val = maximum(Psi)
             Psi_max_idx = argmax(Psi)
             res[1] = time_pts[Psi_max_idx]
+            res[9] = Psi_max_val
 
             h_indices = findall(>=(xi_h_w), Psi)
             if !isempty(h_indices)
@@ -300,6 +306,7 @@ if N >= 50000
         tau_r[i] = res[6]
         tau_V_max[i] = res[7]
         R0_P2P[i] = res[8]
+        Psi_max[i] = res[9]
     end
 
     # Shut down workers
@@ -321,6 +328,7 @@ else
         tau_r[i] = res[6]
         tau_V_max[i] = res[7]
         R0_P2P[i] = res[8]
+        Psi_max[i] = res[9]
     end
 end
 
@@ -329,6 +337,7 @@ out_df = DataFrame()
 out_df[!, :ID] = params_df[!, :ID]
 out_df[!, :R0_within] = params_df[!, :R0_within]
 out_df[!, :R0_P2P] = R0_P2P
+out_df[!, :Psi_max] = Psi_max
 
 # Note: The manuscript specifies xi_h=75% and xi_d=85% for severity, and V>=4.5 for transmission
 out_df[!, :tau_Psi_max] = tau_Psi_max
@@ -355,10 +364,10 @@ hosp = .!isnan.(tau_h_start)
 inf_start = .!isnan.(tau_c)
 
 println("Total Individuals: ", N)
-println("Survived: ", sum(survived))
-println("Died (tau_d present): ", sum(died))
-println("Hospitalized (tau_h_start present): ", sum(hosp))
-println("Started Infectious Period (tau_c present): ", sum(inf_start))
+println(@sprintf("Survived: %d (%.2f%%)", sum(survived), 100 * sum(survived) / N))
+println(@sprintf("Died (tau_d present): %d (%.2f%%)", sum(died), 100 * sum(died) / N))
+println(@sprintf("Hospitalized (tau_h_start present): %d (%.2f%%)", sum(hosp), 100 * sum(hosp) / N))
+println(@sprintf("Started Infectious Period (tau_c present): %d (%.2f%%)", sum(inf_start), 100 * sum(inf_start) / N))
 println("Mean time to death:     ", round(mean(filter(!isnan, tau_d)); digits=2), " days")
 println("Mean time to hospital:  ", round(mean(filter(!isnan, tau_h_start)); digits=2), " days")
 println("Mean time to infectious:", round(mean(filter(!isnan, tau_c)); digits=2), " days")
@@ -371,9 +380,10 @@ out_path = joinpath(OUTPUT_DIR, "process-virtual-cohort-results.csv")
 CSV.write(out_path, out_df)
 println("Saved successfully to $out_path")
 
-# Save as qs file with "-times" suffix
+# Save as qs file with "cohort_times_" prefix
 base_name = splitext(basename(latest_file))[1]
-out_path_qs = joinpath(OUTPUT_DIR, base_name * "-times.qs")
+new_base = replace(base_name, "cohort_" => "cohort_times_")
+out_path_qs = joinpath(OUTPUT_DIR, new_base * ".qs")
 println("\nSaving updated DataFrame out as $out_path_qs ...")
 @rput out_df
 @rput out_path_qs
@@ -408,41 +418,41 @@ all_t_max = Vector{Float64}(undef, n_total_rows)
 
 row_idx = 1
 for i in 1:N
+    global row_idx
     data = cohort[i][:vars]
     pts = length(data[:time])
-    
+
     # Calculate patient status natively
-    c_Psi_max = out_df[i, :max_Psi] # Actually we didn't compute max_Psi in out_df, let's just recalculate it simply
     c_Psi_max = maximum(data[:Psi])
     c_t_max = data[:time][argmax(data[:Psi])]
-    
+
     c_status = "Mild"
     if c_Psi_max >= xi_d
-       c_status = "Dead"
+        c_status = "Dead"
     elseif c_Psi_max >= xi_h
-       c_status = "ICU"
+        c_status = "ICU"
     end
-    
+
     c_tau_d = tau_d[i]
-    
+
     for j in 1:pts
         # Truncate strictly at time of death
         if !isnan(c_tau_d) && data[:time][j] > c_tau_d
-           continue
+            continue
         end
-        
+
         all_time[row_idx] = data[:time][j]
         all_V[row_idx] = data[:V][j]
         all_I[row_idx] = data[:I][j]
         all_F_U[row_idx] = data[:F_U][j]
         all_F_B[row_idx] = data[:F_B][j]
         all_Psi[row_idx] = data[:Psi][j]
-        
+
         all_individual_id[row_idx] = i
         all_status[row_idx] = c_status
         all_Psi_max[row_idx] = c_Psi_max
         all_t_max[row_idx] = c_t_max
-        
+
         row_idx += 1
     end
 end
@@ -450,27 +460,27 @@ end
 # Crop down to exact length filled
 idx_end = row_idx - 1
 cohort_censored_df = DataFrame(
-    time = all_time[1:idx_end],
-    V = all_V[1:idx_end],
-    I = all_I[1:idx_end],
-    F_U = all_F_U[1:idx_end],
-    F_B = all_F_B[1:idx_end],
-    Psi = all_Psi[1:idx_end],
-    individual_id = all_individual_id[1:idx_end],
-    status = all_status[1:idx_end],
-    Psi_max = all_Psi_max[1:idx_end],
-    t_max = all_t_max[1:idx_end]
+    time=all_time[1:idx_end],
+    V=all_V[1:idx_end],
+    I=all_I[1:idx_end],
+    F_U=all_F_U[1:idx_end],
+    F_B=all_F_B[1:idx_end],
+    Psi=all_Psi[1:idx_end],
+    individual_id=all_individual_id[1:idx_end],
+    status=all_status[1:idx_end],
+    Psi_max=all_Psi_max[1:idx_end],
+    t_max=all_t_max[1:idx_end]
 )
 
-out_truncated_qs = joinpath(OUTPUT_DIR, replace(base_name, "cohort_" => "cohort-censored_") * ".qs")
+out_truncated_qs = joinpath(OUTPUT_DIR, replace(base_name, "cohort_" => "cohort_censored_") * ".qs")
 
 @rput cohort_censored_df
 @rput out_truncated_qs
 R"""
 if(!requireNamespace("qs2", quietly=TRUE)) {
-    warning("'qs2' package is not installed in R. Cannot save truncated data.")
+    warning("'qs2' package is not installed in R. Cannot save censored data.")
 } else {
     qs2::qs_save(cohort_censored_df, file = out_truncated_qs)
 }
 """
-println("✅ Saved right-censored cohort successfully to $out_truncated_qs")
+println("Saved right-censored cohort successfully to $out_truncated_qs")

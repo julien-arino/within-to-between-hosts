@@ -51,3 +51,6 @@ rsconnect/
 # OUTPUT folder content: only keep README.md
 OUTPUT/*
 !OUTPUT/README.md
+
+# FIGS folder content: don't sync pdf as they can be large
+FIGS/*.pdf

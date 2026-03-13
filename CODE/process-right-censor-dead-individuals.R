@@ -21,6 +21,7 @@ library(qs2)
 # ------------------------------------------------------------
 output_dir <- file.path(getwd(), "OUTPUT")
 files <- list.files(output_dir, pattern = "^cohort_P.*\\.qs$", full.names = TRUE)
+files <- files[!grepl("-times\\.qs$", files)]
 
 if (length(files) == 0) {
   stop("No cohort_P... file found in ", output_dir)

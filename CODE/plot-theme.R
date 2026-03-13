@@ -1,9 +1,9 @@
 # ==============================================================================
 # File: plot-theme.R
 # Description:
-#   Sets a standardized ggplot2 theme for the project to ensure consistent
-#   aesthetics across all plots. This script should be sourced at the
-#   beginning of any plotting script. Matches the style used in CODE_clo.
+#   Sets a standardized ggplot2 theme to ensure consistent  aesthetics
+#   across all plots. This script should be sourced at the beginning of 
+#   any plotting script.
 # ==============================================================================
 
 library(ggplot2)
@@ -44,4 +44,4 @@ status_cols <- c(
     "Dead" = "red3"
 )
 
-cat("✅ Loaded standard ggplot2 theme (plot-theme.R)\n")
+cat("Loaded standard ggplot2 theme (plot-theme.R)\n")
