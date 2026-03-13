@@ -88,9 +88,15 @@ for i in random_indices
     plot!(plt_Psi, time_pts, Psi, color=:red, alpha=0.3)
 end
 
+# Ensure FIGS directory exists
+FIGS_DIR = joinpath(@__DIR__, "..", "FIGS")
+if !isdir(FIGS_DIR)
+    mkdir(FIGS_DIR)
+end
+
 # Save the plots
-out_v = joinpath(OUTPUT_DIR, "plot_V_random100.png")
-out_psi = joinpath(OUTPUT_DIR, "plot_Psi_random100.png")
+out_v = joinpath(FIGS_DIR, "test-plot_V_random100.png")
+out_psi = joinpath(FIGS_DIR, "test-plot_Psi_random100.png")
 
 savefig(plt_V, out_v)
 savefig(plt_Psi, out_psi)
