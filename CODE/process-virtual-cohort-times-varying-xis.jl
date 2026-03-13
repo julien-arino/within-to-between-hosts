@@ -24,7 +24,7 @@ end
 latest_file = sort(result_files, by=mtime, rev=true)[1]
 println("Loading latest result file: $latest_file")
 
-# Load the file via RCall into a Julia object based on extension
+# Load the file via RCall
 if endswith(latest_file, ".qs")
     R"""
     if(!requireNamespace("qs2", quietly=TRUE)) {
@@ -139,7 +139,10 @@ using Distributed
 if N >= 50000
     println("N >= 50,000. Configuring distributed processing...")
     if nprocs() > 1
-        try rmprocs(workers()) catch e end
+        try
+            rmprocs(workers())
+        catch e
+        end
     end
     if Sys.CPU_THREADS >= 64
         addprocs(max(2, Int(round(Sys.CPU_THREADS * 2 / 3))))
@@ -147,20 +150,20 @@ if N >= 50000
         addprocs(max(2, Sys.CPU_THREADS - 2))
     end
     println("Done setting up $(nprocs()) workers.")
-    
+
     @everywhere begin
         const xi_c_w = $xi_c
         const xi_r_w = $xi_r
         const alpha_i_w = 16.422
         const k_i_w = 7.49
-        
+
         function beta_i_w(V::Float64)
             if V <= 0.0
                 return 0.0
             end
             return 1.0 / (1.0 + (k_i_w / V)^alpha_i_w)
         end
-        
+
         function compute_tau_for_individual_idx_w(data, xi_h, xi_d, S_P_0=2000.0)
             time_pts = data[:time]
             Psi = data[:Psi]
@@ -229,7 +232,7 @@ if N >= 50000
     end
 end
 
-inputs = [(cohort[i][:vars]) for i in 1:N]
+inputs = [Dict(cohort[i][:vars]) for i in 1:N]
 base_name = splitext(basename(latest_file))[1]
 
 for xi_d in xi_d_vals
@@ -238,11 +241,11 @@ for xi_d in xi_d_vals
         if xi_h > xi_d
             continue
         end
-        
+
         println("\n========================================")
         println("Processing for xi_h = $xi_h and xi_d = $xi_d")
         println("========================================")
-        
+
         tau_Psi_max = fill(NaN, N)
         tau_h_start = fill(NaN, N)
         tau_h_end = fill(NaN, N)
@@ -252,13 +255,13 @@ for xi_d in xi_d_vals
         tau_V_max = fill(NaN, N)
         R0_P2P = fill(0.0, N)
         Psi_max = fill(NaN, N)
-        
+
         if N >= 50000
             # Run the computation in parallel
             results = pmap(inputs) do data
                 compute_tau_for_individual_idx_w(data, xi_h, xi_d)
             end
-            
+
             for i in 1:N
                 res = results[i]
                 tau_Psi_max[i] = res[1]
@@ -285,7 +288,7 @@ for xi_d in xi_d_vals
                 Psi_max[i] = res[9]
             end
         end
-        
+
         # Create output DataFrame
         out_df = DataFrame()
         out_df[!, :ID] = params_df[!, :ID]
@@ -299,24 +302,24 @@ for xi_d in xi_d_vals
         out_df[!, :tau_c] = tau_c
         out_df[!, :tau_r] = tau_r
         out_df[!, :tau_V_max] = tau_V_max
-        
+
         out_df[!, :max_V] = [cohort[i][:maxima][:max_V] for i in 1:N]
         out_df[!, :max_F_U] = [cohort[i][:maxima][:max_F_U] for i in 1:N]
         out_df[!, :max_F_B] = [cohort[i][:maxima][:max_F_B] for i in 1:N]
         out_df[!, :max_V_t] = [cohort[i][:maxima][:max_V_t] for i in 1:N]
         out_df[!, :max_F_U_t] = [cohort[i][:maxima][:max_F_U_t] for i in 1:N]
         out_df[!, :max_F_B_t] = [cohort[i][:maxima][:max_F_B_t] for i in 1:N]
-        
+
         # Format filename suffix based on user request (e.g. 75_85)
         # Assuming we format it as Integer if x.0, otherwise leave decimal
         h_str = isinteger(xi_h) ? string(Int(xi_h)) : string(xi_h)
         d_str = isinteger(xi_d) ? string(Int(xi_d)) : string(xi_d)
-        
+
         new_base = replace(base_name, "cohort_" => "cohort_times_")
         new_base = new_base * "_xih_" * h_str * "_xid_" * d_str
-        
+
         out_path_qs = joinpath(OUTPUT_DIR, new_base * ".qs")
-        
+
         @rput out_df
         @rput out_path_qs
         R"""
