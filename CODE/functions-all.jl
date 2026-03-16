@@ -55,7 +55,7 @@ end
 ##
 # Set initial conditions
 function set_IC()
-    return [4.5, 0.16, 0.0, 0.0, 0.0, 0.015, 1.1e-8]
+    return [1.0, 0.16, 0.0, 0.0, 0.0, 0.015, 1.1e-8]
 end
 
 ##

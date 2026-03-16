@@ -3,50 +3,47 @@ library(ggplot2)
 library(qs2)
 library(tidyr)
 
-# ------------------------------------------------------------
-# Automatically find the latest cohort_truncated file
-# ------------------------------------------------------------
-output_dir <- file.path(getwd(), "OUTPUT")
-files <- list.files(output_dir, pattern = "cohort_censored_.*\\.qs$|cohort-censored_.*\\.qs$|cohort_results_truncated\\.qs$", full.names = TRUE)
-
-if (length(files) == 0) {
-  stop("No truncated/censored cohort file found in ", output_dir)
-}
-
-# Sort by modification time to get the newest one if multiple exist
-latest_file <- files[which.max(file.mtime(files))]
-cat("Loading newest cohort results:", basename(latest_file), "\n")
-
-# Load data
-cohort_df <- qs_read(latest_file)
-
-# Compute Psi_max per patient
-patient_summary <- cohort_df %>%
-  group_by(individual_id, status) %>%
-  summarise(Psi_max = max(Psi, na.rm=TRUE), .groups = "drop")
-
-# Thresholds ξᵈ to evaluate
+# USER SETTINGS
+xi_h_target <- 70
 xi_values <- c(75, 80, 85, 90, 95)
+output_dir <- file.path(getwd(), "OUTPUT")
 
-# Function to classify outcomes for each threshold
-classify_outcomes <- function(df, xi) {
-  df %>%
+# Function to load threshold data and count outcomes
+get_outcome_counts <- function(xi_d_val) {
+  # Find latest file for this specific xih and xid combination
+  pattern_str <- sprintf("^cohort_times_.*_xih_%d_xid_%d\\.qs$", xi_h_target, xi_d_val)
+  files <- list.files(output_dir, pattern = pattern_str, full.names = TRUE)
+  
+  if (length(files) == 0) {
+    stop("No cohort_times file found matching pattern: ", pattern_str)
+  }
+  
+  latest_file <- files[which.max(file.mtime(files))]
+  cat("Loading:", basename(latest_file), "\n")
+  
+  cohort_df <- qs_read(latest_file)
+  
+  # Based on strict thresholds applied to the actual maximum tissue damage
+  class_df <- cohort_df %>%
     mutate(
       outcome = case_when(
-        Psi_max < 75 ~ "Mild",          # toujours < 75%
-        Psi_max >= xi ~ "Dead",         # au-dessus de xi_d → mort
-        TRUE ~ "ICU"                    # entre 75 et xi_d → ICU
+        Psi_max >= xi_d_val ~ "Dead",
+        Psi_max >= xi_h_target ~ "ICU",
+        TRUE ~ "Mild"
       ),
-      xi_d = xi
+      xi_d = xi_d_val
     )
+  
+  counts <- class_df %>% count(xi_d, outcome)
+  return(counts)
 }
 
-# Apply to all thresholds
-classified <- bind_rows(lapply(xi_values, classify_outcomes, df = patient_summary))
+# Apply to all xi_d thresholds
+cat("Aggregating outcomes across xi_d values, holding xi_h =", xi_h_target, "...\n")
+counts_all <- bind_rows(lapply(xi_values, get_outcome_counts))
 
 # Compute proportions
-prop_df <- classified %>%
-  count(xi_d, outcome) %>%
+prop_df <- counts_all %>%
   group_by(xi_d) %>%
   mutate(percent = 100 * n / sum(n)) %>%
   ungroup()
@@ -58,13 +55,30 @@ col_outcomes <- c(
   Dead = "red"
 )
 
-# Capitalize factor levels to match colors
-prop_df$outcome <- factor(prop_df$outcome, levels = c("Mild", "ICU", "Dead"))
+# Capitalize factor levels to match colors and standardise ordering
+# To put Mild at the bottom, ICU in the middle, Dead at the top, we need factor levels c("Dead", "ICU", "Mild")
+prop_df$outcome <- factor(prop_df$outcome, levels = c("Dead", "ICU", "Mild"))
+
+# Print summary table
+cat("\n==== Percentages per Outcome (xi_h = ", xi_h_target, ") ===\n")
+summary_table <- prop_df %>%
+  select(xi_d, outcome, percent) %>%
+  pivot_wider(names_from = outcome, values_from = percent) %>%
+  arrange(xi_d) %>%
+  # We can reorder columns for display: xi_d, Mild, ICU, Dead
+  select(xi_d, Mild, ICU, Dead) %>%
+  mutate(across(c(Mild, ICU, Dead), ~sprintf("%.2f%%", .x)))
+
+print(as.data.frame(summary_table), row.names = FALSE)
+cat("===============================================\n\n")
 
 # Plot: stacked bar chart
 p_outcomes <- ggplot(prop_df, aes(x = factor(xi_d), y = percent, fill = outcome)) +
   geom_bar(stat = "identity", width = 0.75, color = "white") +
-  scale_fill_manual(values = col_outcomes) +
+  scale_fill_manual(
+    values = col_outcomes,
+    breaks = c("Mild", "ICU", "Dead")
+  ) +
   labs(
     x = expression(xi^d~"(%)"),
     y = "Percentage of individuals (%)",
@@ -77,10 +91,10 @@ p_outcomes <- ggplot(prop_df, aes(x = factor(xi_d), y = percent, fill = outcome)
 
 print(p_outcomes)
 
-# --- Save both PNG and PDF versions ---
+# Save both PNG and PDF versions
 dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/plot_Figure_05b_pct_outcomes_fct_xid.pdf"
-out_png <- "FIGS/plot_Figure_05b_pct_outcomes_fct_xid.png"
+out_pdf <- "FIGS/Figure-05b-pct-outcomes-fct-xid.pdf"
+out_png <- "FIGS/Figure-05b-pct-outcomes-fct-xid.png"
 
 ggsave(
   filename = out_pdf,
@@ -94,4 +108,4 @@ ggsave(
   width = 25, height = 15, units = "cm", dpi = 300
 )
 
-cat("\nSaved to", out_pdf, "and", out_png, "\n")
+cat("\nSaved Figure 05b to", out_pdf, "and", out_png, "\n")

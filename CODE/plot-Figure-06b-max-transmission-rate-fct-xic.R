@@ -137,8 +137,8 @@ print(p)
 # 8 Save figure
 # ------------------------------------------------------------
 dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/plot_Figure_06b_max_transmission_rate_fct_xic.pdf"
-out_png <- "FIGS/plot_Figure_06b_max_transmission_rate_fct_xic.png"
+out_pdf <- "FIGS/Figure-06b-max-transmission-rate-fct-xic.pdf"
+out_png <- "FIGS/Figure-06b-max-transmission-rate-fct-xic.png"
 
 ggsave(
   out_pdf,

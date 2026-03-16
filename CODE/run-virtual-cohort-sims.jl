@@ -135,7 +135,7 @@ SAVE[:cohort] = COHORT
 # Only save if SAVE_JLS is true
 if SAVE_JLS
     println("Saving results as JLS")
-    save_path = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s_%s.jls", N, date_time_start, type_output))
+    save_path = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s.jls", N, date_time_start))
     serialize(save_path, SAVE)
     println("Results saved to $save_path")
 end
@@ -149,7 +149,7 @@ end
 #   is insufficient.
 if SAVE_RDS
     println("Saving results as Rds (via RCall)")
-    save_path_rds = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s_%s.Rds", N, date_time_start, type_output))
+    save_path_rds = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s.Rds", N, date_time_start))
     @rput SAVE          # Send the Julia object to R
     @rput save_path_rds # Send the absolute path to R (now guaranteed absolute)
     R"""
@@ -167,7 +167,7 @@ end
 #   is insufficient.
 if SAVE_QS
     println("Saving results as QS (via RCall)")
-    save_path_qs = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s_%s.qs", N, date_time_start, type_output))
+    save_path_qs = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s.qs", N, date_time_start))
     @rput SAVE          # Send the Julia object to R
     @rput save_path_qs  # Send the absolute path to R
     R"""
@@ -184,7 +184,7 @@ end
 # Only save if SAVE_CSV is true (beware, this will create a _massive_ file if N is anything but small, so use for debugging only)
 if SAVE_CSV
     println("Saving results as CSV")
-    save_path_csv = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s_%s.csv", N, date_time_start, type_output))
+    save_path_csv = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s.csv", N, date_time_start))
 
     # Prepare the appropriate DataFrame based on the type of output
     if type_output == "select_variables"

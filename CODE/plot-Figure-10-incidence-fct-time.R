@@ -226,8 +226,8 @@ print(p)
 # ------------------------------------------------------------
 
 dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/plot_Figure_C1_incidence_fct_time.pdf"
-out_png <- "FIGS/plot_Figure_C1_incidence_fct_time.png"
+out_pdf <- "FIGS/Figure-10-incidence-fct-time.pdf"
+out_png <- "FIGS/Figure-10-incidence-fct-time.png"
 
 ggsave(
   filename = out_pdf,

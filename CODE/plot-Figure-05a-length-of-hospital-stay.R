@@ -1,53 +1,50 @@
+## plot-Figure-05a-length-of-hospital-stay.R
+# Generates a boxplot showing the length of stay in hospital for varying 
+# hospitalisation thresholds (xi^h) while holding the death threshold (xi^d) fixed.
+#
+# IMPORTANT: This script explicitly conditions on survival through the 
+# hospitalisation period. Individuals who ultimately die (tau_d is not NA) 
+# are excluded from the duration calculations.
+
 library(qs2)
 library(dplyr)
 library(ggplot2)
+library(tidyr)
 
-# ------------------------------------------------------------
-# Load cohort
-# ------------------------------------------------------------
-cohort_df <- qs_read("OUTPUT/cohort_results_truncated.qs")
+# USER SETTINGS
+xi_d_target <- 85
+xi_h_values <- c(50, 60, 70, 75, 80)
+output_dir <- file.path(getwd(), "OUTPUT")
 
-# ------------------------------------------------------------
-# Hospitalisation thresholds
-# ------------------------------------------------------------
-xi_h_values <- c(50, 60, 70, 80, 90)
-
+# Function to load threshold data and compute hospitalization
 results <- list()
 percent_df <- data.frame()
 
-total_patients <- length(unique(cohort_df$individual_id))
-
 for (xi_h in xi_h_values) {
   
-  cat("Computing hospitalisation for xi_h =", xi_h, "\n")
+  cat("Computing hospitalisation for xi_h =", xi_h, "and fixed xi_d =", xi_d_target, "\n")
   
+  # Find latest file for this specific xih and xid combination
+  pattern_str <- sprintf("^cohort_times_.*_xih_%d_xid_%d\\.qs$", xi_h, xi_d_target)
+  files <- list.files(output_dir, pattern = pattern_str, full.names = TRUE)
+  
+  if (length(files) == 0) {
+    stop("No cohort_times file found matching pattern: ", pattern_str)
+  }
+  
+  latest_file <- files[which.max(file.mtime(files))]
+  cohort_df <- qs_read(latest_file)
+  
+  total_patients <- nrow(cohort_df)
+  
+  # Keep hospitalised only AND condition on survival (exclude those who die)
   hosp_df <- cohort_df %>%
-    group_by(individual_id) %>%
-    summarise(
-      
-      tau_h_start = {
-        idx <- which(Psi >= xi_h)
-        if (length(idx) > 0) min(time[idx]) else NA
-      },
-      
-      tau_h_end = {
-        idx <- which(Psi >= xi_h)
-        if (length(idx) > 0) max(time[idx]) else NA
-      },
-      
-      status = first(status),
-      .groups = "drop"
-    )
-  
-  # Keep hospitalised only
-  hosp_df <- hosp_df %>%
-    filter(!is.na(tau_h_start))
-  
-  hosp_df <- hosp_df %>%
+    filter(!is.na(tau_h_start) & is.na(tau_d)) %>%
     mutate(
       duration = tau_h_end - tau_h_start,
       xi_h = xi_h
-    )
+    ) %>%
+    filter(is.finite(duration))
   
   results[[as.character(xi_h)]] <- hosp_df
   
@@ -64,15 +61,20 @@ for (xi_h in xi_h_values) {
 
 hospital_df <- bind_rows(results)
 
-# ------------------------------------------------------------
-# Position for percentage labels
-# ------------------------------------------------------------
-percent_df$ypos <- max(hospital_df$duration, na.rm=TRUE) * 1.1
-percent_df$label <- paste0(round(percent_df$percent,1), "%")
+# Print Summary Table for Legend Generation
+cat("\n==== Hospitalization Percentages (xi_d = ", xi_d_target, ") ===\n", sep="")
+cat(" xi_h    % Hospitalized\n")
+cat("-------------------------\n")
+for (i in seq_len(nrow(percent_df))) {
+  cat(sprintf("  %2d       %6.2f%%\n", percent_df$xi_h[i], percent_df$percent[i]))
+}
+cat("=========================\n\n")
 
-# ------------------------------------------------------------
+# Position for percentage labels
+percent_df$ypos <- max(hospital_df$duration, na.rm=TRUE) * 1.05
+percent_df$label <- paste0(round(percent_df$percent, 1), "%")
+
 # Plot
-# ------------------------------------------------------------
 p <- ggplot(
   hospital_df,
   aes(x = factor(xi_h),
@@ -108,24 +110,22 @@ p <- ggplot(
     y = "Length of stay in hospital (days)"
   ) +
   
-  theme_minimal(base_size = 14)+
+  theme_minimal(base_size = 14) +
   annotate(
     "text",
-    x = 3,
-    y = max(hospital_df$duration, na.rm=TRUE) * 1.25,
-    label = "Hospitalised patients (%)",
+    x = 3, # center of 5 categories
+    y = max(hospital_df$duration, na.rm=TRUE) * 1.15,
+    label = "Surviving hospitalised patients (%)",
     size = 4,
     fontface = "italic"
   )
 
 print(p)
 
-# ------------------------------------------------------------
 # Save
-# ------------------------------------------------------------
 dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/plot_Figure_05a_hospitalisation_duration_xih.pdf"
-out_png <- "FIGS/plot_Figure_05a_hospitalisation_duration_xih.png"
+out_pdf <- "FIGS/Figure-05a-length-of-hospital-stay.pdf"
+out_png <- "FIGS/Figure-05a-length-of-hospital-stay.png"
 
 ggsave(
   out_pdf,

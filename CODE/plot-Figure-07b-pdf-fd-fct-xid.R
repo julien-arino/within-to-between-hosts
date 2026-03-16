@@ -132,8 +132,8 @@ print(p_mu)
 # ------------------------------------------------------------
 
 dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/plot_Figure_07b_pdf_fd_fct_xid.pdf"
-out_png <- "FIGS/plot_Figure_07b_pdf_fd_fct_xid.png"
+out_pdf <- "FIGS/Figure-07b-pdf-fd-fct-xid.pdf"
+out_png <- "FIGS/Figure-07b-pdf-fd-fct-xid.png"
 
 ggsave(out_pdf, plot = p_mu, width = 25, height = 15, units = "cm", dpi = 300)
 ggsave(out_png, plot = p_mu, width = 25, height = 15, units = "cm", dpi = 300)

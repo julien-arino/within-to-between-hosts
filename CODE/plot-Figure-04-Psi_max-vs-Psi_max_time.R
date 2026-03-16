@@ -58,6 +58,12 @@ status_colors <- c(
 )
 
 # ---------------------------
+# Count and filter out values hitting the simulation time boundary (x >= 100)
+# ---------------------------
+dropped_count <- sum(summary_df$t_Psi_max >= 100, na.rm = TRUE)
+summary_df <- summary_df %>% filter(t_Psi_max < 100)
+
+# ---------------------------
 # 5) Create plot
 # ---------------------------
 p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = Psi_max)) +
@@ -92,7 +98,7 @@ p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = Psi_max)) +
     legend.title = element_blank()
   ) +
   labs(
-    x = expression("Time in days to maximum tissue damage"~tau[Psi[max]]),
+    x = expression("Time to maximum tissue damage"~tau[Psi[max]]~"(days)"),
     y = expression("Maximum tissue damage"~Psi[max]),
     parse = TRUE
   ) +
@@ -123,10 +129,11 @@ print(p2)
 # ---------------------------
 # 6) Save figure
 # ---------------------------
-out_png <- "FIGS/plot_Psi_max_vs_Psi_max_time_Figure_04.png"
-out_pdf <- "FIGS/plot_Psi_max_vs_Psi_max_time_Figure_04.pdf"
+out_png <- "FIGS/Figure-04-Psi_max-vs-Psi_max_time.png"
+out_pdf <- "FIGS/Figure-04-Psi_max-vs-Psi_max_time.pdf"
 
 ggsave(filename = out_png, plot = p2, width = 25, height = 15, units = "cm", dpi = 300)
 ggsave(filename = out_pdf, plot = p2, width = 25, height = 15, units = "cm", dpi = 300)
 
 cat("\nFigure 4 saved to:\n  -", out_png, "\n  -", out_pdf, "\n")
+cat("Note:", dropped_count, "individuals who hit the simulation horizon (t >= 100 days) were omitted from this plot.\n")

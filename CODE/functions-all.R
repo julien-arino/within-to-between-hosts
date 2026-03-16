@@ -40,7 +40,7 @@ rhs_within_host_deSolve_some_pars_fixed <- function(t, x, p) {
   a_F <- as.numeric((MM_F / avo) *
     (R_F_I + R_F_T) *
     (1 / 5000) * (10^9 * 1e12))
-  V0 <- 4.5
+  V0 <- 1.0
   S0 <- 0.16
   I0 <- 0
   R0 <- 0
@@ -63,7 +63,7 @@ rhs_within_host_deSolve_some_pars_fixed <- function(t, x, p) {
 set_IC <- function() {
   # | Variable | Definition         | Value  | Unit              |
   # |----------|--------------------|--------|-------------------|
-  # | V        | Viral load         | 4.5    | log_10(copies/ml) |
+  # | V        | Viral load         | 1.0    | log_10(copies/ml) |
   # | S        | Susceptible cells  | 0.16   | 10^9 cells/ml     |
   # | I        | Infected cells     | 0      | 10^9 cells/ml     |
   # | R        | Resistant cells    | 0      | 10^9 cells/ml     |
@@ -71,7 +71,7 @@ set_IC <- function() {
   # | F_U      | Unbound interferon | 0.015  | pg/ml             |
   # | F_B      | Bound interferon   | 1.1e-8 | pg/ml             |
   IC <- c(
-    V = 4.5, S = 0.16, I = 0, R = 0, D = 0,
+    V = 1.0, S = 0.16, I = 0, R = 0, D = 0,
     F_U = 0.015, F_B = 1.1e-8
   )
   return(IC)

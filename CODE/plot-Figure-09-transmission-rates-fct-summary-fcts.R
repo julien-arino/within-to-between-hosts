@@ -153,8 +153,8 @@ print(p)
 # 8. Save
 # ------------------------------------------------------------
 dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/plot_Figure_09_transmission_rates_fct_summary_fcts.pdf"
-out_png <- "FIGS/plot_Figure_09_transmission_rates_fct_summary_fcts.png"
+out_pdf <- "FIGS/Figure-09-transmission-rates-fct-summary-fcts.pdf"
+out_png <- "FIGS/Figure-09-transmission-rates-fct-summary-fcts.png"
 
 ggsave(
   out_pdf,

@@ -175,8 +175,8 @@ print(p)
 # 7. Save results
 # ------------------------------------------------------------
 dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/plot_Figure_08_pdf_fr_fct_xic.pdf"
-out_png <- "FIGS/plot_Figure_08_pdf_fr_fct_xic.png"
+out_pdf <- "FIGS/Figure-08-pdf-fr-fct-xic.pdf"
+out_png <- "FIGS/Figure-08-pdf-fr-fct-xic.png"
 
 ggsave(
   out_pdf,
