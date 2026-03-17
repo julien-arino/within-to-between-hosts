@@ -51,7 +51,7 @@ SAVE_QS = true
 type_output = "vars_and_max"
 
 # Number of individuals in the virtual cohort
-N = 10_000
+N = 1_000_000
 
 # Set general parameters and (common) initial conditions
 params = set_parameters()
@@ -121,7 +121,7 @@ if type_output == "vars_and_max"
     individuals[!, :max_F_U_t] = [r[:maxima][:max_F_U_t] for r in raw_results]
     individuals[!, :max_F_B_t] = [r[:maxima][:max_F_B_t] for r in raw_results]
     individuals[!, :max_Psi_t] = [r[:maxima][:max_Psi_t] for r in raw_results]
-    
+
     COHORT = [r[:vars] for r in raw_results]
 else
     COHORT = raw_results
