@@ -16,7 +16,7 @@ library(qs2)
 library(parallel)
 
 # Define fixed infectiousness thresholds
-xi_c <- 9.0 # Start of infectious period
+xi_c <- seq(from = 4, to = 8, by = 1) # Start of infectious period
 xi_r <- 1.0 # End of infectious period
 
 # Find the latest truncated cohort file

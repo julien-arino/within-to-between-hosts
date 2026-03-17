@@ -55,8 +55,37 @@ base_summary_df <- cohort_df$parameters %>%
     t_max = max_Psi_t
   )
 
+# Set up parallel backend using PSOCK cluster to prevent memory duplication and SIGPIPEs
+n_cores <- parallel::detectCores()
+if (n_cores >= 64) {
+  workers_to_use <- max(2, round(n_cores * 2 / 3))
+} else {
+  workers_to_use <- max(2, n_cores - 2)
+}
+
+cat("Extracting tau_h_start values from trajectories...\n")
+cl <- makeCluster(workers_to_use)
+clusterExport(cl, varlist = c("xi_h_vals"))
+
+tau_h_list <- parLapply(cl, cohort_df$cohort, function(df) {
+  psi <- df$Psi
+  time <- df$time
+  res <- numeric(length(xi_h_vals))
+  for (i in seq_along(xi_h_vals)) {
+    idx <- which(psi >= xi_h_vals[i])[1]
+    res[i] <- if (is.na(idx)) NA_real_ else time[idx]
+  }
+  res
+})
+stopCluster(cl)
+
+tau_h_mat <- do.call(rbind, tau_h_list)
+colnames(tau_h_mat) <- paste0("tau_h_", xi_h_vals)
+
+base_summary_df <- bind_cols(base_summary_df, as.data.frame(tau_h_mat))
+
 # Immediately free the cohort dataframe
-rm(cohort_df)
+rm(cohort_df, tau_h_list, tau_h_mat)
 gc()
 
 cat("Computing and saving status tables for each threshold...\n")
@@ -66,14 +95,19 @@ for (xi_d in xi_d_vals) {
       next
     }
 
+    tau_h_col <- paste0("tau_h_", xi_h)
+
     current_summary_df <- base_summary_df %>%
       mutate(
         status = case_when(
           Psi_max < xi_h ~ "Mild",
           Psi_max < xi_d ~ "ICU",
           TRUE ~ "Dead"
-        )
-      )
+        ),
+        tau_d = ifelse(status == "Dead", t_max, NA_real_),
+        tau_h_start = ifelse(status %in% c("ICU", "Dead"), .data[[tau_h_col]], NA_real_)
+      ) %>%
+      select(-starts_with("tau_h_")) # Clear out all tau_h columns so they are not saved redundantly
 
     h_str <- ifelse(xi_h %% 1 == 0, as.character(as.integer(xi_h)), as.character(xi_h))
     d_str <- ifelse(xi_d %% 1 == 0, as.character(as.integer(xi_d)), as.character(xi_d))

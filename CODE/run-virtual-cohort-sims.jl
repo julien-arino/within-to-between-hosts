@@ -51,7 +51,7 @@ SAVE_QS = true
 type_output = "vars_and_max"
 
 # Number of individuals in the virtual cohort
-N = 1_000_000
+N = 10_000
 
 # Set general parameters and (common) initial conditions
 params = set_parameters()

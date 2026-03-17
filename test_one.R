@@ -1,5 +1,0 @@
-source("CODE/functions-all.R")
-default_params <- set_parameters()
-IC <- set_IC()
-out <- run_one_individual(params_tmp = default_params, IC = IC)
-print(dim(out))
