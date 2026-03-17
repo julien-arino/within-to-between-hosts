@@ -150,7 +150,7 @@ function generate_params_cohort(params, n=1000)
     end
 
     # Step 4: Build the output DataFrame
-    OUT = DataFrame()
+    OUT = DataFrame(ID = 1:n)
 
     # Add fixed parameters (same value for all individuals)
     for (key, val) in params_fixed
@@ -172,9 +172,6 @@ function generate_params_cohort(params, n=1000)
         # Sample from LogNormal distribution
         OUT[!, key] = rand(LogNormal(mu, sigma), n)
     end
-
-    # Add ID column
-    OUT[!, :ID] = 1:n
 
     return OUT
 end
@@ -210,7 +207,7 @@ function run_one_individual(idx, individuals, IC; type_output="solution")
     if type_output == "solution"
         return sol
     elseif type_output == "maxima"
-        return find_maxima(sol)
+        return find_maxima(sol, params_tmp)
     elseif type_output == "select_variables"
         # Extract time and selected variables
         S_max = params_tmp[:S_max]
@@ -239,7 +236,7 @@ function run_one_individual(idx, individuals, IC; type_output="solution")
             :F_B => sol[7, :],  # Bound IFN
             :F_U => sol[6, :]   # Unbound IFN
         )
-        maxima_data = find_maxima(sol)
+        maxima_data = find_maxima(sol, params_tmp)
         return Dict(:vars => selected_data, :maxima => maxima_data)
     else
         error("Invalid type_output: must be 'solution', 'maxima', 'select_variables', or 'vars_and_max'")
@@ -250,7 +247,7 @@ end
 ## find_maxima
 ##
 # Extract maxima and their corresponding times from the solution
-function find_maxima(sol)
+function find_maxima(sol, params_tmp=nothing)
     # Ensure the solution has enough data points
     if length(sol.t) == 0
         error("Solution has no time points")
@@ -266,6 +263,17 @@ function find_maxima(sol)
     OUT[:max_V_t] = sol.t[argmax(sol[1, :])]  # Time of maximum viral load
     OUT[:max_F_U_t] = sol.t[argmax(sol[6, :])]  # Time of maximum unbound IFN
     OUT[:max_F_B_t] = sol.t[argmax(sol[7, :])]  # Time of maximum bound IFN
+
+    # Compute Psi specifically if parameters are provided
+    if !isnothing(params_tmp)
+        S_max = params_tmp[:S_max]
+        S = sol[2, :]
+        R = sol[4, :]
+        Psi = 100 .* (S_max .- (S .+ R)) ./ S_max
+        
+        OUT[:max_Psi] = maximum(Psi)
+        OUT[:max_Psi_t] = sol.t[argmax(Psi)]
+    end
 
     return OUT
 end
