@@ -51,7 +51,7 @@ SAVE_QS = true
 type_output = "maxima"
 
 # Number of individuals in the virtual cohort
-N = 100_000
+N = 1_000_000
 
 # Build the absolute path to the R scripts to use FOR WITH_V0 PIPELINE
 r_functions_path = joinpath(SCRIPT_DIR, "functions-all.R")
@@ -91,10 +91,10 @@ if PARALLEL
             @warn "Failed to remove existing workers in run-sensitivity-analysis-sims-withV0" exception = (e, catch_backtrace())
         end
     end
-    
+
     # Give the system a brief moment to clear the ports before spinning up new workers
     sleep(1.0)
-    
+
     # In case julia was not started with multiple processes, add some here. 
     # For large CPU counts, we add two thirds of the CPUs.
     # For smaller ones, we leave two free.
@@ -103,11 +103,11 @@ if PARALLEL
     else
         max(2, Sys.CPU_THREADS - 2)
     end
-    
+
     println("Spawning $num_to_add new workers...")
     # Explicitly pass the project path to ensure credential domains align
     addprocs(num_to_add, exeflags="--project=@.")
-    
+
     # Ensure all workers have the required functions and modules
     @everywhere using DifferentialEquations  # Import the DifferentialEquations package
     @everywhere using Serialization

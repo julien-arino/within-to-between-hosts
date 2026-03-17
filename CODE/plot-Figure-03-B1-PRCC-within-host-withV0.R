@@ -116,6 +116,8 @@ ggsave(
     plot = P_max, width = 25, height = 15, units = "cm", dpi = 300, device = cairo_pdf
 )
 
+cat("\nPRCC values plot saved:", file.path(FIGS, "Figure-B1a-PRCC-values-withV0.pdf"), "\n")
+
 # ------------------------------------------------------------
 # 10. Time-to-max plot
 # ------------------------------------------------------------
@@ -174,6 +176,8 @@ ggsave(
     plot = P_tmax, width = 25, height = 15, units = "cm", dpi = 300, device = cairo_pdf
 )
 
+cat("\nPRCC time-to-max plot saved:", file.path(FIGS, "Figure-B1b-PRCC-values-times-withV0.pdf"), "\n")
+
 # ------------------------------------------------------------
 # 10b. Global summed PRCC plot (values + times)
 # ------------------------------------------------------------
@@ -223,12 +227,12 @@ P_global <- ggplot() +
 print(P_global)
 
 ggsave(
-    filename = file.path(FIGS, "Figure-03c-PRCC-global-withV0.png"),
+    filename = file.path(FIGS, "Figure-03-PRCC-global-withV0.png"),
     plot = P_global,
     width = 25, height = 15, units = "cm", dpi = 300
 )
 ggsave(
-    filename = file.path(FIGS, "Figure-03c-PRCC-global-withV0.pdf"),
+    filename = file.path(FIGS, "Figure-03-PRCC-global-withV0.pdf"),
     plot = P_global,
     width = 25, height = 15, units = "cm", dpi = 300, device = cairo_pdf
 )

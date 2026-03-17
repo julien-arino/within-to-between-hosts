@@ -1,6 +1,6 @@
 # ============================================================
 # File: plot-Figure-C1-max-viral-load-fct-status.R
-# Purpose: Plot maximum viral load per patient (colored by status)
+# Purpose: Plot maximum viral load per individual (colored by status)
 # ============================================================
 
 library(ggplot2)
@@ -25,7 +25,7 @@ cohort_df <- qs_read(latest_file)
 cat("✅ Cohort data loaded with", nrow(cohort_df), "rows\n")
 
 # ------------------------------------------------------------
-# 2️⃣ Compute maximum Viral Load per patient
+# 2️⃣ Compute maximum Viral Load per individual
 # ------------------------------------------------------------
 viral_max_df <- cohort_df %>%
   group_by(individual_id, status) %>%
@@ -34,7 +34,7 @@ viral_max_df <- cohort_df %>%
     .groups = "drop"
   )
 
-cat("✅ Computed maximum viral load for", nrow(viral_max_df), "patients\n")
+cat("✅ Computed maximum viral load for", nrow(viral_max_df), "individuals\n")
 
 # ------------------------------------------------------------
 # 3️⃣ Define custom colors

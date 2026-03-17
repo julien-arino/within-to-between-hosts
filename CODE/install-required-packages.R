@@ -7,6 +7,7 @@ required_packages <- c(
     "deSolve",
     "doParallel",
     "dplyr",
+    "factoextra",
     "foreach",
     "furrr",
     "future",

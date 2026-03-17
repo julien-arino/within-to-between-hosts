@@ -50,7 +50,7 @@ N = length(cohort)
 
 println("Loaded results for cohort of size: $N")
 
-# Fixed thresholds based on user request
+# Fixed thresholds for hospitalisation, deaths and end of infectious period
 const xi_h = 75.0
 const xi_d = 85.0
 const xi_r = 1.0    # End of infectious period

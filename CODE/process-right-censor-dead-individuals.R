@@ -60,7 +60,7 @@ cohort_truncated <- cohort_truncated %>%
   select(time, V, I, F_U, F_B,
     Psi,
     individual_id,
-    status = status.y, # <-- you asked to KEEP THIS EXACTLY
+    status = status.y,
     Psi_max, t_max
   )
 
