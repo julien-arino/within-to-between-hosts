@@ -21,7 +21,6 @@ required_packages <- c(
     "ODEsensitivity",
     "patchwork",
     "purrr",
-    "qs",
     "qs2",
     "readr",
     "reshape",
@@ -41,19 +40,22 @@ for (pkg in required_packages) {
     if (!require(pkg, character.only = TRUE, quietly = TRUE)) {
         cat("Installing missing package:", pkg, "\n")
         # Wrapped in a try-catch equivalent to avoid stopping script on single package failure
-        tryCatch({
-            install.packages(pkg, quiet = TRUE)
-            # Verify it actually installed
-            if (require(pkg, character.only = TRUE, quietly = TRUE)) {
-                cat("Successfully installed", pkg, "\n")
-            } else {
-                cat("Failed to install", pkg, "\n")
+        tryCatch(
+            {
+                install.packages(pkg, quiet = TRUE)
+                # Verify it actually installed
+                if (require(pkg, character.only = TRUE, quietly = TRUE)) {
+                    cat("Successfully installed", pkg, "\n")
+                } else {
+                    cat("Failed to install", pkg, "\n")
+                }
+            },
+            error = function(e) {
+                cat("Error installing", pkg, ":", conditionMessage(e), "\n")
             }
-        }, error = function(e) {
-            cat("Error installing", pkg, ":", conditionMessage(e), "\n")
-        })
+        )
     } else {
-         cat("Package already installed:", pkg, "\n")
+        cat("Package already installed:", pkg, "\n")
     }
 }
 

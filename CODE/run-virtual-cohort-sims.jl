@@ -105,10 +105,26 @@ if PARALLEL
 end
 
 # Run computation
-COHORT = if PARALLEL
+raw_results = if PARALLEL
     pmap(x -> run_one_individual(x, individuals, IC; type_output=type_output), individuals_idx)
 else
     map(x -> run_one_individual(x, individuals, IC; type_output=type_output), individuals_idx)
+end
+
+if type_output == "vars_and_max"
+    println("Extracting maxima into the parameters table...")
+    individuals[!, :max_V] = [r[:maxima][:max_V] for r in raw_results]
+    individuals[!, :max_F_U] = [r[:maxima][:max_F_U] for r in raw_results]
+    individuals[!, :max_F_B] = [r[:maxima][:max_F_B] for r in raw_results]
+    individuals[!, :max_Psi] = [r[:maxima][:max_Psi] for r in raw_results]
+    individuals[!, :max_V_t] = [r[:maxima][:max_V_t] for r in raw_results]
+    individuals[!, :max_F_U_t] = [r[:maxima][:max_F_U_t] for r in raw_results]
+    individuals[!, :max_F_B_t] = [r[:maxima][:max_F_B_t] for r in raw_results]
+    individuals[!, :max_Psi_t] = [r[:maxima][:max_Psi_t] for r in raw_results]
+
+    COHORT = [r[:vars] for r in raw_results]
+else
+    COHORT = raw_results
 end
 
 # Print elapsed time
@@ -220,12 +236,12 @@ if SAVE_CSV
         long_table = DataFrame(sim_nb=Int[], time=Float64[], Psi=Float64[], F_B=Float64[], F_U=Float64[], I=Float64[], V=Float64[])
 
         for (sim_nb, result) in enumerate(COHORT)
-            times = result[:vars][:time]
-            Psi = result[:vars][:Psi]
-            F_B = result[:vars][:F_B]
-            F_U = result[:vars][:F_U]
-            I = result[:vars][:I]
-            V = result[:vars][:V]
+            times = result[:time]
+            Psi = result[:Psi]
+            F_B = result[:F_B]
+            F_U = result[:F_U]
+            I = result[:I]
+            V = result[:V]
 
             # Append rows for this simulation
             append!(long_table, DataFrame(sim_nb=fill(sim_nb, length(times)), time=times, Psi=Psi, F_B=F_B, F_U=F_U, I=I, V=V))
