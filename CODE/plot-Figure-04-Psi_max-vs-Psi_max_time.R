@@ -132,8 +132,8 @@ print(p2)
 # ---------------------------
 # 6) Save figure
 # ---------------------------
-out_png <- "FIGS/Figure-04-Psi_max-vs-Psi_max_time.png"
-out_pdf <- "FIGS/Figure-04-Psi_max-vs-Psi_max_time.pdf"
+out_png <- file.path(project_dir, "FIGS", "Figure-04-Psi_max-vs-Psi_max_time.png")
+out_pdf <- file.path(project_dir, "FIGS", "Figure-04-Psi_max-vs-Psi_max_time.pdf")
 
 ggsave(filename = out_png, plot = p2, width = 25, height = 15, units = "cm", dpi = 300)
 ggsave(filename = out_pdf, plot = p2, width = 25, height = 15, units = "cm", dpi = 300)

@@ -10,7 +10,7 @@ suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 SHOW_TITLES <- FALSE
 
 # ------------------------------------------------------------
-# 1. Automatically find the latest cohort_truncated file
+# 1. Setup paths and load dynamically matched cohort_status files
 # ------------------------------------------------------------
 cat("\n\n>>> Running plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R ...\n\n")
 
@@ -20,27 +20,22 @@ project_dir <- here()
 if (basename(project_dir) == "CODE") {
   project_dir <- dirname(project_dir)
 }
-
 output_dir <- file.path(project_dir, "OUTPUT")
-files <- list.files(output_dir, pattern = "^cohort_truncated_state_.*\\.qs$", full.names = TRUE)
 
-if (length(files) == 0) {
-  stop("No truncated/censored cohort file found in ", output_dir)
+# --- Setup target xi_h and load all status files ---
+xi_h_target <- 75
+status_files <- list.files(output_dir, pattern = "^cohort_status_P.*\\.qs$", full.names = TRUE)
+# Exclude files with xic and xir changes
+status_files <- status_files[!grepl("_xic_|_xir_", status_files)]
+
+if (length(status_files) == 0) {
+  stop("No base cohort_status files found in ", output_dir)
 }
 
-latest_file <- files[which.max(file.mtime(files))]
-cat("Loading newest cohort results:", basename(latest_file), "\n")
-
-# --- Load your cohort data ---
-cohort_df <- qs_read(latest_file)
-
-# --- Compute Psi_max and tau_d per patient ---
-death_summary <- cohort_df %>%
-  group_by(individual_id, status) %>%
-  summarise(
-    psi_max = max(Psi, na.rm = TRUE),
-    tau_d   = time[which.max(Psi)],
-    .groups = "drop"
+valid_files <- data.frame(file = status_files, stringsAsFactors = FALSE) %>%
+  mutate(
+    xih = as.numeric(gsub(".*_xih_([0-9]+).*", "\\1", basename(file))),
+    xid = as.numeric(gsub(".*_xid_([0-9]+).*", "\\1", basename(file)))
   )
 
 # --- Thresholds to plot ---
@@ -49,19 +44,40 @@ xi_values <- c(85, 90, 95)
 # --- Compute mean ± SD psi_max vs tau_d for each xi ---
 psi_tau_list <- lapply(xi_values, function(xi){
   
-  # We KEEP ONLY patients that exceed the threshold
-  dead_summary_xi <- death_summary %>%
+  cat("Processing xi_d =", xi, "\n")
+  # 1. Load the specific status file for this xi_d
+  target_file_df <- valid_files %>% filter(xih == xi_h_target, xid == xi)
+  if (nrow(target_file_df) == 0) {
+    warning("No status data available for targeted xi_h=75 and xi_d=", xi)
+    return(NULL)
+  }
+  
+  latest_status_file <- target_file_df$file[which.max(file.mtime(target_file_df$file))]
+  status_df <- qs_read(latest_status_file)
+  
+  # 2. Extract psi_max and tau_d directly from status
+  dead_summary_xi <- status_df %>%
+    mutate(
+      psi_max = max_Psi,
+      tau_d   = tau_max_Psi
+    ) %>%
     filter(psi_max >= xi)
   
   if(nrow(dead_summary_xi)==0) return(NULL)
   
+  # 3. Bin tau_d to integers to compute mean and sd for the envelope
   psi_tau_xi <- dead_summary_xi %>%
-    group_by(tau_d) %>%
+    mutate(tau_d_bin = round(tau_d)) %>%
+    group_by(tau_d_bin) %>%
     summarise(
-      psi_mean = mean(psi_max),
-      psi_sd   = sd(psi_max),
+      psi_mean = mean(psi_max, na.rm=TRUE),
+      psi_sd   = sd(psi_max, na.rm=TRUE),
+      n        = n(),
       .groups="drop"
     ) %>%
+    # Use the bin as the x-axis value (tau_d), and only keep points with at least 2 patients to have a valid sd
+    rename(tau_d = tau_d_bin) %>%
+    filter(n > 1) %>%
     mutate(xi_d = factor(xi))
   
   psi_tau_xi

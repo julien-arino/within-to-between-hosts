@@ -8,7 +8,7 @@ suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 
 # ------------------------------------------------------------
-# 1. Automatically find the latest cohort_truncated file
+# 1. Setup paths and load dynamically matched cohort_status files
 # ------------------------------------------------------------
 cat("\n\n>>> Running plot-Figure-C5b-violins-Psi_max-fct-xid.R ...\n\n")
 
@@ -18,24 +18,23 @@ project_dir <- here()
 if (basename(project_dir) == "CODE") {
   project_dir <- dirname(project_dir)
 }
-
 output_dir <- file.path(project_dir, "OUTPUT")
-files <- list.files(output_dir, pattern = "^cohort_truncated_state_.*\\.qs$", full.names = TRUE)
 
-if (length(files) == 0) {
-  stop("No truncated/censored cohort file found in ", output_dir)
+# --- Setup target xi_h and load all status files ---
+xi_h_target <- 75
+status_files <- list.files(output_dir, pattern = "^cohort_status_P.*\\.qs$", full.names = TRUE)
+# Exclude files with xic and xir changes
+status_files <- status_files[!grepl("_xic_|_xir_", status_files)]
+
+if (length(status_files) == 0) {
+  stop("No base cohort_status files found in ", output_dir)
 }
 
-latest_file <- files[which.max(file.mtime(files))]
-cat("Loading newest cohort results:", basename(latest_file), "\n")
-
-# --- Load data ---
-cohort_df <- qs_read(latest_file)
-
-# --- One Psi_max per patient ---
-patient_summary <- cohort_df %>%
-  group_by(individual_id, status) %>%
-  summarise(Psi_max = max(Psi, na.rm=TRUE), .groups = "drop")
+valid_files <- data.frame(file = status_files, stringsAsFactors = FALSE) %>%
+  mutate(
+    xih = as.numeric(gsub(".*_xih_([0-9]+).*", "\\1", basename(file))),
+    xid = as.numeric(gsub(".*_xid_([0-9]+).*", "\\1", basename(file)))
+  )
 
 # --- Thresholds we want to compare ---
 xi_values <- c(85, 90, 95)
@@ -43,6 +42,23 @@ xi_values <- c(85, 90, 95)
 # --- Build cumulative groups ---
 psi_groups <- bind_rows(
   lapply(xi_values, function(th) {
+    
+    cat("Processing xi_d =", th, "\n")
+    # 1. Load the specific status file for this xi_d
+    target_file_df <- valid_files %>% filter(xih == xi_h_target, xid == th)
+    if (nrow(target_file_df) == 0) {
+      warning("No status data available for targeted xi_h=75 and xi_d=", th)
+      return(NULL)
+    }
+    
+    latest_status_file <- target_file_df$file[which.max(file.mtime(target_file_df$file))]
+    status_df <- qs_read(latest_status_file)
+    
+    # 2. Extract Psi_max directly from status
+    patient_summary <- status_df %>%
+      mutate(Psi_max = max_Psi)
+    
+    # 3. Filter and annotate groups
     patient_summary %>%
       filter(Psi_max >= th) %>%
       mutate(xi_group = factor(th, levels = xi_values))

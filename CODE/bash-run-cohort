@@ -29,7 +29,7 @@ if [ "$PLOT" -eq 1 ]; then
 
     echo "Plotting Figures C1 to C5b..."
     Rscript plot-Figure-C1-max-viral-load-fct-status.R
-    Rscript plot-Figure-C2-IFNb-IFNu-vs-viral-load.R
+    Rscript plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R
     Rscript plot-Figure-C3-PCA.R
     Rscript plot-Figure-C4-time-evolution-quantities.R
     Rscript plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R
