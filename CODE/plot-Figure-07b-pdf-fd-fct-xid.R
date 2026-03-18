@@ -1,13 +1,18 @@
-library(ggplot2)
-library(dplyr)
-library(qs2)
-library(tidyr)
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
 
 # ------------------------------------------------------------
 # 1. Load cohort data
 # ------------------------------------------------------------
 cat("Loading cohort data...\n")
-output_dir <- file.path(getwd(), "OUTPUT")
+suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+output_dir <- file.path(project_dir, "OUTPUT")
 files <- list.files(output_dir, pattern = "cohort_censored_.*\\.qs$|cohort-censored_.*\\.qs$|cohort_results_truncated\\.qs$", full.names = TRUE)
 
 if (length(files) == 0) {
@@ -131,21 +136,21 @@ print(p_mu)
 # 6. Save outputs
 # ------------------------------------------------------------
 
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/Figure-07b-pdf-fd-fct-xid.pdf"
-out_png <- "FIGS/Figure-07b-pdf-fd-fct-xid.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-07b-pdf-fd-fct-xid.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-07b-pdf-fd-fct-xid.png")
 
 ggsave(out_pdf, plot = p_mu, width = 25, height = 15, units = "cm", dpi = 300)
 ggsave(out_png, plot = p_mu, width = 25, height = 15, units = "cm", dpi = 300)
 
 # Densities μ(a) in wide format (like beta_overall / gamma_overall)
-qs_save(mu_overall, "OUTPUT/mu_overall.qs")
+qs_save(mu_overall, file.path(project_dir, "OUTPUT", "mu_overall.qs"))
 
 # Summary of death times (mean etc.)
-saveRDS(summary_df, "OUTPUT/death_summary_thresholds.rds")
+saveRDS(summary_df, file.path(project_dir, "OUTPUT", "death_summary_thresholds.rds"))
 
 # Optional: keep long format too
-saveRDS(mu_all, "OUTPUT/mu_density_thresholds.rds")
+saveRDS(mu_all, file.path(project_dir, "OUTPUT", "mu_density_thresholds.rds"))
 
 cat("\n✅ Figures saved to", out_pdf, "and", out_png, "\n")
 cat("✅ Wide μ saved to OUTPUT/mu_overall.qs\n")

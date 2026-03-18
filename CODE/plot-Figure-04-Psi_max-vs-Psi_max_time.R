@@ -8,44 +8,47 @@
 #   - FIGS/plot_Psi_max_vs_Psi_max_time_Figure_04.png and .pdf
 # ============================================================
 
-library(dplyr)
-library(ggplot2)
-library(patchwork)
-library(qs2)
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(patchwork)))
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(here)))
 
-dir.create("OUTPUT", showWarnings = FALSE, recursive = TRUE)
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
+cat("\n\n>>> Running plot-Figure-04-Psi_max-vs-Psi_max_time.R ...\n\n")
 
-output_dir <- file.path(getwd(), "OUTPUT")
+# Set project root automatically relative to the .git tracking directory
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
 
-# 1a) Find latest processed times .qs file
-times_files <- list.files(output_dir, pattern = "^cohort_times_P.*\\.qs$", full.names = TRUE)
-if (length(times_files) == 0) stop("Cannot find times qs file in ", output_dir)
-TIMES_FILE <- times_files[which.max(file.mtime(times_files))]
+dir.create(file.path(project_dir, "OUTPUT"), showWarnings = FALSE, recursive = TRUE)
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+
+output_dir <- file.path(project_dir, "OUTPUT")
+
+# 1a) Find latest processed status file (xi_h=75, xi_d=85)
+status_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xih_75_xid_85\\.qs$", full.names = TRUE)
+if (length(status_files) == 0) stop("Cannot find status qs file in ", output_dir)
+STATUS_FILE <- status_files[which.max(file.mtime(status_files))]
 
 # ---------------------------
 # 1) Load data
 # ---------------------------
-cat("Loading processed times:", basename(TIMES_FILE), "\n")
-summary_df <- qs_read(TIMES_FILE)
+cat("Loading processed status:", basename(STATUS_FILE), "\n")
+status_df <- qs_read(STATUS_FILE)
+
+# We don't need to merge; status_df already has all parameter metrics natively embedded!
+summary_df <- status_df
 
 # ---------------------------
-# 2) Formatting for plotting (Create status, rename columns to match plot)
+# 2) Formatting for plotting (rename columns to match plot)
 # ---------------------------
-# The manuscript definitions:
-# tau_d present = Dead
-# tau_h present = ICU (Hospitalization)
-# otherwise = Mild
 summary_df <- summary_df %>%
   mutate(
-    status = case_when(
-      !is.na(tau_d) ~ "Dead",
-      !is.na(tau_h_start) ~ "ICU",
-      TRUE ~ "Mild"
-    ),
     R0 = R0_within,
-    t_Psi_max = tau_Psi_max,
-    Psi_max = Psi_max
+    t_Psi_max = tau_max_Psi,
+    Psi_max = max_Psi
   ) %>%
   filter(!is.na(R0))
 

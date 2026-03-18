@@ -1,0 +1,9 @@
+#!/bin/bash
+
+echo "Installing/updating Julia packages..."
+julia install-required-packages.jl
+
+echo "Installing R packages..."
+Rscript install-required-packages.R
+
+echo "Package installation complete!"

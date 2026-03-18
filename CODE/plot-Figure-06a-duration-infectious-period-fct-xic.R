@@ -3,48 +3,67 @@
 # (tau_r - tau_c) for varying infectiousness onset thresholds (xi^c),
 # while holding hospitalisation and death thresholds fixed.
 
-library(qs2)
-library(dplyr)
-library(ggplot2)
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+
+cat("\n\n>>> Running plot-Figure-06a-duration-infectious-period-fct-xic.R ...\n\n")
 
 # USER SETTINGS
 xi_h_target <- 75
 xi_d_target <- 85
-xi_c_values <- 1:10
-output_dir <- file.path(getwd(), "OUTPUT")
+xi_c_values <- 4:8
 
-# Load and compute duration
+# Set project root automatically relative to the .git tracking directory
+suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+output_dir <- file.path(project_dir, "OUTPUT")
+
+# Load all available files for dynamic tracking
+all_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xir_1\\.qs$", full.names = TRUE)
+if (length(all_files) == 0) {
+  stop("No cohort_status files found with xir_1 in ", output_dir)
+}
+
 results <- list()
 percent_df <- data.frame()
 
-for (xi_c in xi_c_values) {
+# First compile all valid combinations found
+valid_files <- data.frame(file = all_files, stringsAsFactors = FALSE) %>%
+  mutate(
+    xih = as.numeric(gsub(".*_xih_([0-9]+).*", "\\1", basename(file))),
+    xid = as.numeric(gsub(".*_xid_([0-9]+).*", "\\1", basename(file))),
+    xic = as.numeric(gsub(".*_xic_([0-9.]+).*", "\\1", basename(file)))
+  )
+
+# If the targeted base isn't in the dataset, fallback to the clearest baseline
+if (!(xi_h_target %in% unique(valid_files$xih))) {
+  xi_h_target <- valid_files$xih[1]
+  cat("Target xi_h=75 not found. Falling back to plotting xi_h =", xi_h_target, "\n")
+}
+if (!(xi_d_target %in% unique(valid_files$xid))) {
+  xi_d_target <- valid_files$xid[1]
+  cat("Target xi_d=85 not found. Falling back to plotting xi_d =", xi_d_target, "\n")
+}
+
+valid_subset <- valid_files %>% filter(xih == xi_h_target, xid == xi_d_target)
+if(nrow(valid_subset) == 0) stop("No files matched the combined fallback targets!")
+
+# Process only those within the subset
+for (i in seq_len(nrow(valid_subset))) {
+  f <- valid_subset$file[i]
+  xi_c <- valid_subset$xic[i]
   
-  cat("Computing infectious duration for xi_c =", xi_c, "\n")
-  
-  # Format string for file matching (handling integers from Julia output)
-  pattern_str <- sprintf("^cohort_times_.*_xih_%d_xid_%d_xic_%s\\.qs$", 
-                         xi_h_target, xi_d_target, xi_c)
-  files <- list.files(output_dir, pattern = pattern_str, full.names = TRUE)
-  
-  if (length(files) == 0) {
-    # It might have been saved as .0 by Julia
-    pattern_str <- sprintf("^cohort_times_.*_xih_%d_xid_%d_xic_%s\\.0\\.qs$", 
-                           xi_h_target, xi_d_target, xi_c)
-    files <- list.files(output_dir, pattern = pattern_str, full.names = TRUE)
-  }
-  
-  if (length(files) == 0) {
-    warning("No cohort_times file found for xi_c = ", xi_c)
-    next
-  }
-  
-  latest_file <- files[which.max(file.mtime(files))]
-  cohort_df <- qs_read(latest_file)
+  cat("Loading parsed metrics for xi_c =", xi_c, "\n")
+  cohort_df <- qs_read(f)
   
   total_patients <- nrow(cohort_df)
   
   # Establish the simulation end time (usually 30 or 60 days) to bound NA tau_r values
-  sim_end_time <- ceiling(max(c(cohort_df$tau_r, cohort_df$tau_d, cohort_df$max_V_t), na.rm = TRUE) / 10) * 10
+  sim_end_time <- ceiling(max(c(cohort_df$tau_r, cohort_df$tau_d, cohort_df$tau_max_V), na.rm = TRUE) / 10) * 10
   
   # Calculate valid infectious durations exactly as mathematically defined in the manuscript
   tau_df <- cohort_df %>%
@@ -130,15 +149,15 @@ p <- ggplot(
     inherit.aes = FALSE
   ) +
   labs(
-    x = expression(xi^c~"(Log10 viral load threshold)"),
-    y = "Infectious duration (days)"
+    x = expression(xi^c~"(log"[10]~"viral load threshold)"),
+    y = "Infectious period duration (days)"
   ) +
   theme_minimal(base_size = 14) +
   annotate(
     "text",
-    x = length(xi_c_values) / 2 + 0.5,
+    x = length(unique(duration_df$xi_c)) / 2 + 0.5,
     y = max(duration_df$infectious_duration, na.rm=TRUE) * 1.18,
-    label = "Percentage transmitters",
+    label = "Percentage of transmitters",
     size = 4,
     fontface = "italic"
   )
@@ -146,11 +165,11 @@ p <- ggplot(
 print(p)
 
 # Save
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/Figure-06a-duration-infectious-period-fct-xic.pdf"
-out_png <- "FIGS/Figure-06a-duration-infectious-period-fct-xic.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-06a-duration-infectious-period-fct-xic.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-06a-duration-infectious-period-fct-xic.png")
 
 ggsave(out_pdf, plot = p, width = 25, height = 15, units = "cm", dpi = 300)
 ggsave(out_png, plot = p, width = 25, height = 15, units = "cm", dpi = 300)
 
-cat("\nSaved to", out_pdf, "and", out_png, "\n")
+cat("\nSaved to:\n  -", out_pdf, "\n  -", out_png, "\n")

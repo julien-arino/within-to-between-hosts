@@ -1,11 +1,16 @@
-library(qs2)
-library(dplyr)
-library(ggplot2)
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 
 # ------------------------------------------------------------
 # 1. Automatically find the latest cohort_truncated file
 # ------------------------------------------------------------
-output_dir <- file.path(getwd(), "OUTPUT")
+suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+output_dir <- file.path(project_dir, "OUTPUT")
 files <- list.files(output_dir, pattern = "cohort_censored_.*\\.qs$|cohort-censored_.*\\.qs$|cohort_results_truncated\\.qs$", full.names = TRUE)
 
 if (length(files) == 0) {
@@ -82,7 +87,7 @@ beta_overall <- cohort_transmitters %>%
 
 qs_save(
   beta_overall,
-  "OUTPUT/beta_overall_transmitters.qs"
+  file.path(project_dir, "OUTPUT", "beta_overall_transmitters.qs")
 )
 
 # ------------------------------------------------------------
@@ -152,9 +157,9 @@ print(p)
 # ------------------------------------------------------------
 # 8. Save
 # ------------------------------------------------------------
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/Figure-09-transmission-rates-fct-summary-fcts.pdf"
-out_png <- "FIGS/Figure-09-transmission-rates-fct-summary-fcts.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-09-transmission-rates-fct-summary-fcts.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-09-transmission-rates-fct-summary-fcts.png")
 
 ggsave(
   out_pdf,

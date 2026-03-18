@@ -1,73 +1,68 @@
-library(qs2)
-library(dplyr)
-library(ggplot2)
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 
 # ------------------------------------------------------------
 # Automatically find the latest cohort_truncated file
 # ------------------------------------------------------------
-output_dir <- file.path(getwd(), "OUTPUT")
-files <- list.files(output_dir, pattern = "cohort_censored_.*\\.qs$|cohort-censored_.*\\.qs$|cohort_results_truncated\\.qs$", full.names = TRUE)
-
-if (length(files) == 0) {
-  stop("No truncated/censored cohort file found in ", output_dir)
+# Set project root automatically relative to the .git tracking directory
+suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
 }
 
-latest_file <- files[which.max(file.mtime(files))]
-cat("Loading newest cohort results:", basename(latest_file), "\n")
+# USER SETTINGS
+xi_h_target <- 75
+xi_d_target <- 85
+xi_r_target <- 1
 
-# Load cohort
-cohort_df <- qs_read(latest_file)
+output_dir <- file.path(project_dir, "OUTPUT")
 
-# ------------------------------------------------------------
-# 2 Compute beta_hat
-# ------------------------------------------------------------
+pattern_str <- sprintf("^cohort_status_P.*_xih_%s_xid_%s_xic_.*_xir_%s\\.qs$", 
+                       xi_h_target, xi_d_target, xi_r_target)
+
+files <- list.files(output_dir, pattern = pattern_str, full.names = TRUE)
+
+if (length(files) == 0) {
+  stop("No matching cohort_status file found in ", output_dir)
+}
+
+cat("Found", length(files), "status files. Processing...\n")
+
 compute_beta_hat <- function(V, alpha = 16.422, k_v = 7.49) {
   (V^alpha) / (V^alpha + k_v^alpha)
 }
 
-cohort_df$beta_hat <- compute_beta_hat(cohort_df$V)
-
-# ------------------------------------------------------------
-# 3 Compute beta_max per patient
-# ------------------------------------------------------------
-beta_max_df <- cohort_df %>%
-  group_by(individual_id) %>%
-  summarise(
-    beta_max = max(beta_hat, na.rm = TRUE),
-    status = first(status),
-    .groups = "drop"
-  )
-
-# ------------------------------------------------------------
-# 4 Values of xi_c
-# ------------------------------------------------------------
-xi_seq <- c(1e-06, 1e-05, 1e-04, 0.001, 0.01)
-
-# ------------------------------------------------------------
-# 5 Collect transmitters and percentages
-# ------------------------------------------------------------
 results <- list()
 percent_results <- data.frame()
 
-total_patients <- nrow(beta_max_df)
-
-for (xi_val in xi_seq) {
+for (f in files) {
+  # Extract xic from filename
+  xic_val <- as.numeric(gsub(".*_xic_([0-9.]+)_.*", "\\1", basename(f)))
   
-  cat("Processing transmitters for xi_c =", xi_val, "\n")
+  cat("Processing transmitters for xi_c =", xic_val, "\n")
   
-  transmitters <- beta_max_df %>%
-    filter(beta_max >= xi_val)
+  cohort_df <- qs_read(f)
+  total_patients <- nrow(cohort_df)
   
-  transmitters$xi_c <- xi_val
-  
-  results[[as.character(xi_val)]] <- transmitters
+  # A transmitter is someone who became infectious (tau_c is not NA)
+  transmitters <- cohort_df %>%
+    filter(!is.na(tau_c)) %>%
+    mutate(
+      beta_max = compute_beta_hat(max_V),
+      xi_c = xic_val
+    ) %>%
+    select(ID, beta_max, status, xi_c)
+    
+  results[[as.character(xic_val)]] <- transmitters
   
   percent <- 100 * nrow(transmitters) / total_patients
   
   percent_results <- rbind(
     percent_results,
     data.frame(
-      xi_c = xi_val,
+      xi_c = xic_val,
       percent = percent
     )
   )
@@ -117,7 +112,7 @@ p <- ggplot(
   ) +
   
   labs(
-    x = expression("Threshold"~xi^c),
+    x = expression(xi^c~"(log"[10]~"viral load threshold)"),
     y = expression("Maximum transmission rate"~beta[max])
   ) +
   
@@ -136,9 +131,9 @@ print(p)
 # ------------------------------------------------------------
 # 8 Save figure
 # ------------------------------------------------------------
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/Figure-06b-max-transmission-rate-fct-xic.pdf"
-out_png <- "FIGS/Figure-06b-max-transmission-rate-fct-xic.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-06b-max-transmission-rate-fct-xic.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-06b-max-transmission-rate-fct-xic.png")
 
 ggsave(
   out_pdf,

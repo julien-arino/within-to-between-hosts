@@ -3,36 +3,42 @@
 # Purpose: Plot maximum viral load per individual (colored by status)
 # ============================================================
 
-library(ggplot2)
-library(dplyr)
-library(qs2)
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(here)))
 
 # ------------------------------------------------------------
 # 1. Automatically find the latest cohort_truncated file
 # ------------------------------------------------------------
-output_dir <- file.path(getwd(), "OUTPUT")
-files <- list.files(output_dir, pattern = "cohort_censored_.*\\.qs$|cohort-censored_.*\\.qs$|cohort_results_truncated\\.qs$", full.names = TRUE)
+cat("\n\n>>> Running plot-Figure-C1-max-viral-load-fct-status.R ...\n\n")
+
+# Set project root automatically relative to the .git tracking directory
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+
+output_dir <- file.path(project_dir, "OUTPUT")
+files <- list.files(output_dir, pattern = "^cohort_status_P.*_xid_[0-9]+\\.qs$", full.names = TRUE)
 
 if (length(files) == 0) {
-  stop("No truncated/censored cohort file found in ", output_dir)
+  stop("No base cohort_status file found in ", output_dir)
 }
 
 latest_file <- files[which.max(file.mtime(files))]
-cat("Loading newest cohort results:", basename(latest_file), "\n")
+cat("Loading newest cohort status results:", basename(latest_file), "\n")
 
 cohort_df <- qs_read(latest_file)
 
-cat("✅ Cohort data loaded with", nrow(cohort_df), "rows\n")
+cat("✅ Cohort data loaded with", nrow(cohort_df), "individuals\n")
 
 # ------------------------------------------------------------
 # 2️⃣ Compute maximum Viral Load per individual
 # ------------------------------------------------------------
+cat("Extracting V_max per individual from status dataframe...\n")
 viral_max_df <- cohort_df %>%
-  group_by(individual_id, status) %>%
-  summarise(
-    V_max = max(V, na.rm = TRUE),
-    .groups = "drop"
-  )
+  select(individual_id = ID, status, V_max = max_V)
 
 cat("✅ Computed maximum viral load for", nrow(viral_max_df), "individuals\n")
 
@@ -71,9 +77,9 @@ print(p_Vmax)
 # 6️⃣ Save plot to PDF and PNG
 # ------------------------------------------------------------
 
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/Figure-C1-max-viral-load-fct-status.pdf"
-out_png <- "FIGS/Figure-C1-max-viral-load-fct-status.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-C1-max-viral-load-fct-status.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-C1-max-viral-load-fct-status.png")
 
 ggsave(
   filename = out_png, 

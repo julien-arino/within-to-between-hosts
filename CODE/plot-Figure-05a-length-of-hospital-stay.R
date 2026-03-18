@@ -6,15 +6,24 @@
 # hospitalisation period. Individuals who ultimately die (tau_d is not NA) 
 # are excluded from the duration calculations.
 
-library(qs2)
-library(dplyr)
-library(ggplot2)
-library(tidyr)
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
+
+cat("\n\n>>> Running plot-Figure-05a-length-of-hospital-stay.R ...\n\n")
 
 # USER SETTINGS
 xi_d_target <- 85
 xi_h_values <- c(50, 60, 70, 75, 80)
-output_dir <- file.path(getwd(), "OUTPUT")
+
+# Set project root automatically relative to the .git tracking directory
+suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+output_dir <- file.path(project_dir, "OUTPUT")
 
 # Function to load threshold data and compute hospitalization
 results <- list()
@@ -25,11 +34,11 @@ for (xi_h in xi_h_values) {
   cat("Computing hospitalisation for xi_h =", xi_h, "and fixed xi_d =", xi_d_target, "\n")
   
   # Find latest file for this specific xih and xid combination
-  pattern_str <- sprintf("^cohort_times_.*_xih_%d_xid_%d\\.qs$", xi_h, xi_d_target)
+  pattern_str <- sprintf("^cohort_status_P.*_xih_%d_xid_%d\\.qs$", xi_h, xi_d_target)
   files <- list.files(output_dir, pattern = pattern_str, full.names = TRUE)
   
   if (length(files) == 0) {
-    stop("No cohort_times file found matching pattern: ", pattern_str)
+    stop("No cohort_status file found matching pattern: ", pattern_str)
   }
   
   latest_file <- files[which.max(file.mtime(files))]
@@ -123,9 +132,9 @@ p <- ggplot(
 print(p)
 
 # Save
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/Figure-05a-length-of-hospital-stay.pdf"
-out_png <- "FIGS/Figure-05a-length-of-hospital-stay.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-05a-length-of-hospital-stay.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-05a-length-of-hospital-stay.png")
 
 ggsave(
   out_pdf,
@@ -144,4 +153,4 @@ ggsave(
   units = "cm",
   dpi = 300
 )
-cat("\nSaved to", out_pdf, "and", out_png, "\n")
+cat("\nSaved to:\n  -", out_pdf, "\n  -", out_png, "\n")

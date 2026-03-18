@@ -14,27 +14,32 @@
 #   The cleaned and truncated data is saved for each combination of cutpoints.
 # ==============================================================================
 
-library(dplyr)
-library(qs2)
-library(parallel)
-library(data.table)
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(parallel)))
+suppressWarnings(suppressPackageStartupMessages(library(data.table)))
 
-# Find the latest cohort_P* file
+# Find the latest cohort_sim_parameters_P* file
 if (basename(getwd()) == "CODE") {
   output_dir <- normalizePath(file.path(getwd(), "..", "OUTPUT"))
 } else {
   output_dir <- normalizePath(file.path(getwd(), "OUTPUT"))
 }
-files <- list.files(output_dir, pattern = "^cohort_P.*\\.qs$", full.names = TRUE)
-files <- files[!grepl("-times\\.qs$", files)]
+files <- list.files(output_dir, pattern = "^cohort_sim_parameters_P.*\\.qs$", full.names = TRUE)
 
 if (length(files) == 0) {
-  stop("No cohort_P... file found in ", output_dir)
+  stop("No cohort_sim_parameters_P... file found in ", output_dir)
 }
 
 # Sort by modification time to get the newest one if multiple exist
-latest_file <- files[which.max(file.mtime(files))]
-cat("Loading newest cohort results:", basename(latest_file), "\n")
+latest_param_file <- files[which.max(file.mtime(files))]
+cat("Loading newest cohort parameters:", basename(latest_param_file), "\n")
+
+# Infer the state file
+state_file <- file.path(output_dir, sub("^cohort_sim_parameters_", "cohort_sim_state_", basename(latest_param_file)))
+if (!file.exists(state_file)) {
+    stop("Matching state file not found: ", state_file)
+}
 
 # Define grid of thresholds to iterate over
 xi_h_vals <- c(50.0, 55.0, 60.0, 65.0, 70.0, 75.0, 80.0, 85.0, 90.0)
@@ -43,16 +48,20 @@ xi_d_vals <- c(75.0, 80.0, 85.0, 90.0, 95.0)
 # ====================================================================
 # PART 1: PROCESS TABLES
 # ====================================================================
-cat("\n[PART 1] Loading newest cohort results (Tables ONLY):", basename(latest_file), "\n")
-cohort_df <- qs_read(latest_file)
+cat("\n[PART 1] Loading newest cohort parameters and state...\n")
+cohort_params <- qs_read(latest_param_file)
+cohort_state <- qs_read(state_file)
 
-base_name <- tools::file_path_sans_ext(basename(latest_file))
+base_name <- sub("^cohort_sim_parameters_", "cohort_", tools::file_path_sans_ext(basename(latest_param_file)))
 
-base_summary_df <- cohort_df$parameters %>%
+base_summary_df <- cohort_params %>%
   select(
     ID,
-    Psi_max = max_Psi,
-    t_max = max_Psi_t
+    R0_within,
+    max_V,
+    tau_max_V,
+    max_Psi,
+    tau_max_Psi
   )
 
 # Set up parallel backend using PSOCK cluster to prevent memory duplication and SIGPIPEs
@@ -67,25 +76,52 @@ cat("Extracting tau_h_start values from trajectories...\n")
 cl <- makeCluster(workers_to_use)
 clusterExport(cl, varlist = c("xi_h_vals"))
 
-tau_h_list <- parLapply(cl, cohort_df$cohort, function(df) {
+tau_h_list <- parLapply(cl, cohort_state, function(df) {
   psi <- df$Psi
   time <- df$time
-  res <- numeric(length(xi_h_vals))
+  res_start <- numeric(length(xi_h_vals))
+  res_end   <- numeric(length(xi_h_vals))
+  
   for (i in seq_along(xi_h_vals)) {
-    idx <- which(psi >= xi_h_vals[i])[1]
-    res[i] <- if (is.na(idx)) NA_real_ else time[idx]
+    xi <- xi_h_vals[i]
+    # Find onset
+    idx_start <- which(psi >= xi)[1]
+    res_start[i] <- if (is.na(idx_start)) NA_real_ else time[idx_start]
+    
+    # Find resolution (first time it falls below xi AFTER onset)
+    if (is.na(idx_start)) {
+      res_end[i] <- NA_real_
+    } else {
+      # Look only at times after onset
+      post_onset_psi <- psi[idx_start:length(psi)]
+      post_onset_time <- time[idx_start:length(time)]
+      idx_end <- which(post_onset_psi < xi)[1]
+      
+      res_end[i] <- if (is.na(idx_end)) NA_real_ else post_onset_time[idx_end]
+    }
   }
-  res
+  list(start = res_start, end = res_end)
 })
 stopCluster(cl)
 
-tau_h_mat <- do.call(rbind, tau_h_list)
-colnames(tau_h_mat) <- paste0("tau_h_", xi_h_vals)
+# Separate the start and end lists
+tau_h_start_list <- lapply(tau_h_list, `[[`, "start")
+tau_h_end_list   <- lapply(tau_h_list, `[[`, "end")
 
-base_summary_df <- bind_cols(base_summary_df, as.data.frame(tau_h_mat))
+tau_h_start_mat <- do.call(rbind, tau_h_start_list)
+colnames(tau_h_start_mat) <- paste0("tau_h_start_", xi_h_vals)
 
-# Immediately free the cohort dataframe
-rm(cohort_df, tau_h_list, tau_h_mat)
+tau_h_end_mat <- do.call(rbind, tau_h_end_list)
+colnames(tau_h_end_mat) <- paste0("tau_h_end_", xi_h_vals)
+
+base_summary_df <- bind_cols(
+  base_summary_df, 
+  as.data.frame(tau_h_start_mat),
+  as.data.frame(tau_h_end_mat)
+)
+
+# Immediately free the state list
+rm(cohort_state, tau_h_list, tau_h_start_list, tau_h_end_list, tau_h_start_mat, tau_h_end_mat)
 gc()
 
 cat("Computing and saving status tables for each threshold...\n")
@@ -95,19 +131,21 @@ for (xi_d in xi_d_vals) {
       next
     }
 
-    tau_h_col <- paste0("tau_h_", xi_h)
+    tau_h_start_col <- paste0("tau_h_start_", xi_h)
+    tau_h_end_col   <- paste0("tau_h_end_", xi_h)
 
     current_summary_df <- base_summary_df %>%
       mutate(
         status = case_when(
-          Psi_max < xi_h ~ "Mild",
-          Psi_max < xi_d ~ "ICU",
+          max_Psi < xi_h ~ "Mild",
+          max_Psi < xi_d ~ "ICU",
           TRUE ~ "Dead"
         ),
-        tau_d = ifelse(status == "Dead", t_max, NA_real_),
-        tau_h_start = ifelse(status %in% c("ICU", "Dead"), .data[[tau_h_col]], NA_real_)
+        tau_d = ifelse(status == "Dead", tau_max_Psi, NA_real_),
+        tau_h_start = ifelse(status %in% c("ICU", "Dead"), .data[[tau_h_start_col]], NA_real_),
+        tau_h_end   = ifelse(status %in% c("ICU", "Dead"), .data[[tau_h_end_col]], NA_real_)
       ) %>%
-      select(-starts_with("tau_h_")) # Clear out all tau_h columns so they are not saved redundantly
+      select(-any_of(c(paste0("tau_h_start_", xi_h_vals), paste0("tau_h_end_", xi_h_vals)))) # Clear numeric trackers
 
     h_str <- ifelse(xi_h %% 1 == 0, as.character(as.integer(xi_h)), as.character(xi_h))
     d_str <- ifelse(xi_d %% 1 == 0, as.character(as.integer(xi_d)), as.character(xi_d))
@@ -125,13 +163,8 @@ for (xi_d in xi_d_vals) {
 # ====================================================================
 # PART 2: PROCESS TRAJECTORIES
 # ====================================================================
-cat("\n[PART 2] Loading newest cohort results AGAIN for trajectories ONLY...\n")
-cohort_df <- qs_read(latest_file)
-cohort_list_raw <- cohort_df$cohort
-
-# Immediately free the parameters array
-rm(cohort_df)
-gc()
+cat("\n[PART 2] Loading newest cohort state AGAIN for trajectories...\n")
+cohort_list_raw <- qs_read(state_file)
 
 # Set up parallel backend using PSOCK cluster to prevent memory duplication and SIGPIPEs
 n_cores <- parallel::detectCores()
@@ -181,18 +214,13 @@ for (xi_d in xi_d_vals) {
     xi_d = xi_d
   )
 
-  # Mimic the previous `structured_output$cohort` format for compatibility
-  # with downstream scripts (`process-cohort-assign-zero-transmssion.R`).
-  # We leave `parameters` out since they are already saved separately.
-  structured_output <- list(cohort = processed_list)
-
   d_str <- ifelse(xi_d %% 1 == 0, as.character(as.integer(xi_d)), as.character(xi_d))
 
-  new_base <- sub("cohort_", "cohort_truncated_", base_name)
+  new_base <- sub("cohort_", "cohort_truncated_state_", base_name)
   new_base <- paste0(new_base, "_xid_", d_str)
 
   out_file <- file.path(output_dir, paste0(new_base, ".qs"))
-  qs_save(structured_output, out_file)
+  qs_save(processed_list, out_file)
   cat("Saved:", basename(out_file), "\n")
 }
 

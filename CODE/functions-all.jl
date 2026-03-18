@@ -260,9 +260,9 @@ function find_maxima(sol, params_tmp=nothing)
     OUT[:max_F_B] = maximum(sol[7, :])  # Maximum bound IFN
 
     # Ensure indices are valid before accessing
-    OUT[:max_V_t] = sol.t[argmax(sol[1, :])]  # Time of maximum viral load
-    OUT[:max_F_U_t] = sol.t[argmax(sol[6, :])]  # Time of maximum unbound IFN
-    OUT[:max_F_B_t] = sol.t[argmax(sol[7, :])]  # Time of maximum bound IFN
+    OUT[:tau_max_V] = sol.t[argmax(sol[1, :])]  # Time of maximum viral load
+    OUT[:tau_max_F_U] = sol.t[argmax(sol[6, :])]  # Time of maximum unbound IFN
+    OUT[:tau_max_F_B] = sol.t[argmax(sol[7, :])]  # Time of maximum bound IFN
 
     # Compute Psi specifically if parameters are provided
     if !isnothing(params_tmp)
@@ -272,7 +272,7 @@ function find_maxima(sol, params_tmp=nothing)
         Psi = 100 .* (S_max .- (S .+ R)) ./ S_max
         
         OUT[:max_Psi] = maximum(Psi)
-        OUT[:max_Psi_t] = sol.t[argmax(Psi)]
+        OUT[:tau_max_Psi] = sol.t[argmax(Psi)]
     end
 
     return OUT

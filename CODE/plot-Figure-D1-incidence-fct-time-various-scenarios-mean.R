@@ -5,10 +5,10 @@
 # SAME R0 WITHIN EACH PANEL (calibrated)
 # ============================================================
 
-library(dplyr)
-library(ggplot2)
-library(qs2)
-library(tidyr)
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
 
 # ------------------------------------------------------------
 # USER CONTROLS

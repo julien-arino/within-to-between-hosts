@@ -18,7 +18,6 @@ required_packages <- c(
     "latex2exp",
     "lhs",
     "lubridate",
-    "ODEsensitivity",
     "patchwork",
     "purrr",
     "qs2",

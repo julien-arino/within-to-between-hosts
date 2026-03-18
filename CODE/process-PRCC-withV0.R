@@ -38,9 +38,9 @@ prcc_values <- list(
     F_B_max = pcc(X, res_df$max_F_B, rank = TRUE)
 )
 prcc_times <- list(
-    t_V_max   = pcc(X, res_df$max_V_t, rank = TRUE),
-    t_F_U_max = pcc(X, res_df$max_F_U_t, rank = TRUE),
-    t_F_B_max = pcc(X, res_df$max_F_B_t, rank = TRUE)
+    t_V_max   = pcc(X, res_df$tau_max_V, rank = TRUE),
+    t_F_U_max = pcc(X, res_df$tau_max_F_U, rank = TRUE),
+    t_F_B_max = pcc(X, res_df$tau_max_F_B, rank = TRUE)
 )
 
 ##

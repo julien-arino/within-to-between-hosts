@@ -2,29 +2,58 @@
 # Generates a horizontal violin plot showing the time to death (tau_d)
 # for two different death thresholds (xi^d = 85 and 95).
 
-library(ggplot2)
-library(dplyr)
-library(qs2)
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(here)))
+
+cat("\n\n>>> Running plot-Figure-07a-death-time-fct-xid.R ...\n\n")
 
 # USER SETTINGS
 xi_h_target <- 70 # Fixed xi_h just to find a valid file (tau_d is independent of xi_h)
+# USER SETTINGS
 xi_d_values <- c(85, 95)
-output_dir <- file.path(getwd(), "OUTPUT")
 
-# Load and process threshold data
+# Set project root automatically relative to the .git tracking directory
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+output_dir <- file.path(project_dir, "OUTPUT")
+
+# Load all available files to map available parameters dynamically
+all_files <- list.files(output_dir, pattern = "^cohort_status_P.*\\.qs$", full.names = TRUE)
+if (length(all_files) == 0) {
+  stop("No cohort_status files found with any parameters in ", output_dir)
+}
+
+# Compile all combinations
+valid_files <- data.frame(file = all_files, stringsAsFactors = FALSE) %>%
+  mutate(
+    xih = as.numeric(gsub(".*_xih_([0-9]+).*", "\\1", basename(file))),
+    xid = as.numeric(gsub(".*_xid_([0-9]+).*", "\\1", basename(file)))
+  )
+
+# If the targeted xi_h isn't in the dataset, fallback to the clearest baseline
+if (!(xi_h_target %in% unique(valid_files$xih))) {
+  xi_h_target <- valid_files$xih[1]
+  cat("Target xi_h=70 not found. Falling back to extracting death times using baseline xi_h =", xi_h_target, "\n")
+}
+
 results <- list()
 
 for (xi_d in xi_d_values) {
   cat("Loading data for xi_d =", xi_d, "...\n")
   
-  pattern_str <- sprintf("^cohort_times_.*_xih_%d_xid_%d\\.qs$", xi_h_target, xi_d)
-  files <- list.files(output_dir, pattern = pattern_str, full.names = TRUE)
+  target_file <- valid_files %>% filter(xih == xi_h_target, xid == xi_d)
   
-  if (length(files) == 0) {
-    stop("No cohort_times file found matching pattern: ", pattern_str)
+  if (nrow(target_file) == 0) {
+    warning("No status data available for targeted xi_d = ", xi_d)
+    next
   }
   
-  latest_file <- files[which.max(file.mtime(files))]
+  # If there happen to be multiple matching this pattern exactly, grab the newest
+  latest_file <- target_file$file[which.max(file.mtime(target_file$file))]
   cohort_df <- qs_read(latest_file)
   
   # Filter for individuals who died (tau_d is not NA)
@@ -78,11 +107,11 @@ p_violin <- ggplot(
 print(p_violin)
 
 # Save
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/Figure-07a-death-time-fct-xid.pdf"
-out_png <- "FIGS/Figure-07a-death-time-fct-xid.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-07a-death-time-fct-xid.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-07a-death-time-fct-xid.png")
 
 ggsave(out_pdf, plot = p_violin, width = 20, height = 8, units = "cm", dpi = 300)
 ggsave(out_png, plot = p_violin, width = 20, height = 8, units = "cm", dpi = 300)
 
-cat("\nSaved to", out_pdf, "and", out_png, "\n")
+cat("\nSaved to:\n  -", out_pdf, "\n  -", out_png, "\n")

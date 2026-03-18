@@ -5,9 +5,9 @@
 # All rescaled to the same R0^P = 2.5
 # ============================================================
 
-library(dplyr)
-library(ggplot2)
-library(qs2)
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 
 # ------------------------------------------------------------
 # USER PARAMETERS

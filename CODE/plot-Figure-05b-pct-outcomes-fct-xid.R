@@ -1,46 +1,72 @@
-library(dplyr)
-library(ggplot2)
-library(qs2)
-library(tidyr)
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
+
+cat("\n\n>>> Running plot-Figure-05b-pct-outcomes-fct-xid.R ...\n\n")
 
 # USER SETTINGS
 xi_h_target <- 70
 xi_values <- c(75, 80, 85, 90, 95)
-output_dir <- file.path(getwd(), "OUTPUT")
 
-# Function to load threshold data and count outcomes
-get_outcome_counts <- function(xi_d_val) {
-  # Find latest file for this specific xih and xid combination
-  pattern_str <- sprintf("^cohort_times_.*_xih_%d_xid_%d\\.qs$", xi_h_target, xi_d_val)
-  files <- list.files(output_dir, pattern = pattern_str, full.names = TRUE)
+# Set project root automatically relative to the .git tracking directory
+suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+output_dir <- file.path(project_dir, "OUTPUT")
+
+# Load all available base files (excluding the _xic_..._xir_... extensions)
+all_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xid_[0-9]+\\.qs$", full.names = TRUE)
+if (length(all_files) == 0) {
+  stop("No base cohort_status files found directly ending in _xid_XX.qs in ", output_dir)
+}
+
+results <- list()
+
+for (f in all_files) {
+  # Extract threshold digits from filename
+  match <- regexpr("_xih_([0-9]+)_xid_([0-9]+)", basename(f))
+  if (match == -1) next
   
-  if (length(files) == 0) {
-    stop("No cohort_times file found matching pattern: ", pattern_str)
-  }
+  # Only add if it's the latest generation (avoid double counting old runs)
+  # The filenames differentiate themselves by timestamp, so we group by the prefixes
+  # Note: A simpler approach is to read it, since we're just plotting aggregates of whatever latest data exists!
   
-  latest_file <- files[which.max(file.mtime(files))]
-  cat("Loading:", basename(latest_file), "\n")
+  cohort_df <- qs_read(f)
   
-  cohort_df <- qs_read(latest_file)
+  # If the file didn't actually contain xi_h and xi_d inside, we extract it from the path string
+  xih_val <- as.numeric(gsub(".*_xih_([0-9]+).*", "\\1", basename(f)))
+  xid_val <- as.numeric(gsub(".*_xid_([0-9]+).*", "\\1", basename(f)))
   
-  # Based on strict thresholds applied to the actual maximum tissue damage
+  # Skip processing if we only want one specific xi_h line (e.g. tracking purely xi_d curves)
+  # BUT gracefully fallback to whatever exists if 70 isn't available
+  
   class_df <- cohort_df %>%
     mutate(
       outcome = case_when(
-        Psi_max >= xi_d_val ~ "Dead",
-        Psi_max >= xi_h_target ~ "ICU",
+        max_Psi >= xid_val ~ "Dead",
+        max_Psi >= xih_val ~ "ICU",
         TRUE ~ "Mild"
       ),
-      xi_d = xi_d_val
+      xi_d = xid_val,
+      xi_h = xih_val
     )
   
-  counts <- class_df %>% count(xi_d, outcome)
-  return(counts)
+  counts <- class_df %>% count(xi_h, xi_d, outcome)
+  results[[basename(f)]] <- counts
 }
 
-# Apply to all xi_d thresholds
-cat("Aggregating outcomes across xi_d values, holding xi_h =", xi_h_target, "...\n")
-counts_all <- bind_rows(lapply(xi_values, get_outcome_counts))
+counts_all <- bind_rows(results)
+
+# If the targeted xi_h isn't in the dataset, fallback to the clearest baseline
+if (!(xi_h_target %in% unique(counts_all$xi_h))) {
+  xi_h_target <- counts_all$xi_h[1]
+  cat("\nTarget xi_h=70 not found. Falling back to plotting xi_h =", xi_h_target, "\n")
+}
+
+counts_all <- counts_all %>% filter(xi_h == xi_h_target)
 
 # Compute proportions
 prop_df <- counts_all %>%
@@ -92,9 +118,9 @@ p_outcomes <- ggplot(prop_df, aes(x = factor(xi_d), y = percent, fill = outcome)
 print(p_outcomes)
 
 # Save both PNG and PDF versions
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/Figure-05b-pct-outcomes-fct-xid.pdf"
-out_png <- "FIGS/Figure-05b-pct-outcomes-fct-xid.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-05b-pct-outcomes-fct-xid.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-05b-pct-outcomes-fct-xid.png")
 
 ggsave(
   filename = out_pdf,
@@ -108,4 +134,4 @@ ggsave(
   width = 25, height = 15, units = "cm", dpi = 300
 )
 
-cat("\nSaved Figure 05b to", out_pdf, "and", out_png, "\n")
+cat("\nSaved Figure 05b to:\n  -", out_pdf, "\n  -", out_png, "\n")

@@ -304,9 +304,9 @@ for xi_c in xi_c_vals
     out_df[!, :max_V] = [cohort[i][:maxima][:max_V] for i in 1:N]
     out_df[!, :max_F_U] = [cohort[i][:maxima][:max_F_U] for i in 1:N]
     out_df[!, :max_F_B] = [cohort[i][:maxima][:max_F_B] for i in 1:N]
-    out_df[!, :max_V_t] = [cohort[i][:maxima][:max_V_t] for i in 1:N]
-    out_df[!, :max_F_U_t] = [cohort[i][:maxima][:max_F_U_t] for i in 1:N]
-    out_df[!, :max_F_B_t] = [cohort[i][:maxima][:max_F_B_t] for i in 1:N]
+    out_df[!, :tau_max_V] = [cohort[i][:maxima][:tau_max_V] for i in 1:N]
+    out_df[!, :tau_max_F_U] = [cohort[i][:maxima][:tau_max_F_U] for i in 1:N]
+    out_df[!, :tau_max_F_B] = [cohort[i][:maxima][:tau_max_F_B] for i in 1:N]
 
     c_str = isinteger(xi_c) ? string(Int(xi_c)) : string(xi_c)
 

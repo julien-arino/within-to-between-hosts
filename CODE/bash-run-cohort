@@ -1,0 +1,39 @@
+#!/bin/bash
+
+# Logical gates to control pipeline execution (1 = run, 0 = skip)
+RUN=0
+PROCESS=0
+PLOT=1
+
+if [ "$RUN" -eq 1 ]; then
+    echo "Running the cohort simulations..."
+    julia run-virtual-cohort-sims.jl
+fi
+
+if [ "$PROCESS" -eq 1 ]; then
+    echo "Processing cohort classification (Grid Search xi_h, xi_d)..."
+    Rscript process-cohort-classify-individuals-fct-xih-xid.R
+
+    echo "Assigning zero transmission bounds (tau_c, tau_r)..."
+    Rscript process-cohort-assign-zero-transmssion.R
+fi
+
+if [ "$PLOT" -eq 1 ]; then
+    echo "Plotting Figures 04 to 07a..."
+    Rscript plot-Figure-04-Psi_max-vs-Psi_max_time.R
+    Rscript plot-Figure-05a-length-of-hospital-stay.R
+    Rscript plot-Figure-05b-pct-outcomes-fct-xid.R
+    Rscript plot-Figure-06a-duration-infectious-period-fct-xic.R
+    Rscript plot-Figure-06b-max-transmission-rate-fct-xic.R
+    Rscript plot-Figure-07a-death-time-fct-xid.R
+
+    echo "Plotting Figures C1 to C5b..."
+    Rscript plot-Figure-C1-max-viral-load-fct-status.R
+    Rscript plot-Figure-C2-IFNb-IFNu-vs-viral-load.R
+    Rscript plot-Figure-C3-PCA.R
+    Rscript plot-Figure-C4-time-evolution-quantities.R
+    Rscript plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R
+    Rscript plot-Figure-C5b-violins-Psi_max-fct-xid.R
+fi
+
+echo "Cohort simulation pipeline complete!"

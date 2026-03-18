@@ -3,7 +3,7 @@
 # Purpose: PCA biplot including ψ[max] (maximum Psi per patient)
 # ============================================================
 
-# 1️⃣ Load libraries
+# 1. Load libraries
 suppressPackageStartupMessages({
   library(qs2)
   library(dplyr)
@@ -11,57 +11,69 @@ suppressPackageStartupMessages({
   library(factoextra)
   library(ggplot2)
 })
+suppressWarnings(suppressPackageStartupMessages(library(here)))
 
 # ------------------------------------------------------------
 # 2. Automatically find the latest cohort_truncated file
 # ------------------------------------------------------------
-output_dir <- file.path(getwd(), "OUTPUT")
-files <- list.files(output_dir, pattern = "cohort_censored_.*\\.qs$|cohort-censored_.*\\.qs$|cohort_results_truncated\\.qs$", full.names = TRUE)
+cat("\n\n>>> Running plot-Figure-C3-PCA.R ...\n\n")
 
-if (length(files) == 0) {
-  stop("No truncated/censored cohort file found in ", output_dir)
+# Set project root automatically relative to the .git tracking directory
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
 }
 
-latest_file <- files[which.max(file.mtime(files))]
-cat("Loading newest cohort results:", basename(latest_file), "\n")
+output_dir <- file.path(project_dir, "OUTPUT")
 
-cohort_df <- qs_read(latest_file)
-cat("✅ Dataset loaded:", nrow(cohort_df), "rows\n")
+# 1a. Load simulation parameters (contains the max metrics)
+param_files <- list.files(output_dir, pattern = "^cohort_sim_parameters_P.*\\.qs$", full.names = TRUE)
+if (length(param_files) == 0) {
+  stop("No cohort_sim_parameters file found in ", output_dir)
+}
+latest_param_file <- param_files[which.max(file.mtime(param_files))]
+cat("Loading newest cohort parameters for MAX metrics:", basename(latest_param_file), "\n")
+cohort_params <- qs_read(latest_param_file)
 
-# 3️⃣ Summarize by individual
-# Mean for V, F_B, F_U — but MAX for Psi
-patient_summary <- cohort_df %>%
-  group_by(individual_id, status) %>%
-  summarise(
-    V       = mean(V, na.rm = TRUE),
-    F_B     = mean(F_B, na.rm = TRUE),
-    F_U     = mean(F_U, na.rm = TRUE),
-    psi_max = max(Psi, na.rm = TRUE),
-    .groups = "drop"
-  ) %>%
-  filter(!is.na(status))
+# 1b. Load corresponding patient status summary (classifier target: xi_h=75, xi_d=85)
+status_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xih_75_xid_85\\.qs$|^cohort_status_P.*_xid_85\\.qs$", full.names = TRUE)
+if (length(status_files) == 0) {
+  stop("No baseline cohort_status file found in ", output_dir)
+}
+latest_status_file <- status_files[which.max(file.mtime(status_files))]
+cat("Loading newest cohort baseline statuses:", basename(latest_status_file), "\n")
+cohort_status <- qs_read(latest_status_file)
 
-# Keep complete cases only
-patient_summary <- patient_summary %>%
-  filter(if_all(c(V, F_B, F_U, psi_max), ~ !is.na(.x)))
+# ------------------------------------------------------------
+# 3. Summarize and merge by individual
+# ------------------------------------------------------------
+if("individual_id" %in% names(cohort_params) && !("ID" %in% names(cohort_params))) {
+  cohort_params <- rename(cohort_params, ID = individual_id)
+}
 
-cat("✅ Individuals summarized:", nrow(patient_summary), "\n")
+cohort_merged <- cohort_status %>%
+  select(ID, status) %>%
+  inner_join(cohort_params, by = "ID")
 
-# 4️⃣ Prepare PCA data
-data_pca_full <- patient_summary %>%
+# 4. Prepare PCA data natively resolving Max Values
+data_pca_full <- cohort_merged %>%
+  filter(!is.na(status)) %>%
+  filter(if_all(c(max_V, max_F_B, max_F_U, max_Psi), ~ !is.na(.x))) %>%
   mutate(status = factor(status, levels = c("Mild", "ICU", "Dead"))) %>%
-  select(V, F_B, F_U, psi_max, status) %>%
+  select(max_V, max_F_B, max_F_U, max_Psi, status) %>%
   as.data.frame()
+
+cat("Individuals summarized for PCA:", nrow(data_pca_full), "\n")
 
 quali_pos <- ncol(data_pca_full)
 
-# 5️⃣ PCA computation
+# 5. PCA computation
 res.pca <- tryCatch(
   PCA(data_pca_full, quali.sup = quali_pos, graph = FALSE),
   error = function(e) { message("❌ PCA failed: ", e$message); NULL }
 )
 
-# 6️⃣ PCA biplot visualization
+# 6. PCA biplot visualization
 if (!is.null(res.pca)) {
   
   status_colors <- c(Mild = "dodgerblue4", ICU = "orange", Dead = "red")
@@ -95,10 +107,10 @@ if (!is.null(res.pca)) {
   
   # Map R names -> math labels
   label_map <- c(
-    "psi_max" = "psi[max]",
-    "V"       = "V",
-    "F_U"     = "F[U]",
-    "F_B"     = "F[B]"
+    "max_Psi" = "psi[max]",
+    "max_V"   = "V[max]",
+    "max_F_U" = "F[U]^max",
+    "max_F_B" = "F[B]^max"
   )
   var_coord$label <- label_map[var_coord$varname]
   
@@ -124,9 +136,9 @@ if (!is.null(res.pca)) {
   # ------------------------------------------------------------
   # Save
   # ------------------------------------------------------------
-  dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-  out_pdf <- "FIGS/Figure-C3-PCA.pdf"
-  out_png <- "FIGS/Figure-C3-PCA.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-C3-PCA.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-C3-PCA.png")
   
   ggsave(
     filename = out_pdf,
@@ -140,7 +152,7 @@ if (!is.null(res.pca)) {
     width = 25, height = 15, units = "cm", dpi = 300
   )
   
-  cat("✅ PCA biplot saved to", out_pdf, "and", out_png, "\n")
+  cat("✅ PCA plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
   
 } else {
   message("⚠️ PCA computation failed. No plot generated.")

@@ -1,12 +1,17 @@
-library(ggplot2)
-library(dplyr)
-library(qs2)
-library(tidyr)
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
 
 # ------------------------------------------------------------
 # 1. Automatically find the latest cohort_truncated file
 # ------------------------------------------------------------
-output_dir <- file.path(getwd(), "OUTPUT")
+suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+output_dir <- file.path(project_dir, "OUTPUT")
 files <- list.files(output_dir, pattern = "cohort_censored_.*\\.qs$|cohort-censored_.*\\.qs$|cohort_results_truncated\\.qs$", full.names = TRUE)
 
 if (length(files) == 0) {
@@ -174,9 +179,9 @@ print(p)
 # ------------------------------------------------------------
 # 7. Save results
 # ------------------------------------------------------------
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/Figure-08-pdf-fr-fct-xic.pdf"
-out_png <- "FIGS/Figure-08-pdf-fr-fct-xic.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-08-pdf-fr-fct-xic.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-08-pdf-fr-fct-xic.png")
 
 ggsave(
   out_pdf,
@@ -196,7 +201,7 @@ ggsave(
   dpi = 300
 )
 
-qs_save(gamma_overall, "OUTPUT/gamma_overall.qs")
+qs_save(gamma_overall, file.path(project_dir, "OUTPUT", "gamma_overall.qs"))
 
 cat("\n✅ Figures saved to", out_pdf, "and", out_png, "\n")
 cat("✅ Wide γ saved to OUTPUT/gamma_overall.qs\n")

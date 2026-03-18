@@ -34,12 +34,6 @@ PARALLEL = true
 # Save as jls?
 SAVE_JLS = false
 
-# Save as CSV?
-SAVE_CSV = false
-
-# Save as Rds?
-SAVE_RDS = false
-
 # Save as qs (using R's qs2/qs package)?
 SAVE_QS = true
 
@@ -117,10 +111,10 @@ if type_output == "vars_and_max"
     individuals[!, :max_F_U] = [r[:maxima][:max_F_U] for r in raw_results]
     individuals[!, :max_F_B] = [r[:maxima][:max_F_B] for r in raw_results]
     individuals[!, :max_Psi] = [r[:maxima][:max_Psi] for r in raw_results]
-    individuals[!, :max_V_t] = [r[:maxima][:max_V_t] for r in raw_results]
-    individuals[!, :max_F_U_t] = [r[:maxima][:max_F_U_t] for r in raw_results]
-    individuals[!, :max_F_B_t] = [r[:maxima][:max_F_B_t] for r in raw_results]
-    individuals[!, :max_Psi_t] = [r[:maxima][:max_Psi_t] for r in raw_results]
+    individuals[!, :tau_max_V] = [r[:maxima][:tau_max_V] for r in raw_results]
+    individuals[!, :tau_max_F_U] = [r[:maxima][:tau_max_F_U] for r in raw_results]
+    individuals[!, :tau_max_F_B] = [r[:maxima][:tau_max_F_B] for r in raw_results]
+    individuals[!, :tau_max_Psi] = [r[:maxima][:tau_max_Psi] for r in raw_results]
 
     COHORT = [r[:vars] for r in raw_results]
 else
@@ -140,38 +134,18 @@ println("Computing R0 for each individual in the cohort...")
 compute_R0_cohort!(individuals)
 println("R0 computation completed")
 
-# Start preparing the save variable
-SAVE = Dict()
-SAVE[:parameters] = individuals
-# Add IC and results to save variable
-SAVE[:IC] = IC
-SAVE[:cohort] = COHORT
-
 ## Save the results as a JLS file
 # Only save if SAVE_JLS is true
 if SAVE_JLS
     println("Saving results as JLS")
-    save_path = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s.jls", N, date_time_start))
-    serialize(save_path, SAVE)
-    println("Results saved to $save_path")
-end
+    save_path_params = joinpath(OUTPUT, @sprintf("cohort_sim_parameters_P%07d_DT%s.jls", N, date_time_start))
+    save_path_ic = joinpath(OUTPUT, @sprintf("cohort_sim_IC_P%07d_DT%s.jls", N, date_time_start))
+    save_path_state = joinpath(OUTPUT, @sprintf("cohort_sim_state_P%07d_DT%s.jls", N, date_time_start))
 
-## Save the results as an Rds file
-# Only save if SAVE_RDS is true
-# Beware:
-# - R must be installed and available in the PATH
-# - RCall must be installed so julia can call R
-# - This copies the SAVE variable to R, so if SAVE is large, this will be slow and likely to fail if RAM
-#   is insufficient.
-if SAVE_RDS
-    println("Saving results as Rds (via RCall)")
-    save_path_rds = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s.Rds", N, date_time_start))
-    @rput SAVE          # Send the Julia object to R
-    @rput save_path_rds # Send the absolute path to R (now guaranteed absolute)
-    R"""
-    saveRDS(SAVE, file = save_path_rds)
-    """
-    println("Results saved to $save_path_rds")
+    serialize(save_path_params, individuals)
+    serialize(save_path_ic, IC)
+    serialize(save_path_state, COHORT)
+    println("Results saved to JLS files with DT$date_time_start")
 end
 
 ## Save the results as a qs file (faster than Rds)
@@ -183,78 +157,27 @@ end
 #   is insufficient.
 if SAVE_QS
     println("Saving results as QS (via RCall)")
-    save_path_qs = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s.qs", N, date_time_start))
-    @rput SAVE          # Send the Julia object to R
-    @rput save_path_qs  # Send the absolute path to R
+    save_path_qs_params = joinpath(OUTPUT, @sprintf("cohort_sim_parameters_P%07d_DT%s.qs", N, date_time_start))
+    save_path_qs_ic     = joinpath(OUTPUT, @sprintf("cohort_sim_IC_P%07d_DT%s.qs", N, date_time_start))
+    save_path_qs_state  = joinpath(OUTPUT, @sprintf("cohort_sim_state_P%07d_DT%s.qs", N, date_time_start))
+
+    @rput individuals
+    @rput IC
+    @rput COHORT
+    @rput save_path_qs_params
+    @rput save_path_qs_ic
+    @rput save_path_qs_state
+
     R"""
     if(!requireNamespace("qs2", quietly=TRUE)) {
         warning("'qs2' package is not installed in R. Cannot save in qs format.")
     } else {
-        qs2::qs_save(SAVE, file = save_path_qs)
+        qs2::qs_save(individuals, file = save_path_qs_params)
+        qs2::qs_save(IC, file = save_path_qs_ic)
+        qs2::qs_save(COHORT, file = save_path_qs_state)
     }
     """
-    println("Results saved to $save_path_qs")
-end
-
-## Save the results as a CSV file
-# Only save if SAVE_CSV is true (beware, this will create a _massive_ file if N is anything but small, so use for debugging only)
-if SAVE_CSV
-    println("Saving results as CSV")
-    save_path_csv = joinpath(OUTPUT, @sprintf("cohort_P%07d_DT%s.csv", N, date_time_start))
-
-    # Prepare the appropriate DataFrame based on the type of output
-    if type_output == "select_variables"
-        # Prepare a long-format DataFrame for selected variables
-        long_table = DataFrame(sim_nb=Int[], time=Float64[], Psi=Float64[], F_B=Float64[], F_U=Float64[], I=Float64[], V=Float64[])
-
-        for (sim_nb, result) in enumerate(COHORT)
-            times = result[:time]
-            Psi = result[:Psi]
-            F_B = result[:F_B]
-            F_U = result[:F_U]
-            I = result[:I]
-            V = result[:V]
-
-            # Append rows for this simulation
-            append!(long_table, DataFrame(sim_nb=fill(sim_nb, length(times)), time=times, Psi=Psi, F_B=F_B, F_U=F_U, I=I, V=V))
-        end
-
-    elseif type_output == "maxima"
-        # Prepare a DataFrame for maxima
-        long_table = DataFrame(sim_nb=Int[], variable=String[], value=Float64[])
-
-        for (sim_nb, result) in enumerate(COHORT)
-            for (var, value) in result
-                push!(long_table, (sim_nb, string(var), value))
-            end
-        end
-
-    elseif type_output == "vars_and_max"
-        # Since CSV requires a single flat table, we'll store the 'selected_variables' part in this CSV
-        # Alternatively, if both are needed in CSV format, we can save two separate CSV files.
-        # But for now, we'll save the vars in the main CSV. The Rds file inherently supports nested structures out-of-the-box.
-        long_table = DataFrame(sim_nb=Int[], time=Float64[], Psi=Float64[], F_B=Float64[], F_U=Float64[], I=Float64[], V=Float64[])
-
-        for (sim_nb, result) in enumerate(COHORT)
-            times = result[:time]
-            Psi = result[:Psi]
-            F_B = result[:F_B]
-            F_U = result[:F_U]
-            I = result[:I]
-            V = result[:V]
-
-            # Append rows for this simulation
-            append!(long_table, DataFrame(sim_nb=fill(sim_nb, length(times)), time=times, Psi=Psi, F_B=F_B, F_U=F_U, I=I, V=V))
-        end
-
-    else
-        error("Unknown type_output: $type_output")
-    end
-
-    # Save the DataFrame as a CSV
-    CSV.write(save_path_csv, long_table)
-
-    println("Results saved to $save_path_csv")
+    println("Results saved to QS files with DT$date_time_start")
 end
 
 # Close the cluster if parallel processing was used

@@ -3,15 +3,24 @@
 # Purpose: Violin plots of Psi_max fct xid
 # ============================================================
 
-library(ggplot2)
-library(dplyr)
-library(qs2)
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 
 # ------------------------------------------------------------
 # 1. Automatically find the latest cohort_truncated file
 # ------------------------------------------------------------
-output_dir <- file.path(getwd(), "OUTPUT")
-files <- list.files(output_dir, pattern = "cohort_censored_.*\\.qs$|cohort-censored_.*\\.qs$|cohort_results_truncated\\.qs$", full.names = TRUE)
+cat("\n\n>>> Running plot-Figure-C5b-violins-Psi_max-fct-xid.R ...\n\n")
+
+# Set project root automatically relative to the .git tracking directory
+suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+
+output_dir <- file.path(project_dir, "OUTPUT")
+files <- list.files(output_dir, pattern = "^cohort_truncated_state_.*\\.qs$", full.names = TRUE)
 
 if (length(files) == 0) {
   stop("No truncated/censored cohort file found in ", output_dir)
@@ -69,9 +78,9 @@ p_violin <- ggplot(psi_groups,
 print(p_violin)
 
 # --- Save both PNG and PDF versions ---
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/Figure-C5b-violins-Psi_max-fct-xid.pdf"
-out_png <- "FIGS/Figure-C5b-violins-Psi_max-fct-xid.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-C5b-violins-Psi_max-fct-xid.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-C5b-violins-Psi_max-fct-xid.png")
 
 ggsave(
   filename = out_pdf,

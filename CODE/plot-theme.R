@@ -6,7 +6,7 @@
 #   any plotting script.
 # ==============================================================================
 
-library(ggplot2)
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 
 # Define project preferred base size (often 14 or 15 in this project)
 base_font_size <- 14

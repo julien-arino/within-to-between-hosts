@@ -5,10 +5,10 @@
 #   Case 2: β(a), γ(a), μ(a)  (all age-dependent)
 # ============================================================
 
-library(dplyr)
-library(ggplot2)
-library(qs2)
-library(patchwork)
+suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
+suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
+suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+suppressWarnings(suppressPackageStartupMessages(library(patchwork)))
 
 # ------------------------------------------------------------
 # 1. Load beta, gamma(a), mu(a) dynamically from OUTPUT

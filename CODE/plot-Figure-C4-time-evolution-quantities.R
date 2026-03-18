@@ -3,42 +3,139 @@
 # Purpose: 6-panel plot showing time evolution of V, beta, I, Psi, FB, FU
 # ============================================================
 
-suppressPackageStartupMessages({
+suppressWarnings(suppressPackageStartupMessages({
   library(qs2)
   library(dplyr)
   library(ggplot2)
   library(patchwork)
-})
+  library(here)
+  # library(parallel)
+  library(future.apply)
+}))
 
 # ------------------------------------------------------------
-# 1. Automatically find the latest cohort_truncated file
+# 1. Automatically find the latest files
 # ------------------------------------------------------------
-output_dir <- file.path(getwd(), "OUTPUT")
-files <- list.files(output_dir, pattern = "cohort_censored_.*\\.qs$|cohort-censored_.*\\.qs$|cohort_results_truncated\\.qs$", full.names = TRUE)
+cat("\n\n>>> Running plot-Figure-C4-time-evolution-quantities.R ...\n\n")
 
-if (length(files) == 0) {
-  stop("No truncated/censored cohort file found in ", output_dir)
+# Set project root automatically relative to the .git tracking directory
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+output_dir <- file.path(project_dir, "OUTPUT")
+
+# Load sim_state instead of truncated state
+files <- list.files(output_dir, pattern = "^cohort_sim_state_.*\\.qs$", full.names = TRUE)
+if (length(files) == 0) stop("No cohort_sim_state file found in ", output_dir)
+latest_file <- files[which.max(file.mtime(files))]
+cat("Loading newest cohort trajectories:", basename(latest_file), "\n")
+cohort_list <- qs_read(latest_file)
+
+# Load baseline statuses
+status_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xih_75_xid_85\\.qs$|^cohort_status_P.*_xid_85\\.qs$", full.names = TRUE)
+if (length(status_files) == 0) stop("No baseline cohort_status file found")
+latest_status_file <- status_files[which.max(file.mtime(status_files))]
+cat("Loading newest cohort baseline statuses:", basename(latest_status_file), "\n")
+cohort_status <- qs_read(latest_status_file)
+
+status_map <- setNames(as.character(cohort_status$status), as.character(cohort_status$ID))
+
+# ------------------------------------------------------------
+# 2. Parallel interpolation of trajectories
+# ------------------------------------------------------------
+cat("\nStarting future multisession for parallel interpolation...\n")
+n_cores <- parallel::detectCores()
+workers_to_use <- max(2, n_cores - 2)
+if (n_cores >= 64) workers_to_use <- max(2, round(n_cores * 2 / 3))
+
+plan(multisession, workers = workers_to_use)
+
+# We need a unified global max time to interpolate everyone out to
+max_time <- max(sapply(cohort_list, function(lst) max(lst$time, na.rm = TRUE)))
+
+interpolate_trajectory <- function(lst_element) {
+  if (is.null(lst_element)) return(NULL)
+  
+  df <- as.data.frame(lst_element)
+  if (nrow(df) == 0) return(NULL)
+  
+  # Determine death naturally from the trajectory
+  xi_d <- 85
+  is_dead <- FALSE
+  t_death <- max_time
+  
+  if ("Psi" %in% names(df)) {
+    psi_max <- max(df$Psi, na.rm = TRUE)
+    if (psi_max >= xi_d) {
+      is_dead <- TRUE
+      idx_death <- which(df$Psi >= xi_d)[1]
+      t_death <- df$time[idx_death]
+    }
+  }
+  
+  # Interpolate strictly to the global max_time on a 0.1 grid
+  t_interp <- seq(0, max_time, by = 0.1)
+  
+  res <- data.frame(
+    time = t_interp,
+    stringsAsFactors = FALSE
+  )
+  
+  vars_to_interp <- c("V", "I", "F_B", "F_U", "Psi")
+  
+  for (var in vars_to_interp) {
+    if (var %in% names(df)) {
+      active_df <- df[df$time <= t_death, ]
+      
+      interpolated_vals <- approx(active_df$time, active_df[[var]], xout = t_interp, rule = 2, ties = mean)$y
+      if (is_dead) {
+        interpolated_vals[t_interp > t_death] <- NA
+      }
+      
+      res[[var]] <- interpolated_vals
+    } else {
+      res[[var]] <- NA
+    }
+  }
+  
+  return(res)
 }
 
-latest_file <- files[which.max(file.mtime(files))]
-cat("Loading newest cohort results:", basename(latest_file), "\n")
+cohort_list_interp <- future_lapply(cohort_list, interpolate_trajectory, future.seed = TRUE)
 
-cohort_df <- qs_read(latest_file)
+# Explicitly ensure the resulting list names match the original cohort list layout
+if (!is.null(names(cohort_list))) {
+  names(cohort_list_interp) <- names(cohort_list)
+} else {
+  names(cohort_list_interp) <- as.character(seq_along(cohort_list_interp))
+}
 
-# Ensure capitalized status
+# Flush the (potentially massive) original trajectory list from memory
+rm(cohort_list)
+gc()
+
+# Assemble the complete new cohort metric tensor
+cohort_df <- dplyr::bind_rows(Filter(Negate(is.null), cohort_list_interp), .id = "individual_id")
+
+# Stitch on their severity status purely from the official baseline output
+cohort_df <- cohort_df %>%
+  inner_join(cohort_status %>% select(ID, status) %>% mutate(ID = as.character(ID)), 
+             by = c("individual_id" = "ID"))
+
 cohort_df$status <- factor(cohort_df$status, levels = c("Mild", "ICU", "Dead"))
 
 # ------------------------------------------------------------
-# 2️⃣ Parameters
+# 3. Parameters
 # ------------------------------------------------------------
-xi_c <- 0.001
+xi_c <- 4       # start of infectious period (viral load threshold)
+xi_r <- 1.0     # end of infectious period (viral load threshold)
 xi_h <- 75
 alpha <- 16.422
 k_v <-  7.49
-V_star <- k_v * (xi_c / (1 - xi_c))^(1/alpha)
 
 # ------------------------------------------------------------
-# 3️⃣ Compute beta_hat
+# 4. Compute beta_hat
 # ------------------------------------------------------------
 compute_beta_hat <- function(V, alpha = 16.422, k_v = 7.49) {
   (V^alpha) / (V^alpha + k_v^alpha)
@@ -47,31 +144,21 @@ compute_beta_hat <- function(V, alpha = 16.422, k_v = 7.49) {
 cohort_df$beta_hat <- compute_beta_hat(cohort_df$V)
 
 # ------------------------------------------------------------
-# 4️⃣ Sort + derivative
-# ------------------------------------------------------------
-cohort_df <- cohort_df %>%
-  arrange(individual_id, time) %>%
-  group_by(individual_id) %>%
-  mutate(d_beta = beta_hat - lag(beta_hat)) %>%
-  ungroup()
-
-# ------------------------------------------------------------
-# 5️⃣ Compute tau_c, tau_r, tau_h
+# 5. Compute tau_c, tau_r, tau_h
 # ------------------------------------------------------------
 tau_df <- cohort_df %>%
   group_by(individual_id) %>%
   summarise(
     tau_c = {
-      idx <- which(beta_hat >= xi_c)
+      idx <- which(V >= xi_c)
       if (length(idx) > 0) min(time[idx]) else Inf
     },
     tau_r = {
-      idx <- which(beta_hat >= xi_c)
+      idx <- which(V >= xi_c)
       if (length(idx) == 0) Inf else {
-        t_c <- min(time[idx])
-        idx_r <- which(time >= t_c &
-                         beta_hat <= xi_c &
-                         d_beta < 0)
+        V_peak_idx <- which.max(V)
+        t_peak <- time[V_peak_idx]
+        idx_r <- which(time > t_peak & V <= xi_r)
         if (length(idx_r) > 0) min(time[idx_r]) else Inf
       }
     },
@@ -92,7 +179,7 @@ tau_h_start_vec <- setNames(tau_df$tau_h_start, tau_df$individual_id)
 tau_h_end_vec   <- setNames(tau_df$tau_h_end, tau_df$individual_id)
 
 # ------------------------------------------------------------
-# 6️⃣ Build effective beta_c(a)
+# 7. Build effective beta_c(a)
 # ------------------------------------------------------------
 cohort_df <- cohort_df %>%
   mutate(
@@ -111,7 +198,7 @@ cohort_df <- cohort_df %>%
   )
 
 # ------------------------------------------------------------
-# 7️⃣ Compute mean ± SD per status
+# 8. Compute mean ± SD per status
 # ------------------------------------------------------------
 mean_df <- cohort_df %>%
   group_by(status, time) %>%
@@ -138,7 +225,7 @@ status_cols <- c(
 )
 
 # ------------------------------------------------------------
-# 8️⃣ Helper function
+# 9. Helper function
 # ------------------------------------------------------------
 make_plot <- function(y_mean, y_sd, ylab, xlim=NULL, ylim=NULL, legend=FALSE) {
   
@@ -166,7 +253,7 @@ make_plot <- function(y_mean, y_sd, ylab, xlim=NULL, ylim=NULL, legend=FALSE) {
 }
 
 # ------------------------------------------------------------
-# 9️⃣ Create the 6 panels
+# 10. Create the 6 panels
 # ------------------------------------------------------------
 p_V    <- make_plot("V_mean","V_sd",
                     expression("Viral load"~log[10]*"(copies/ml)"))
@@ -206,9 +293,9 @@ print(combined_all)
 # Save single-page figure
 # ------------------------------------------------------------
 
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-out_pdf <- "FIGS/Figure-C4-time-evolution-quantities.pdf"
-out_png <- "FIGS/Figure-C4-time-evolution-quantities.png"
+dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(project_dir, "FIGS", "Figure-C4-time-evolution-quantities.pdf")
+out_png <- file.path(project_dir, "FIGS", "Figure-C4-time-evolution-quantities.png")
 
 ggsave(
   out_pdf,
@@ -222,4 +309,4 @@ ggsave(
   width = 26, height = 16, units = "cm", dpi = 300
 )
 
-cat("✅ Extracted 6-panel evolution plot saved to", out_pdf, "and", out_png, "\n")
+cat("✅ 6-panel evolution plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
