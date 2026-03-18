@@ -1,0 +1,17 @@
+git #!/bin/bash
+
+# Logical gates to control pipeline execution (1 = run, 0 = skip)
+PLOT=1
+
+if [ "$PLOT" -eq 1 ]; then
+    echo "Plotting between-host incidence (Figure 10)..."
+    Rscript plot-Figure-10-incidence-fct-time.R
+    
+    echo "Plotting additional between-host scenarios (Figures D1-D4)..."
+    Rscript plot-Figure-D1-incidence-fct-time-various-scenarios-mean.R
+    Rscript plot-Figure-D2-incidence-fct-time-various-scenarios-mean-AUC.R
+    Rscript plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R
+    Rscript plot-Figure-D4-incidence-fct-time-same-R0P-different-summaries.R
+fi
+
+echo "Between-host simulation pipeline complete!"

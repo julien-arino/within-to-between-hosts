@@ -93,8 +93,8 @@ p_violin <- ggplot(
   
   scale_fill_manual(
     values = c(
-      "85" = "mistyrose3",
-      "95" = "firebrick3"
+      "85" = "firebrick3",
+      "95" = "mistyrose3"
     ),
     labels = c(
       expression(xi^d == 85),

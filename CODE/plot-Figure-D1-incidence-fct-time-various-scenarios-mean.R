@@ -10,6 +10,13 @@ suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
 
+# Set project root automatically relative to the .git tracking directory
+suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+
 # ------------------------------------------------------------
 # USER CONTROLS
 # ------------------------------------------------------------
@@ -24,11 +31,19 @@ Tplot <- 85
 # ------------------------------------------------------------
 # LOAD DATA
 # ------------------------------------------------------------
-beta_df       <- qs_read("OUTPUT/beta_overall_transmitters.qs")
-gamma_overall <- qs_read("OUTPUT/gamma_overall.qs")
-mu_overall    <- qs_read("OUTPUT/mu_overall.qs")
+output_dir <- file.path(project_dir, "OUTPUT")
 
-xi_r_target <- "1e5"
+get_latest_dist <- function(pattern) {
+  files <- list.files(output_dir, pattern = pattern, full.names = TRUE)
+  if (length(files) == 0) stop("No files found for pattern: ", pattern)
+  files[which.max(file.mtime(files))]
+}
+
+beta_df       <- qs_read(get_latest_dist("^cohort_distributions_P.*_beta\\.qs$"))
+gamma_overall <- qs_read(get_latest_dist("^cohort_distributions_P.*_gamma\\.qs$"))
+mu_overall    <- qs_read(get_latest_dist("^cohort_distributions_P.*_mu\\.qs$"))
+
+xi_r_target <- "4"
 xi_d_target <- "85"
 
 gamma_col <- paste0("gamma_xi_", xi_r_target)
@@ -37,28 +52,19 @@ mu_col    <- paste0("mu_xid_",   xi_d_target)
 # ------------------------------------------------------------
 # ALIGN DATA
 # ------------------------------------------------------------
-n0 <- min(nrow(beta_df), nrow(gamma_overall), nrow(mu_overall))
-beta_df       <- beta_df[1:n0, ]
-gamma_overall <- gamma_overall[1:n0, ]
-mu_overall    <- mu_overall[1:n0, ]
+combined_df <- beta_df %>%
+  select(time, beta_mean) %>%
+  left_join(gamma_overall %>% select(time, all_of(gamma_col)), by = "time") %>%
+  left_join(mu_overall %>% select(time, all_of(mu_col)), by = "time") %>%
+  mutate(
+    across(c(all_of(gamma_col), all_of(mu_col)), ~ replace_na(.x, 0))
+  ) %>%
+  arrange(time)
 
-a_vals  <- beta_df$time
-beta_a  <- beta_df$beta_mean
-gamma_a <- gamma_overall[[gamma_col]]
-mu_a    <- mu_overall[[mu_col]]
-
-ok <- complete.cases(a_vals,beta_a,gamma_a,mu_a)
-
-a_vals  <- a_vals[ok]
-beta_a  <- beta_a[ok]
-gamma_a <- gamma_a[ok]
-mu_a    <- mu_a[ok]
-
-ord <- order(a_vals)
-a_vals  <- a_vals[ord]
-beta_a  <- beta_a[ord]
-gamma_a <- gamma_a[ord]
-mu_a    <- mu_a[ord]
+a_vals  <- combined_df$time
+beta_a  <- combined_df$beta_mean
+gamma_a <- combined_df[[gamma_col]]
+mu_a    <- combined_df[[mu_col]]
 
 dt <- mean(diff(a_vals))
 nA <- length(a_vals)
@@ -192,9 +198,10 @@ p <- ggplot(res_all,aes(time,U,color=R0))+
 
 print(p)
 
-dir.create("FIGS", showWarnings = FALSE, recursive = TRUE)
-ggsave("FIGS/Figure-D1-incidence-fct-time-various-scenarios-mean.pdf",
-       p, width=22, height=12, units="cm")
-ggsave("FIGS/Figure-D1-incidence-fct-time-various-scenarios-mean.png",
-       p, width=22, height=12, units="cm")
-cat("✅ Plot saved to FIGS/Figure-D1-incidence-fct-time-various-scenarios-mean.pdfn")
+fig_dir <- file.path(project_dir, "FIGS")
+dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
+out_pdf <- file.path(fig_dir, "Figure-D1-incidence-fct-time-various-scenarios-mean.pdf")
+out_png <- file.path(fig_dir, "Figure-D1-incidence-fct-time-various-scenarios-mean.png")
+ggsave(out_pdf, p, width=22, height=12, units="cm")
+ggsave(out_png, p, width=22, height=12, units="cm")
+cat("✅ Plot saved to", out_pdf, "\n")

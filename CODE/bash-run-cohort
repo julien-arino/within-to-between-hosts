@@ -13,10 +13,17 @@ fi
 if [ "$PROCESS" -eq 1 ]; then
     echo "Processing cohort classification (Grid Search xi_h, xi_d)..."
     Rscript process-cohort-classify-individuals-fct-xih-xid.R
+    
+    echo "Processing cohort transmission times (Grid Search xi_c, xi_r)..."
+    Rscript process-cohort-times-fct-xic-xir.R
 
     echo "Assigning zero transmission bounds (tau_c, tau_r)..."
     Rscript process-cohort-assign-zero-transmssion.R
+    
+    echo "Creating overall distributions for plots (gamma, mu, beta)..."
+    Rscript process-cohort-make-distributions.R
 fi
+
 
 if [ "$PLOT" -eq 1 ]; then
     echo "Plotting Figures 04 to 07a..."
@@ -26,6 +33,9 @@ if [ "$PLOT" -eq 1 ]; then
     Rscript plot-Figure-06a-duration-infectious-period-fct-xic.R
     Rscript plot-Figure-06b-max-transmission-rate-fct-xic.R
     Rscript plot-Figure-07a-death-time-fct-xid.R
+    Rscript plot-Figure-07b-pdf-fd-fct-xid.R
+    Rscript plot-Figure-08-pdf-fr-fct-xic.R
+    Rscript plot-Figure-09-transmission-rates-fct-summary-fcts.R
 
     echo "Plotting Figures C1 to C5b..."
     Rscript plot-Figure-C1-max-viral-load-fct-status.R
