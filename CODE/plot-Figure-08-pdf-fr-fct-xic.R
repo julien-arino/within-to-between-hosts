@@ -1,4 +1,9 @@
 #!/usr/bin/env Rscript
+# ============================================================
+# File: plot-Figure-08-pdf-fr-fct-xic.R
+# Description:
+# ============================================================
+
 cat("\n\n>>> Running plot-Figure-08-pdf-fr-fct-xic.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))

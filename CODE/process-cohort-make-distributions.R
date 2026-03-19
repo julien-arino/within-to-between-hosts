@@ -1,14 +1,14 @@
 #!/usr/bin/env Rscript
-# ==============================================================================
+# ============================================================
 # File: process-cohort-make-distributions.R
 # Description:
-#   This script extracts core statistical distributions (gamma, mu, beta) 
-#   from raw cohort status and simulation trajectory data. 
-# 
-#   By isolating these computations from the visualization files, we ensure 
-#   data processing logic is cleanly decoupled and standardly formatted 
+#   File: process-cohort-make-distributions.R
+#   This script extracts core statistical distributions (gamma, mu, beta)
+#   from raw cohort status and simulation trajectory data.
+#   By isolating these computations from the visualization files, we ensure
+#   data processing logic is cleanly decoupled and standardly formatted
 #   for downstream numerical models (like incidence plotting).
-# ==============================================================================
+# ============================================================
 
 cat("\n\n>>> Running process-cohort-make-distributions.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages({

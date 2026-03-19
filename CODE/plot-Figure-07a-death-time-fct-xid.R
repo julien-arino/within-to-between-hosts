@@ -1,7 +1,10 @@
 #!/usr/bin/env Rscript
-## plot-Figure-07a-death-time-fct-xid.R
-# Generates a horizontal violin plot showing the time to death (tau_d)
-# for two different death thresholds (xi^d = 85 and 95).
+# ============================================================
+# File: plot-Figure-07a-death-time-fct-xid.R
+# Description:
+#   Generates a horizontal violin plot showing the time to death (tau_d)
+#   for two different death thresholds (xi^d = 85 and 95).
+# ============================================================
 
 cat("\n\n>>> Running plot-Figure-07a-death-time-fct-xid.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))

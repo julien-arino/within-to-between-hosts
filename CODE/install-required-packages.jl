@@ -1,6 +1,9 @@
 #!/usr/bin/env julia
-## install-required-packages.jl
-# Ensure that all Julia packages required by the project are installed.
+# ============================================================
+# File: install-required-packages.jl
+# Description:
+#   Ensure that all Julia packages required by the project are installed.
+# ============================================================
 
 println("\n\n>>> Running install-required-packages.jl ...\n\n")
 using Pkg

@@ -1,11 +1,13 @@
 #!/usr/bin/env Rscript
-## plot-Figure-05a-length-of-hospital-stay.R
-# Generates a boxplot showing the length of stay in hospital for varying 
-# hospitalisation thresholds (xi^h) while holding the death threshold (xi^d) fixed.
-#
-# IMPORTANT: This script explicitly conditions on survival through the 
-# hospitalisation period. Individuals who ultimately die (tau_d is not NA) 
-# are excluded from the duration calculations.
+# ============================================================
+# File: plot-Figure-05a-length-of-hospital-stay.R
+# Description:
+#   Generates a boxplot showing the length of stay in hospital for varying
+#   hospitalisation thresholds (xi^h) while holding the death threshold (xi^d) fixed.
+#   IMPORTANT: This script explicitly conditions on survival through the
+#   hospitalisation period. Individuals who ultimately die (tau_d is not NA)
+#   are excluded from the duration calculations.
+# ============================================================
 
 cat("\n\n>>> Running plot-Figure-05a-length-of-hospital-stay.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))

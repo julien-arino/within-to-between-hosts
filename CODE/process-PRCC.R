@@ -1,6 +1,9 @@
 #!/usr/bin/env Rscript
-## process-PRCC.R
-# Computes PRCC from simulation results and saves outputs.
+# ============================================================
+# File: process-PRCC.R
+# Description:
+#   Computes PRCC from simulation results and saves outputs.
+# ============================================================
 
 cat("\n\n>>> Running process-PRCC.R ...\n\n")
 suppressPackageStartupMessages({

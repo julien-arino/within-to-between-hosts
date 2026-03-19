@@ -1,9 +1,13 @@
 #!/usr/bin/env julia
-# This script creates a virtual cohort of individuals and runs simulations
-# for each individual in parallel, saving the results in various formats.
-# The script saves results as Rds files for later exploitation in R.
+# ============================================================
+# File: run-virtual-cohort-sims.jl
+# Description:
+#   This script creates a virtual cohort of individuals and runs simulations
+#   for each individual in parallel, saving the results in various formats.
+#   The script saves results as Rds files for later exploitation in R.
+#   Load required packages
+# ============================================================
 
-# Load required packages
 println("\n\n>>> Running run-virtual-cohort-sims.jl ...\n\n")
 using Dates
 using Distributed

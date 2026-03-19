@@ -1,8 +1,11 @@
 #!/usr/bin/env Rscript
-## plot-Figure-06a-duration-infectious-period-fct-xic.R
-# Generates a boxplot showing the duration of the infectious period 
-# (tau_r - tau_c) for varying infectiousness onset thresholds (xi^c),
-# while holding hospitalisation and death thresholds fixed.
+# ============================================================
+# File: plot-Figure-06a-duration-infectious-period-fct-xic.R
+# Description:
+#   Generates a boxplot showing the duration of the infectious period
+#   (tau_r - tau_c) for varying infectiousness onset thresholds (xi^c),
+#   while holding hospitalisation and death thresholds fixed.
+# ============================================================
 
 cat("\n\n>>> Running plot-Figure-06a-duration-infectious-period-fct-xic.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))

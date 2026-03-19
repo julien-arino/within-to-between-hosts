@@ -1,4 +1,9 @@
 #!/usr/bin/env Rscript
+# ============================================================
+# File: plot-Figure-06b-max-transmission-rate-fct-xic.R
+# Description:
+# ============================================================
+
 cat("\n\n>>> Running plot-Figure-06b-max-transmission-rate-fct-xic.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))

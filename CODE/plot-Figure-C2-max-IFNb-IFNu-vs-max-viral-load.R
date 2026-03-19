@@ -1,7 +1,9 @@
 #!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R
-# Purpose: Plot max(F_B) and max(F_U) against max(V) for the cohort
+# Description:
+#   File: plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R
+#   Plot max(F_B) and max(F_U) against max(V) for the cohort
 # ============================================================
 
 cat("\n\n>>> Running plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R ...\n\n")

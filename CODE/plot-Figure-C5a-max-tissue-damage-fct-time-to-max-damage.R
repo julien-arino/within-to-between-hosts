@@ -1,7 +1,9 @@
 #!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R
-# Purpose: Mean Psi-max vs Time to maximum tissue damage
+# Description:
+#   File: plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R
+#   Mean Psi-max vs Time to maximum tissue damage
 # ============================================================
 
 cat("\n\n>>> Running plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R ...\n\n")

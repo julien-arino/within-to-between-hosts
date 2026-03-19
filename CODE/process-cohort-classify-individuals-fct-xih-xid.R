@@ -1,19 +1,19 @@
 #!/usr/bin/env Rscript
-# ==============================================================================
+# ============================================================
 # File: process-cohort-classify-individuals-fct-xih-xid.R
 # Description:
+#   File: process-cohort-classify-individuals-fct-xih-xid.R
 #   This script processes the full virtual cohort simulation results.
 #   It iterates over a grid of xi_h (hospitalization) and xi_d (death)
 #   thresholds, similar to process-virtual-cohort-times-vary-xih-xid.jl.
 #   For each combination, it identifies individuals based on their Psi_max:
-#     - Mild: Psi_max < xi_h
-#     - ICU: xi_h <= Psi_max < xi_d
-#     - Dead: Psi_max >= xi_d
-#
+#   - Mild: Psi_max < xi_h
+#   - ICU: xi_h <= Psi_max < xi_d
+#   - Dead: Psi_max >= xi_d
 #   For individuals classified as "Dead", their simulation trajectories are
 #   truncated exactly at the time they hit their maximum damage score (t_max).
 #   The cleaned and truncated data is saved for each combination of cutpoints.
-# ==============================================================================
+# ============================================================
 
 cat("\n\n>>> Running process-cohort-classify-individuals-fct-xih-xid.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))

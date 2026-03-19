@@ -1,8 +1,12 @@
 #!/usr/bin/env julia
-## plot-random-individuals.jl
-# This script selects a random subset of individuals from a cohort simulation
-# and plots their viral load and tissue damage over time.
-# This is intended only for debugging purposes.
+# ============================================================
+# File: debug-plot-random-individuals.jl
+# Description:
+#   plot-random-individuals.jl
+#   This script selects a random subset of individuals from a cohort simulation
+#   and plots their viral load and tissue damage over time.
+#   This is intended only for debugging purposes.
+# ============================================================
 
 println("\n\n>>> Running debug-plot-random-individuals.jl ...\n\n")
 using RCall

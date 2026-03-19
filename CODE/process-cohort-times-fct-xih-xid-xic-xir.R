@@ -1,16 +1,16 @@
 #!/usr/bin/env Rscript
-# ==============================================================================
-# File: process-cohort-times-fct-xic-xir.R
+# ============================================================
+# File: process-cohort-times-fct-xih-xid-xic-xir.R
 # Description:
-#   This script complements zero-transmission grouping by specifically 
-#   identifying the exact simulation times when individuals become 
+#   File: process-cohort-times-fct-xic-xir.R
+#   This script complements zero-transmission grouping by specifically
+#   identifying the exact simulation times when individuals become
 #   infectious (tau_c) and when they recover/cease to be infectious (tau_r).
-#
-#   It reads the large `cohort_truncated_state` files to find V(t) crossings 
-#   for the given xi_c and xi_r thresholds, and appends these extracted 
-#   times to matching `cohort_status_` files, saving them with the 
+#   It reads the large `cohort_truncated_state` files to find V(t) crossings
+#   for the given xi_c and xi_r thresholds, and appends these extracted
+#   times to matching `cohort_status_` files, saving them with the
 #   corresponding `_xic_X_xir_X.qs` suffixes for downstream plotting.
-# ==============================================================================
+# ============================================================
 
 cat("\n\n>>> Running process-cohort-times-fct-xih-xid-xic-xir.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))

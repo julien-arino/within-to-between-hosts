@@ -1,5 +1,9 @@
 #!/usr/bin/env Rscript
-# Set up the sample for the sensitivity analysis
+# ============================================================
+# File: create-sample-for-sensitivity.R
+# Description:
+#   Set up the sample for the sensitivity analysis
+# ============================================================
 
 cat("\n\n>>> Running create-sample-for-sensitivity.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages({

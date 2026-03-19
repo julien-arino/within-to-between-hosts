@@ -1,11 +1,15 @@
 #!/usr/bin/env julia
-# This script creates a set of parameter values for individuals, varying
-# all parameters according to a Sobol sequence, and runs simulations
-# for each individual in parallel, saving the results in various formats.
-# The script calls on R to create the cohort parameters and saves results as 
-# Rds or qs files for later exploitation in R.
+# ============================================================
+# File: run-sensitivity-analysis-sims.jl
+# Description:
+#   This script creates a set of parameter values for individuals, varying
+#   all parameters according to a Sobol sequence, and runs simulations
+#   for each individual in parallel, saving the results in various formats.
+#   The script calls on R to create the cohort parameters and saves results as
+#   Rds or qs files for later exploitation in R.
+#   Load required packages
+# ============================================================
 
-# Load required packages
 println("\n\n>>> Running run-sensitivity-analysis-sims.jl ...\n\n")
 using Dates
 using Distributed

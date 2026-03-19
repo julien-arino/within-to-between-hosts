@@ -1,4 +1,9 @@
 #!/usr/bin/env Rscript
+# ============================================================
+# File: debug-pull-indiividual-trajectory.R
+# Description:
+# ============================================================
+
 cat("\n\n>>> Running debug-pull-indiividual-trajectory.R ...\n\n")
 library(qs2)
 library(dplyr)

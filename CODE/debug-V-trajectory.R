@@ -1,4 +1,9 @@
 #!/usr/bin/env Rscript
+# ============================================================
+# File: debug-V-trajectory.R
+# Description:
+# ============================================================
+
 cat("\n\n>>> Running debug-V-trajectory.R ...\n\n")
 library(qs2)
 library(dplyr)

@@ -1,7 +1,9 @@
 #!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-C1-max-viral-load-fct-status.R
-# Purpose: Plot maximum viral load per individual (colored by status)
+# Description:
+#   File: plot-Figure-C1-max-viral-load-fct-status.R
+#   Plot maximum viral load per individual (colored by status)
 # ============================================================
 
 cat("\n\n>>> Running plot-Figure-C1-max-viral-load-fct-status.R ...\n\n")

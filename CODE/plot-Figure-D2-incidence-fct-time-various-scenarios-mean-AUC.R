@@ -1,9 +1,11 @@
 #!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-D2-incidence-fct-time-various-scenarios-mean-AUC.R
-# Purpose: 8 STRUCTURAL SCENARIOS (mean beta) WITH AUC
-# 2 R0 VALUES PER PANEL
-# SAME R0 WITHIN EACH PANEL (calibrated)
+# Description:
+#   File: plot-Figure-D2-incidence-fct-time-various-scenarios-mean-AUC.R
+#   8 STRUCTURAL SCENARIOS (mean beta) WITH AUC
+#   2 R0 VALUES PER PANEL
+#   SAME R0 WITHIN EACH PANEL (calibrated)
 # ============================================================
 
 cat("\n\n>>> Running plot-Figure-D2-incidence-fct-time-various-scenarios-mean-AUC.R ...\n\n")

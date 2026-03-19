@@ -1,9 +1,11 @@
 #!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-D4-incidence-fct-time-same-R0P-different-summaries.R
-# Purpose: BETWEEN-HOST SIMULATOR – Compare 4 transmission profiles
-# beta_mean, beta_median, beta_Q10, beta_Q90
-# All rescaled to the same R0^P = 2.5
+# Description:
+#   File: plot-Figure-D4-incidence-fct-time-same-R0P-different-summaries.R
+#   BETWEEN-HOST SIMULATOR – Compare 4 transmission profiles
+#   beta_mean, beta_median, beta_Q10, beta_Q90
+#   All rescaled to the same R0^P = 2.5
 # ============================================================
 
 cat("\n\n>>> Running plot-Figure-D4-incidence-fct-time-same-R0P-different-summaries.R ...\n\n")

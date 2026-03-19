@@ -1,11 +1,12 @@
 #!/usr/bin/env Rscript
 # ============================================================
-# File: plot-Psi_max-vs-Psi_max_time-Figure-04.R
-# Goal:
+# File: plot-Figure-04-Psi_max-vs-Psi_max_time.R
+# Description:
+#   File: plot-Psi_max-vs-Psi_max_time-Figure-04.R
 #   1) Load truncated cohort results to get Psi_max & status per patient
 #   2) Load process-virtual-cohort-results.csv to get R0_within and tau_Psi_max
 #   3) Join and make figure (Psi_max vs t_Psi_max, split by R0_within<1 vs >=1)
-# Outputs:
+#   Outputs:
 #   - FIGS/plot_Psi_max_vs_Psi_max_time_Figure_04.png and .pdf
 # ============================================================
 

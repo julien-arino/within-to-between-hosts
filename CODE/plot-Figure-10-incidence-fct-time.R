@@ -1,7 +1,9 @@
 #!/usr/bin/env Rscript
 # ============================================================
-# File: plot-Figure-C1-incidence-fct-time.R
-# Purpose: BETWEEN-HOST SIMULATOR – 2 MAIN CASES
+# File: plot-Figure-10-incidence-fct-time.R
+# Description:
+#   File: plot-Figure-C1-incidence-fct-time.R
+#   BETWEEN-HOST SIMULATOR – 2 MAIN CASES
 #   Case 1: βc, γc, μc  (all constant)
 #   Case 2: β(a), γ(a), μ(a)  (all age-dependent)
 # ============================================================

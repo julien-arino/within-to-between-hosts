@@ -1,4 +1,9 @@
 #!/usr/bin/env Rscript
+# ============================================================
+# File: plot-Figure-09-transmission-rates-fct-summary-fcts.R
+# Description:
+# ============================================================
+
 cat("\n\n>>> Running plot-Figure-09-transmission-rates-fct-summary-fcts.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages({
   library(qs2)

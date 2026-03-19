@@ -1,7 +1,9 @@
 #!/usr/bin/env Rscript
 # ============================================================
-# File : plot-PRCC-within-host-new.R
-# category-based plots for PRCC values
+# File: plot-Figure-03-B1-PRCC-within-host.R
+# Description:
+#   File : plot-PRCC-within-host-new.R
+#   category-based plots for PRCC values
 # ============================================================
 
 cat("\n\n>>> Running plot-Figure-03-B1-PRCC-within-host.R ...\n\n")

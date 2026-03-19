@@ -1,7 +1,10 @@
 #!/usr/bin/env julia
-## process-virtual-cohort.jl
-# Processes output files from run-virtual-cohort-sims.jl and computes the
-# various tau times defined in the manuscript.
+# ============================================================
+# File: process-virtual-cohort.jl
+# Description:
+#   Processes output files from run-virtual-cohort-sims.jl and computes the
+#   various tau times defined in the manuscript.
+# ============================================================
 
 println("\n\n>>> Running process-virtual-cohort.jl ...\n\n")
 using RCall

@@ -1,10 +1,12 @@
 #!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-C3-PCA.R
-# Purpose: PCA biplot including ψ[max] (maximum Psi per patient)
+# Description:
+#   File: plot-Figure-C3-PCA.R
+#   PCA biplot including ψ[max] (maximum Psi per patient)
+#   1. Load libraries
 # ============================================================
 
-# 1. Load libraries
 cat("\n\n>>> Running plot-Figure-C3-PCA.R ...\n\n")
 suppressPackageStartupMessages({
   library(qs2)

@@ -1,7 +1,9 @@
 #!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-C5b-violins-Psi_max-fct-xid.R
-# Purpose: Violin plots of Psi_max fct xid
+# Description:
+#   File: plot-Figure-C5b-violins-Psi_max-fct-xid.R
+#   Violin plots of Psi_max fct xid
 # ============================================================
 
 cat("\n\n>>> Running plot-Figure-C5b-violins-Psi_max-fct-xid.R ...\n\n")

@@ -1,4 +1,9 @@
 #!/usr/bin/env Rscript
+# ============================================================
+# File: debug-read-write-big-data.R
+# Description:
+# ============================================================
+
 cat("\n\n>>> Running debug-read-write-big-data.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(arrow)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))

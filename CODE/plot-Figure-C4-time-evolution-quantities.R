@@ -1,7 +1,9 @@
 #!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-C4-time-evolution-quantities.R
-# Purpose: 6-panel plot showing time evolution of V, beta, I, Psi, FB, FU
+# Description:
+#   File: plot-Figure-C4-time-evolution-quantities.R
+#   6-panel plot showing time evolution of V, beta, I, Psi, FB, FU
 # ============================================================
 
 cat("\n\n>>> Running plot-Figure-C4-time-evolution-quantities.R ...\n\n")

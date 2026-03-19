@@ -1,4 +1,9 @@
 #!/usr/bin/env Rscript
+# ============================================================
+# File: debug-Psi_max-distribution.R
+# Description:
+# ============================================================
+
 cat("\n\n>>> Running debug-Psi_max-distribution.R ...\n\n")
 library(qs2)
 if(!exists("N_QS_THREADS")) {

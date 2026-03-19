@@ -1,9 +1,12 @@
 #!/usr/bin/env Rscript
-
-## process-interpolate-solutions.R
-# This script reads the raw adaptive ODE output from Julia, forces it into a
-# standardized 0.1 day step grid over parallel forks and saves the bound
-# dataframe back to disk for plotting and distribution matrices.
+# ============================================================
+# File: process-cohort-interpolate-solutions.R
+# Description:
+#   process-interpolate-solutions.R
+#   This script reads the raw adaptive ODE output from Julia, forces it into a
+#   standardized 0.1 day step grid over parallel forks and saves the bound
+#   dataframe back to disk for plotting and distribution matrices.
+# ============================================================
 
 cat("\n\n>>> Running process-cohort-interpolate-solutions.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages({
