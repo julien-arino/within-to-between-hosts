@@ -92,8 +92,8 @@ n_cores <- parallel::detectCores()
 workers_to_use <- min(24, max(2, n_cores - 2))
 
 tau_h_list <- mclapply(cohort_state, function(ind_list) {
-  time <- ind_list[[1]] # or ind_list$time
-  psi <- ind_list[[2]] # or ind_list$Psi
+  time <- ind_list$time
+  psi <- ind_list$Psi
   res_start <- numeric(length(xi_h_vals))
   res_end <- numeric(length(xi_h_vals))
 

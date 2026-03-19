@@ -7,6 +7,7 @@
 # ============================================================
 
 cat("\n\n>>> Running plot-Figure-03-B1-PRCC-within-host.R ...\n\n")
+
 suppressPackageStartupMessages({
     library(dplyr)
     library(ggplot2)
@@ -19,12 +20,12 @@ suppressPackageStartupMessages({
 # Set project root automatically relative to the .git tracking directory
 project_dir <- here()
 if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
+    project_dir <- dirname(project_dir)
 }
 
 OUTPUT <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+if (!exists("N_QS_THREADS")) {
+    source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 }
 FIGS <- file.path(project_dir, "FIGS")
 
