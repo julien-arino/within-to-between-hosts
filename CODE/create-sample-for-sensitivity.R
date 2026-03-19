@@ -1,16 +1,20 @@
 # Set up the sample for the sensitivity analysis
 
-library(sensitivity)
-library(randtoolbox)
+suppressWarnings(suppressPackageStartupMessages({
+    library(sensitivity)
+    library(randtoolbox)
+    library(here)
+}))
 
-# Some of the stuff should be done by julia but can be
-# run here instead to debug
-if (FALSE) {
-  # Number of individuals in the sensitivity analysis
-  N <- 1000000
-  # Source functions file
-  source("functions-all.R")
+# Set project root automatically relative to the .git tracking directory
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
 }
+
+# The sampling is executed inside Julia via RCall, so N is defined
+# by the julia script. However, we load our utility R functions first
+source(file.path(project_dir, "CODE", "functions-all.R"))
 
 # Use the same order as in plot-sensitivity-from-julia.R
 cols <- c(
@@ -30,7 +34,8 @@ cols <- c(
   "ε_FI",
   "η_FI",
   "c_star",
-  "a_F"
+  "a_F",
+  "V0"
 )
 
 pars_df <- data.frame(params = cols)
@@ -52,7 +57,8 @@ tmp <- matrix(c(
   1e-5, 1e-3, # ε_FI
   0.001, 0.05, # η_FI
   1e-5, 1e-3, # c_star
-  0.1, 0.2 # a_F
+  0.1, 0.2, # a_F
+  0.5, 5 # V0
 ), nc = 2, byrow = TRUE)
 pars_df$min <- tmp[, 1]
 pars_df$max <- tmp[, 2]
@@ -72,7 +78,7 @@ pars_sobol <- as.data.frame(pars_sobol)
 pars_sobol <- cbind(1:dim(pars_sobol)[1], pars_sobol)
 colnames(pars_sobol) <- c("ID", pars_df$params)
 
-# The initial values of the state variables:
+# The initial values of the remaining static state variables:
 IC <- set_IC()
 
 # Constants
@@ -91,10 +97,9 @@ individuals <- cbind(
   # R_F_I = rep(R_F_I, nrow(pars_sobol)),
   # a_F = rep(a_F, nrow(pars_sobol))
 )
-# Add initial condition columns to individuals
+# Add initial condition columns to individuals (excluding V0 since it's now in the sampled params dataframe)
 individuals <- cbind(
   individuals,
-  V0 = rep(IC[1], nrow(pars_sobol)),
   S0 = rep(IC[2], nrow(pars_sobol)),
   I0 = rep(IC[3], nrow(pars_sobol)),
   R0 = rep(IC[4], nrow(pars_sobol))

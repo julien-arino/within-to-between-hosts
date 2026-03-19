@@ -26,6 +26,9 @@ dir.create(file.path(project_dir, "OUTPUT"), showWarnings = FALSE, recursive = T
 dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
 
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 # 1a) Find latest processed status file (xi_h=75, xi_d=85)
 status_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xih_75_xid_85\\.qs$", full.names = TRUE)
@@ -36,7 +39,7 @@ STATUS_FILE <- status_files[which.max(file.mtime(status_files))]
 # 1) Load data
 # ---------------------------
 cat("Loading processed status:", basename(STATUS_FILE), "\n")
-status_df <- qs_read(STATUS_FILE)
+status_df <- qs_read(STATUS_FILE, nthreads = N_QS_THREADS)
 
 # We don't need to merge; status_df already has all parameter metrics natively embedded!
 summary_df <- status_df

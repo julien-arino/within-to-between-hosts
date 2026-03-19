@@ -1,5 +1,8 @@
 library(qs2)
-df <- qs_read("OUTPUT/cohort_times_P1000000_DT20260312-210843_xih_70_xid_95.qs")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
+df <- qs_read("OUTPUT/cohort_times_P1000000_DT20260312-210843_xih_70_xid_95.qs", nthreads = N_QS_THREADS)
 
 cat("=== Distribution of Psi_max ===\n")
 print(summary(df$Psi_max))

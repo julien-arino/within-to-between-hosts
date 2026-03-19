@@ -17,9 +17,6 @@ if [ "$PROCESS" -eq 1 ]; then
     echo "Processing cohort transmission times (Grid Search xi_c, xi_r)..."
     Rscript process-cohort-times-fct-xic-xir.R
 
-    echo "Assigning zero transmission bounds (tau_c, tau_r)..."
-    Rscript process-cohort-assign-zero-transmssion.R
-    
     echo "Creating overall distributions for plots (gamma, mu, beta)..."
     Rscript process-cohort-make-distributions.R
 fi

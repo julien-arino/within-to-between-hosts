@@ -21,6 +21,9 @@ if (basename(project_dir) == "CODE") {
   project_dir <- dirname(project_dir)
 }
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 # Load all available files for dynamic tracking
 all_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xir_1\\.qs$", full.names = TRUE)
@@ -58,7 +61,7 @@ for (i in seq_len(nrow(valid_subset))) {
   xi_c <- valid_subset$xic[i]
   
   cat("Loading parsed metrics for xi_c =", xi_c, "\n")
-  cohort_df <- qs_read(f)
+  cohort_df <- qs_read(f, nthreads = N_QS_THREADS)
   
   total_patients <- nrow(cohort_df)
   

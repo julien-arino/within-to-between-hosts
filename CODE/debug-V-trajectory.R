@@ -1,12 +1,15 @@
 library(qs2)
 library(dplyr)
 library(ggplot2)
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 latest_file <- list.files("OUTPUT", pattern = "^cohort_P.*\\.qs$", full.names = TRUE) %>% 
   .[!grepl("(_times_|_censored)", .)] %>% 
   .[which.max(file.mtime(.))]
 
-save_data <- qs_read(latest_file)
+save_data <- qs_read(latest_file, nthreads = N_QS_THREADS)
 cohort <- save_data$cohort
 params <- save_data$parameters
 

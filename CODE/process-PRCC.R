@@ -1,27 +1,38 @@
 ## process-PRCC.R
-# Computes PRCC from simulation results and saves outputs
+# Computes PRCC from simulation results and saves outputs.
 
 suppressPackageStartupMessages({
     library(dplyr)
     library(sensitivity)
     library(qs2)
+    library(here)
 })
 
-OUTPUT_dir <- file.path(getwd(), "OUTPUT")
+# Set project root automatically relative to the .git tracking directory
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+
+OUTPUT_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  source(file.path(project_dir, "CODE", "functions-all.R"))
+}
 
 # Find the latest sensitivity_* file
 sensitivity_files <- list.files(OUTPUT_dir, pattern = "^sensitivity_.*\\.qs$", full.names = TRUE)
 if (length(sensitivity_files) == 0) {
-    stop("No sensitivity file found in OUTPUT directory.")
+    stop("No sensitivity file found in OUTPUT directory. Run run-sensitivity-analysis-sims.jl first.")
 }
 latest_file <- sensitivity_files[which.max(file.info(sensitivity_files)$mtime)]
 cat("Loading simulation data from:", latest_file, "\n")
 
 # Load exactly what was exported from the simulation phase
-sim_data <- qs_read(latest_file)
+sim_data <- qs_read(latest_file, nthreads = N_QS_THREADS)
 
-# Extract changing variables from the individuals parameter dataframe
-exclude_cols <- c("ID", "avo", "V0", "S0", "I0", "R0", "R0_within")
+# Extract changing variables from the individuals parameter dataframe.
+# Notice "V0" is intentionally NOT excluded here because it is part of the PRCC sensitivity matrix.
+exclude_cols <- c("ID", "avo", "S0", "I0", "R0", "R0_within")
 param_names <- setdiff(names(sim_data$parameters), exclude_cols)
 X <- sim_data$parameters[, param_names]
 
@@ -76,6 +87,6 @@ PRCC_global$sum_total <- PRCC_global$sum_abs.x + PRCC_global$sum_abs.y
 PRCC_global <- PRCC_global[order(-PRCC_global$sum_total), ]
 
 write.csv(PRCC_global, file.path(OUTPUT_dir, "PRCC_global_summary.csv"), row.names = FALSE)
-qs_save(list(PRCC_vals = PRCC_vals, PRCC_times = PRCC_times), file.path(OUTPUT_dir, "PRCC_results.qs"))
+qs_save(list(PRCC_vals = PRCC_vals, PRCC_times = PRCC_times), file.path(OUTPUT_dir, "PRCC_results.qs"), nthreads = N_QS_THREADS)
 
-cat("✅ PRCC computation finished. Results saved in OUTPUT.\n")
+cat("PRCC computation finished. Results saved in OUTPUT.\n")

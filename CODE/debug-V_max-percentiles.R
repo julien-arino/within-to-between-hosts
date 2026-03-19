@@ -2,6 +2,9 @@ library(qs2)
 
 # Find the original unfiltered cohort simulation files
 output_dir <- file.path(getwd(), "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 # Match cohort_P*.qs but exclude cohort_times and cohort_censored
 all_files <- list.files(output_dir, pattern = "^cohort_P.*\\.qs$", full.names = TRUE)
@@ -15,7 +18,7 @@ latest_file <- unfiltered_files[which.max(file.mtime(unfiltered_files))]
 cat("Loading newest UNFILTERED cohort results:", basename(latest_file), "\n")
 
 # The original file is a nested list/dict containing :cohort and :parameters
-save_data <- qs_read(latest_file)
+save_data <- qs_read(latest_file, nthreads = N_QS_THREADS)
 cohort <- save_data$cohort
 parameters <- save_data$parameters
 

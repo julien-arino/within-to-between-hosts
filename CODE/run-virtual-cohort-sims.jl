@@ -37,15 +37,8 @@ SAVE_JLS = false
 # Save as qs (using R's qs2/qs package)?
 SAVE_QS = true
 
-## Type of output
-# "maxima" = save only the maxima and their time of occurrence
-# "select_variables" = select variables to save
-# "vars_and_max" = save selected variables and maximum values
-# "all" = save all variables
-type_output = "vars_and_max"
-
 # Number of individuals in the virtual cohort
-N = 10_000
+N = 1_000_000
 
 # Set general parameters and (common) initial conditions
 params = set_parameters()
@@ -100,26 +93,26 @@ end
 
 # Run computation
 raw_results = if PARALLEL
-    pmap(x -> run_one_individual(x, individuals, IC; type_output=type_output), individuals_idx)
+    pmap(x -> run_one_individual(x, individuals, IC), individuals_idx)
 else
-    map(x -> run_one_individual(x, individuals, IC; type_output=type_output), individuals_idx)
+    map(x -> run_one_individual(x, individuals, IC), individuals_idx)
 end
 
-if type_output == "vars_and_max"
-    println("Extracting maxima into the parameters table...")
-    individuals[!, :max_V] = [r[:maxima][:max_V] for r in raw_results]
-    individuals[!, :max_F_U] = [r[:maxima][:max_F_U] for r in raw_results]
-    individuals[!, :max_F_B] = [r[:maxima][:max_F_B] for r in raw_results]
-    individuals[!, :max_Psi] = [r[:maxima][:max_Psi] for r in raw_results]
-    individuals[!, :tau_max_V] = [r[:maxima][:tau_max_V] for r in raw_results]
-    individuals[!, :tau_max_F_U] = [r[:maxima][:tau_max_F_U] for r in raw_results]
-    individuals[!, :tau_max_F_B] = [r[:maxima][:tau_max_F_B] for r in raw_results]
-    individuals[!, :tau_max_Psi] = [r[:maxima][:tau_max_Psi] for r in raw_results]
+println("Extracting maxima and R0 into the parameters table...")
+individuals[!, :max_V] = [r[:maxima][:max_V] for r in raw_results]
+individuals[!, :max_F_U] = [r[:maxima][:max_F_U] for r in raw_results]
+individuals[!, :max_F_B] = [r[:maxima][:max_F_B] for r in raw_results]
+individuals[!, :max_Psi] = [r[:maxima][:max_Psi] for r in raw_results]
 
-    COHORT = [r[:vars] for r in raw_results]
-else
-    COHORT = raw_results
-end
+individuals[!, :tau_max_V] = [r[:maxima][:tau_max_V] for r in raw_results]
+individuals[!, :tau_max_F_U] = [r[:maxima][:tau_max_F_U] for r in raw_results]
+individuals[!, :tau_max_F_B] = [r[:maxima][:tau_max_F_B] for r in raw_results]
+individuals[!, :tau_max_Psi] = [r[:maxima][:tau_max_Psi] for r in raw_results]
+
+individuals[!, :R0_within] = [r[:R0_within] for r in raw_results]
+
+# Strip standard array for trajectory metadata
+COHORT = [r[:vars] for r in raw_results]
 
 # Print elapsed time
 elapsed_time = time() - start_time
@@ -128,11 +121,6 @@ println("Computation completed in $(elapsed_time) seconds")
 # Record date-time for unique file naming (capture current time for each run)
 # Note: use UTC to avoid issues with compute nodes with time set incorrectly
 date_time_start = Dates.format(now(UTC), "yyyymmdd-HHMMSS")
-
-# Compute R0 for each individual and add as a column
-println("Computing R0 for each individual in the cohort...")
-compute_R0_cohort!(individuals)
-println("R0 computation completed")
 
 ## Save the results as a JLS file
 # Only save if SAVE_JLS is true
@@ -158,8 +146,8 @@ end
 if SAVE_QS
     println("Saving results as QS (via RCall)")
     save_path_qs_params = joinpath(OUTPUT, @sprintf("cohort_sim_parameters_P%07d_DT%s.qs", N, date_time_start))
-    save_path_qs_ic     = joinpath(OUTPUT, @sprintf("cohort_sim_IC_P%07d_DT%s.qs", N, date_time_start))
-    save_path_qs_state  = joinpath(OUTPUT, @sprintf("cohort_sim_state_P%07d_DT%s.qs", N, date_time_start))
+    save_path_qs_ic = joinpath(OUTPUT, @sprintf("cohort_sim_IC_P%07d_DT%s.qs", N, date_time_start))
+    save_path_qs_state = joinpath(OUTPUT, @sprintf("cohort_sim_state_P%07d_DT%s.qs", N, date_time_start))
 
     @rput individuals
     @rput IC
@@ -179,6 +167,7 @@ if SAVE_QS
     """
     println("Results saved to QS files with DT$date_time_start")
 end
+
 
 # Close the cluster if parallel processing was used
 if PARALLEL

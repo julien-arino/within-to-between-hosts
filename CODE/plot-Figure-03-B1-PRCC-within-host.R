@@ -9,15 +9,25 @@ suppressPackageStartupMessages({
     library(reshape2)
     library(latex2exp)
     library(qs2)
+    library(here)
 })
 
-OUTPUT <- file.path(getwd(), "OUTPUT")
-FIGS <- file.path(getwd(), "FIGS")
+# Set project root automatically relative to the .git tracking directory
+project_dir <- here()
+if (basename(project_dir) == "CODE") {
+  project_dir <- dirname(project_dir)
+}
+
+OUTPUT <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  source(file.path(project_dir, "CODE", "functions-all.R"))
+}
+FIGS <- file.path(project_dir, "FIGS")
 
 dir.create(FIGS, showWarnings = FALSE, recursive = TRUE)
 
 # Load data
-prcc_data <- qs_read(file.path(OUTPUT, "PRCC_results.qs"))
+prcc_data <- qs_read(file.path(OUTPUT, "PRCC_results.qs"), nthreads = N_QS_THREADS)
 PRCC_vals <- prcc_data$PRCC_vals
 PRCC_times <- prcc_data$PRCC_times
 PRCC_global <- read.csv(file.path(OUTPUT, "PRCC_global_summary.csv"))
@@ -26,7 +36,7 @@ PRCC_global <- read.csv(file.path(OUTPUT, "PRCC_global_summary.csv"))
 # 8. Plot configuration
 # ------------------------------------------------------------
 cat_cell <- c("λ_S", "S_max", "d_I", "d_D")
-cat_viral <- c("β_V", "d_V", "p")
+cat_viral <- c("β_V", "d_V", "p", "V0")
 cat_immune <- c("k_U_F", "p_FI", "ψ_F_prod", "k_B_F", "k_lin_f", "k_int_f", "ε_FI", "η_FI", "c_star", "a_F")
 
 cat_bg_colors <- c(Cell = "#800080", Viral = "#A9A9A9", Immune = "#F5F5F5")
@@ -49,7 +59,8 @@ x_labels <- c(
     "ψ_F_prod"   = "psi[prod]",
     "S_max"      = "S[max]",
     "c_star"     = "c^'*'",
-    "a_F"        = "a[F]"
+    "a_F"        = "a[F]",
+    "V0"         = "V[0]"
 )
 
 indicator_colors_vals <- c("V_max" = "#D7263D", "F_U_max" = "#1B9E77", "F_B_max" = "#0072B2")

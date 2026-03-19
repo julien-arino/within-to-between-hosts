@@ -53,7 +53,7 @@ type_output = "maxima"
 # Number of individuals in the virtual cohort
 N = 1_000_000
 
-# Build the absolute path to the R scripts to use
+# Build the absolute path to the R scripts to use FOR WITH_V0 PIPELINE
 r_functions_path = joinpath(SCRIPT_DIR, "functions-all.R")
 r_script_path = joinpath(SCRIPT_DIR, "create-sample-for-sensitivity.R")
 
@@ -68,8 +68,9 @@ source(r_script_path)
 @rget individuals  # Get the sample from R
 
 # Print the dimension of pars.sobol
-println("individuals size: ", size(individuals))
+println("individuals size (with V0): ", size(individuals))
 
+# Establish standard IC vector
 IC = set_IC()
 
 # Set the individual indices
@@ -90,27 +91,44 @@ if PARALLEL
             @warn "Failed to remove existing workers in run-sensitivity-analysis-sims" exception = (e, catch_backtrace())
         end
     end
+
+    # Give the system a brief moment to clear the ports before spinning up new workers
+    sleep(1.0)
+
     # In case julia was not started with multiple processes, add some here. 
     # For large CPU counts, we add two thirds of the CPUs.
     # For smaller ones, we leave two free.
-    if nprocs() < 2
-        if Sys.CPU_THREADS >= 64
-            addprocs(max(2, Int(round(Sys.CPU_THREADS * 2 / 3))))
-        else
-            addprocs(max(2, Sys.CPU_THREADS - 2))
-        end
+    num_to_add = if Sys.CPU_THREADS >= 64
+        max(2, Int(round(Sys.CPU_THREADS * 2 / 3)))
+    else
+        max(2, Sys.CPU_THREADS - 2)
     end
+
+    println("Spawning $num_to_add new workers...")
+    # Explicitly pass the project path to ensure credential domains align
+    addprocs(num_to_add, exeflags="--project=@.")
+
     # Ensure all workers have the required functions and modules
     @everywhere using DifferentialEquations  # Import the DifferentialEquations package
     @everywhere using Serialization
     @everywhere include("functions-all.jl")
 end
 
-# Run computation
+# INTERCEPT function to extract dynamic V0 from the individual dataframe before running the ODE wrapper
+@everywhere function run_individual_with_dynamic_V0(idx, individuals_df, base_IC, type_output)
+    # create a locally modified mutable copy of the IC array for this individual
+    local_IC = copy(base_IC)
+    # The sampled V0 is attached directly to the individuals dataframe now
+    local_IC[1] = individuals_df[idx, :V0]
+
+    return run_one_individual(idx, individuals_df, local_IC; type_output=type_output)
+end
+
+# Run computation via our intercept function
 COHORT = if PARALLEL
-    pmap(x -> run_one_individual(x, individuals, IC; type_output=type_output), individuals_idx)
+    pmap(x -> run_individual_with_dynamic_V0(x, individuals, IC, type_output), individuals_idx)
 else
-    map(x -> run_one_individual(x, individuals, IC; type_output=type_output), individuals_idx)
+    map(x -> run_individual_with_dynamic_V0(x, individuals, IC, type_output), individuals_idx)
 end
 
 # Close the cluster if parallel processing was used
@@ -140,7 +158,6 @@ SAVE[:IC] = IC
 SAVE[:cohort] = COHORT
 
 ## Save the results as a JLS file
-# Only save if SAVE_JLS is true
 if SAVE_JLS
     println("Saving results as JLS")
     save_path = joinpath(OUTPUT, @sprintf("sensitivity_P%07d_DT%s_%s.jls", N, date_time_start, type_output))
@@ -149,12 +166,6 @@ if SAVE_JLS
 end
 
 ## Save the results as an Rds file
-# Only save if SAVE_RDS is true
-# Beware:
-# - R must be installed and available in the PATH
-# - RCall must be installed so julia can call R
-# - This copies the SAVE variable to R, so if SAVE is large, this will be slow and likely to fail if RAM
-#   is insufficient.
 if SAVE_RDS
     println("Saving results as Rds (via RCall)")
     save_path_rds = joinpath(OUTPUT, @sprintf("sensitivity_P%07d_DT%s_%s.Rds", N, date_time_start, type_output))
@@ -167,12 +178,6 @@ if SAVE_RDS
 end
 
 ## Save the results as a qs file (faster than Rds)
-# Only save if SAVE_QS is true
-# Beware:
-# - R must be installed and available in the PATH, with libraries qs2 (preferably) or qs installed
-# - RCall must be installed so julia can call R
-# - This copies the SAVE variable to R, so if SAVE is large, this will be slow and likely to fail if RAM
-#   is insufficient.
 if SAVE_QS
     println("Saving results as QS (via RCall)")
     save_path_qs = joinpath(OUTPUT, @sprintf("sensitivity_P%07d_DT%s_%s.qs", N, date_time_start, type_output))
@@ -189,7 +194,6 @@ if SAVE_QS
 end
 
 ## Save the results as a CSV file
-# Only save if SAVE_CSV is true
 if SAVE_CSV
     println("Saving results as CSV")
     save_path_csv = joinpath(OUTPUT, @sprintf("sensitivity_P%07d_DT%s_%s.csv", N, date_time_start, type_output))

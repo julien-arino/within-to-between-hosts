@@ -26,6 +26,9 @@ Tmax  <- 300
 Tplot <- 300
 
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 get_latest_dist <- function(pattern) {
   files <- list.files(output_dir, pattern = pattern, full.names = TRUE)
@@ -33,9 +36,9 @@ get_latest_dist <- function(pattern) {
   files[which.max(file.mtime(files))]
 }
 
-beta_df       <- qs_read(get_latest_dist("^cohort_distributions_P.*_beta\\.qs$"))
-gamma_overall <- qs_read(get_latest_dist("^cohort_distributions_P.*_gamma\\.qs$"))
-mu_overall    <- qs_read(get_latest_dist("^cohort_distributions_P.*_mu\\.qs$"))
+beta_df       <- qs_read(get_latest_dist("^cohort_distributions_P.*_beta\\.qs$"), nthreads = N_QS_THREADS)
+gamma_overall <- qs_read(get_latest_dist("^cohort_distributions_P.*_gamma\\.qs$"), nthreads = N_QS_THREADS)
+mu_overall    <- qs_read(get_latest_dist("^cohort_distributions_P.*_mu\\.qs$"), nthreads = N_QS_THREADS)
 
 xi_r_target <- "4"
 xi_d_target <- "85"

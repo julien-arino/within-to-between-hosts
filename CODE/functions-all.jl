@@ -1,15 +1,18 @@
 ###################
-## FUNCTIONS_ALL.jl
-###################
 #
 # This file contains most functions used in the code.
 #
+
+using RCall
+N_QS_THREADS = min(16, Sys.CPU_THREADS)
+@rput N_QS_THREADS
 
 using DifferentialEquations
 using DiffEqCallbacks
 using Random
 using Statistics
 using DataFrames
+using CSV
 using Distributions
 using Distributed
 using Roots
@@ -55,7 +58,9 @@ end
 ##
 # Set initial conditions
 function set_IC()
-    return [1.0, 0.16, 0.0, 0.0, 0.0, 0.015, 1.1e-8]
+    csv_path = joinpath(@__DIR__, "data-initial-conditions.csv")
+    ic_df = CSV.read(csv_path, DataFrame)
+    return Float64.(ic_df.value)
 end
 
 ##
@@ -181,7 +186,7 @@ end
 ## run_one_individual
 ##
 # Simulate the within-host model for one individual
-function run_one_individual(idx, individuals, IC; type_output="solution")
+function run_one_individual(idx, individuals, IC)
     # Extract individual-specific parameters
     params_tmp = individuals[idx, :]
     params_tmp = add_IC_to_params(params_tmp, IC)
@@ -200,47 +205,31 @@ function run_one_individual(idx, individuals, IC; type_output="solution")
     # Nonnegativity callback
     nonneg_callback = PositiveDomain()
 
-    # Solve the ODE problem with the nonnegativity callback
+    # Solve the ODE problem with the nonnegativity callback (adaptive stepping)
     sol = solve(prob, integrator; callback=nonneg_callback)
 
-    # Return based on type_output
-    if type_output == "solution"
-        return sol
-    elseif type_output == "maxima"
-        return find_maxima(sol, params_tmp)
-    elseif type_output == "select_variables"
-        # Extract time and selected variables
-        S_max = params_tmp[:S_max]
-        S = sol[2, :]
-        R = sol[4, :]
-        Psi = 100 .* (S_max .- (S .+ R)) ./ S_max
-        selected_data = Dict(
-            :time => sol.t,
-            :Psi => Psi,      # Tissue damage
-            :V => sol[1, :],  # Viral load
-            :I => sol[3, :],  # Infected cells
-            :F_B => sol[7, :],  # Bound IFN
-            :F_U => sol[6, :]   # Unbound IFN
-        )
-        return selected_data
-    elseif type_output == "vars_and_max"
-        S_max = params_tmp[:S_max]
-        S = sol[2, :]
-        R = sol[4, :]
-        Psi = 100 .* (S_max .- (S .+ R)) ./ S_max
-        selected_data = Dict(
-            :time => sol.t,
-            :Psi => Psi,      # Tissue damage
-            :I => sol[3, :],  # Infected cells
-            :V => sol[1, :],  # Viral load
-            :F_B => sol[7, :],  # Bound IFN
-            :F_U => sol[6, :]   # Unbound IFN
-        )
-        maxima_data = find_maxima(sol, params_tmp)
-        return Dict(:vars => selected_data, :maxima => maxima_data)
-    else
-        error("Invalid type_output: must be 'solution', 'maxima', 'select_variables', or 'vars_and_max'")
-    end
+    # Unconditionally compute all derived states
+    S_max = params_tmp[:S_max]
+    S = sol[2, :]
+    R = sol[4, :]
+    Psi = 100 .* (S_max .- (S .+ R)) ./ S_max
+    
+    # Store complete trajectory into a DataFrame wrapper for native R exploitation
+    df_vars = DataFrame(
+        time = sol.t,
+        V = sol[1, :],
+        F_U = sol[6, :],
+        F_B = sol[7, :]
+    )
+    df_vars[!, :Psi] = Psi
+
+    # Obtain maxima blocks
+    maxima_data = find_maxima(sol, params_tmp)
+    
+    # Pre-compute R0_within natively
+    R0_val = reproduction_number(params_nt)
+
+    return Dict(:vars => df_vars, :maxima => maxima_data, :R0_within => R0_val)
 end
 
 ##
@@ -255,14 +244,14 @@ function find_maxima(sol, params_tmp=nothing)
 
     # Extract the desired maxima and their corresponding times
     OUT = Dict()
-    OUT[:max_V] = maximum(sol[1, :])  # Maximum viral load
-    OUT[:max_F_U] = maximum(sol[6, :])  # Maximum unbound IFN
-    OUT[:max_F_B] = maximum(sol[7, :])  # Maximum bound IFN
+    OUT[:max_V]   = maximum(sol[1, :])
+    OUT[:max_F_U] = maximum(sol[6, :])
+    OUT[:max_F_B] = maximum(sol[7, :])
 
     # Ensure indices are valid before accessing
-    OUT[:tau_max_V] = sol.t[argmax(sol[1, :])]  # Time of maximum viral load
-    OUT[:tau_max_F_U] = sol.t[argmax(sol[6, :])]  # Time of maximum unbound IFN
-    OUT[:tau_max_F_B] = sol.t[argmax(sol[7, :])]  # Time of maximum bound IFN
+    OUT[:tau_max_V]   = sol.t[argmax(sol[1, :])]
+    OUT[:tau_max_F_U] = sol.t[argmax(sol[6, :])]
+    OUT[:tau_max_F_B] = sol.t[argmax(sol[7, :])]
 
     # Compute Psi specifically if parameters are provided
     if !isnothing(params_tmp)

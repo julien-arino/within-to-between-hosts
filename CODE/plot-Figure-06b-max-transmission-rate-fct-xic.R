@@ -18,6 +18,9 @@ xi_d_target <- 85
 xi_r_target <- 1
 
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 pattern_str <- sprintf("^cohort_status_P.*_xih_%s_xid_%s_xic_.*_xir_%s\\.qs$", 
                        xi_h_target, xi_d_target, xi_r_target)
@@ -43,7 +46,7 @@ for (f in files) {
   
   cat("Processing transmitters for xi_c =", xic_val, "\n")
   
-  cohort_df <- qs_read(f)
+  cohort_df <- qs_read(f, nthreads = N_QS_THREADS)
   total_patients <- nrow(cohort_df)
   
   # A transmitter is someone who became infectious (tau_c is not NA)

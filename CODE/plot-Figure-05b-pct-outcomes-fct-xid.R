@@ -16,6 +16,9 @@ if (basename(project_dir) == "CODE") {
   project_dir <- dirname(project_dir)
 }
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 # Load all available base files (excluding the _xic_..._xir_... extensions)
 all_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xid_[0-9]+\\.qs$", full.names = TRUE)
@@ -34,7 +37,7 @@ for (f in all_files) {
   # The filenames differentiate themselves by timestamp, so we group by the prefixes
   # Note: A simpler approach is to read it, since we're just plotting aggregates of whatever latest data exists!
   
-  cohort_df <- qs_read(f)
+  cohort_df <- qs_read(f, nthreads = N_QS_THREADS)
   
   # If the file didn't actually contain xi_h and xi_d inside, we extract it from the path string
   xih_val <- as.numeric(gsub(".*_xih_([0-9]+).*", "\\1", basename(f)))

@@ -1,0 +1,34 @@
+#!/bin/bash
+
+# Define paths
+SRC_DIR="../FIGS"
+DEST_DIR="$HOME/github/overleaf-within-to-between-hosts-new/FIGS"
+
+# Create destination directory if it doesn't exist
+mkdir -p "$DEST_DIR"
+
+echo "Copying figures from $SRC_DIR to $DEST_DIR..."
+
+# Keep track of success for both types
+PNG_COPIED=0
+PDF_COPIED=0
+
+# Copy PNGs if any exist
+if ls "$SRC_DIR"/Figure-*.png 1> /dev/null 2>&1; then
+    cp "$SRC_DIR"/Figure-*.png "$DEST_DIR/"
+    PNG_COPIED=1
+    echo "  -> Copied PNG files"
+fi
+
+# Copy PDFs if any exist
+if ls "$SRC_DIR"/Figure-*.pdf 1> /dev/null 2>&1; then
+    cp "$SRC_DIR"/Figure-*.pdf "$DEST_DIR/"
+    PDF_COPIED=1
+    echo "  -> Copied PDF files"
+fi
+
+if [ "$PNG_COPIED" -eq 1 ] || [ "$PDF_COPIED" -eq 1 ]; then
+    echo "✅ Successfully copied figures!"
+else
+    echo "⚠️ No Figure-*.png or Figure-*.pdf files found in $SRC_DIR."
+fi

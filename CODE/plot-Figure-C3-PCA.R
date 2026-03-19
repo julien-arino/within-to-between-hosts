@@ -25,6 +25,9 @@ if (basename(project_dir) == "CODE") {
 }
 
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 # 1a. Load simulation parameters (contains the max metrics)
 param_files <- list.files(output_dir, pattern = "^cohort_sim_parameters_P.*\\.qs$", full.names = TRUE)
@@ -33,7 +36,7 @@ if (length(param_files) == 0) {
 }
 latest_param_file <- param_files[which.max(file.mtime(param_files))]
 cat("Loading newest cohort parameters for MAX metrics:", basename(latest_param_file), "\n")
-cohort_params <- qs_read(latest_param_file)
+cohort_params <- qs_read(latest_param_file, nthreads = N_QS_THREADS)
 
 # 1b. Load corresponding patient status summary (classifier target: xi_h=75, xi_d=85)
 status_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xih_75_xid_85\\.qs$|^cohort_status_P.*_xid_85\\.qs$", full.names = TRUE)
@@ -42,14 +45,11 @@ if (length(status_files) == 0) {
 }
 latest_status_file <- status_files[which.max(file.mtime(status_files))]
 cat("Loading newest cohort baseline statuses:", basename(latest_status_file), "\n")
-cohort_status <- qs_read(latest_status_file)
+cohort_status <- qs_read(latest_status_file, nthreads = N_QS_THREADS)
 
 # ------------------------------------------------------------
 # 3. Summarize and merge by individual
 # ------------------------------------------------------------
-if("individual_id" %in% names(cohort_params) && !("ID" %in% names(cohort_params))) {
-  cohort_params <- rename(cohort_params, ID = individual_id)
-}
 
 cohort_merged <- cohort_status %>%
   select(ID, status) %>%

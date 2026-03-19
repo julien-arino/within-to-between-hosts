@@ -24,20 +24,23 @@ if (basename(project_dir) == "CODE") {
   project_dir <- dirname(project_dir)
 }
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 # Load sim_state instead of truncated state
 files <- list.files(output_dir, pattern = "^cohort_sim_state_.*\\.qs$", full.names = TRUE)
 if (length(files) == 0) stop("No cohort_sim_state file found in ", output_dir)
 latest_file <- files[which.max(file.mtime(files))]
 cat("Loading newest cohort trajectories:", basename(latest_file), "\n")
-cohort_list <- qs_read(latest_file)
+cohort_list <- qs_read(latest_file, nthreads = N_QS_THREADS)
 
 # Load baseline statuses
 status_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xih_75_xid_85\\.qs$|^cohort_status_P.*_xid_85\\.qs$", full.names = TRUE)
 if (length(status_files) == 0) stop("No baseline cohort_status file found")
 latest_status_file <- status_files[which.max(file.mtime(status_files))]
 cat("Loading newest cohort baseline statuses:", basename(latest_status_file), "\n")
-cohort_status <- qs_read(latest_status_file)
+cohort_status <- qs_read(latest_status_file, nthreads = N_QS_THREADS)
 
 status_map <- setNames(as.character(cohort_status$status), as.character(cohort_status$ID))
 
@@ -116,12 +119,12 @@ rm(cohort_list)
 gc()
 
 # Assemble the complete new cohort metric tensor
-cohort_df <- dplyr::bind_rows(Filter(Negate(is.null), cohort_list_interp), .id = "individual_id")
+cohort_df <- dplyr::bind_rows(Filter(Negate(is.null), cohort_list_interp), .id = "ID")
 
 # Stitch on their severity status purely from the official baseline output
 cohort_df <- cohort_df %>%
   inner_join(cohort_status %>% select(ID, status) %>% mutate(ID = as.character(ID)), 
-             by = c("individual_id" = "ID"))
+             by = "ID")
 
 cohort_df$status <- factor(cohort_df$status, levels = c("Mild", "ICU", "Dead"))
 
@@ -147,7 +150,7 @@ cohort_df$beta_hat <- compute_beta_hat(cohort_df$V)
 # 5. Compute tau_c, tau_r, tau_h
 # ------------------------------------------------------------
 tau_df <- cohort_df %>%
-  group_by(individual_id) %>%
+  group_by(ID) %>%
   summarise(
     tau_c = {
       idx <- which(V >= xi_c)
@@ -173,20 +176,20 @@ tau_df <- cohort_df %>%
     .groups = "drop"
   )
 
-tau_c_vec       <- setNames(tau_df$tau_c, tau_df$individual_id)
-tau_r_vec       <- setNames(tau_df$tau_r, tau_df$individual_id)
-tau_h_start_vec <- setNames(tau_df$tau_h_start, tau_df$individual_id)
-tau_h_end_vec   <- setNames(tau_df$tau_h_end, tau_df$individual_id)
+tau_c_vec       <- setNames(tau_df$tau_c, tau_df$ID)
+tau_r_vec       <- setNames(tau_df$tau_r, tau_df$ID)
+tau_h_start_vec <- setNames(tau_df$tau_h_start, tau_df$ID)
+tau_h_end_vec   <- setNames(tau_df$tau_h_end, tau_df$ID)
 
 # ------------------------------------------------------------
 # 7. Build effective beta_c(a)
 # ------------------------------------------------------------
 cohort_df <- cohort_df %>%
   mutate(
-    tau_c       = tau_c_vec[as.character(individual_id)],
-    tau_r       = tau_r_vec[as.character(individual_id)],
-    tau_h_start = tau_h_start_vec[as.character(individual_id)],
-    tau_h_end   = tau_h_end_vec[as.character(individual_id)],
+    tau_c       = tau_c_vec[as.character(ID)],
+    tau_r       = tau_r_vec[as.character(ID)],
+    tau_h_start = tau_h_start_vec[as.character(ID)],
+    tau_h_end   = tau_h_end_vec[as.character(ID)],
     
     beta_hat_window = if_else(
       time >= tau_c &

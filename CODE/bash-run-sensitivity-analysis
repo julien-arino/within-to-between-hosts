@@ -1,12 +1,12 @@
 #!/bin/bash
 
 echo "Running the sensitivity analysis simulations..."
-julia run-sensitivity-analysis-sims-withV0.jl
+julia run-sensitivity-analysis-sims.jl
 
 echo "Processing the sensitivity analysis PRCC..."
-Rscript process-PRCC-withV0.R
+Rscript process-PRCC.R
 
 echo "Plotting the PRCC figures..."
-Rscript plot-Figure-03-B1-PRCC-within-host-withV0.R
+Rscript plot-Figure-03-B1-PRCC-within-host.R
 
 echo "Sensitivity analysis pipeline complete!"

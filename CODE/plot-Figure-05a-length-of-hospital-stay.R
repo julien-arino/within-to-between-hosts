@@ -24,6 +24,9 @@ if (basename(project_dir) == "CODE") {
   project_dir <- dirname(project_dir)
 }
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 # Function to load threshold data and compute hospitalization
 results <- list()
@@ -42,7 +45,7 @@ for (xi_h in xi_h_values) {
   }
   
   latest_file <- files[which.max(file.mtime(files))]
-  cohort_df <- qs_read(latest_file)
+  cohort_df <- qs_read(latest_file, nthreads = N_QS_THREADS)
   
   total_patients <- nrow(cohort_df)
   

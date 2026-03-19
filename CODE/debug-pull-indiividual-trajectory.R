@@ -1,12 +1,15 @@
 library(qs2)
 library(dplyr)
 output_dir <- "/home/jarino/github/within-to-between-hosts/OUTPUT"
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 files <- list.files(output_dir, pattern = "^cohort_P.*\\.qs$", full.names = TRUE)
 files <- files[!grepl("-times\\.qs$", files)]
 latest_file <- files[which.max(file.mtime(files))]
 
 cat("Loading latest cohort results:", basename(latest_file), "\n")
-cohort_df <- qs_read(latest_file)
+cohort_df <- qs_read(latest_file, nthreads = N_QS_THREADS)
 
 # Extract individual 3
 ind3 <- cohort_df$cohort[[3]]

@@ -20,6 +20,9 @@ if (basename(project_dir) == "CODE") {
   project_dir <- dirname(project_dir)
 }
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 # Load all available files to map available parameters dynamically
 all_files <- list.files(output_dir, pattern = "^cohort_status_P.*\\.qs$", full.names = TRUE)
@@ -54,7 +57,7 @@ for (xi_d in xi_d_values) {
   
   # If there happen to be multiple matching this pattern exactly, grab the newest
   latest_file <- target_file$file[which.max(file.mtime(target_file$file))]
-  cohort_df <- qs_read(latest_file)
+  cohort_df <- qs_read(latest_file, nthreads = N_QS_THREADS)
   
   # Filter for individuals who died (tau_d is not NA)
   death_df <- cohort_df %>%

@@ -11,7 +11,8 @@ Several bash files are provided to run the code:
 - `run-cohort`
 - `run-between-host`
 
-Note however that the computations can be quite long, so details are provided below.
+Note however that the computations can be quite long, so details are provided below. 
+Note also that if running the full 1 million individuals cohort simulation, you will need a serious amount of RAM (256 GB recommended). We made the choice to save the results in a format that can be read by R (qs2) to facilitate the subsequent analysis, but this is not the most memory efficient format, since the simulation results need to be copied to R to the be saved. A more memory efficient format is to use the Arrow format, which exists in both Julia and R. However, Arrow saves flat files, so R will then need to convert to a list of dataframes, which can be memory intensive and very long.
 
 ### 1. Install required packages
 

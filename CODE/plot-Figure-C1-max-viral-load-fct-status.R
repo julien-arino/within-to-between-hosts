@@ -20,6 +20,9 @@ if (basename(project_dir) == "CODE") {
 }
 
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 files <- list.files(output_dir, pattern = "^cohort_status_P.*_xid_[0-9]+\\.qs$", full.names = TRUE)
 
 if (length(files) == 0) {
@@ -29,18 +32,18 @@ if (length(files) == 0) {
 latest_file <- files[which.max(file.mtime(files))]
 cat("Loading newest cohort status results:", basename(latest_file), "\n")
 
-cohort_df <- qs_read(latest_file)
+cohort_df <- qs_read(latest_file, nthreads = N_QS_THREADS)
 
-cat("✅ Cohort data loaded with", nrow(cohort_df), "individuals\n")
+cat("Cohort data loaded with", nrow(cohort_df), "individuals\n")
 
 # ------------------------------------------------------------
 # 2️⃣ Compute maximum Viral Load per individual
 # ------------------------------------------------------------
 cat("Extracting V_max per individual from status dataframe...\n")
 viral_max_df <- cohort_df %>%
-  select(individual_id = ID, status, V_max = max_V)
+  select(ID, status, V_max = max_V)
 
-cat("✅ Computed maximum viral load for", nrow(viral_max_df), "individuals\n")
+cat("Computed maximum viral load for", nrow(viral_max_df), "individuals\n")
 
 # ------------------------------------------------------------
 # 3️⃣ Define custom colors

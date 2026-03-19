@@ -21,6 +21,9 @@ if (basename(project_dir) == "CODE") {
   project_dir <- dirname(project_dir)
 }
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 # --- Setup target xi_h and load all status files ---
 xi_h_target <- 75
@@ -53,7 +56,7 @@ psi_tau_list <- lapply(xi_values, function(xi){
   }
   
   latest_status_file <- target_file_df$file[which.max(file.mtime(target_file_df$file))]
-  status_df <- qs_read(latest_status_file)
+  status_df <- qs_read(latest_status_file, nthreads = N_QS_THREADS)
   
   # 2. Extract psi_max and tau_d directly from status
   dead_summary_xi <- status_df %>%

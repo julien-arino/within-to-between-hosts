@@ -1,0 +1,8 @@
+variable,value,min_value,max_value,definition,unit
+V,1.0,,,Viral load,log_10(copies/ml)
+S,0.16,,,Susceptible cells,10^9 cells/ml
+I,0,,,Infected cells,10^9 cells/ml
+R,0,,,Resistant cells,10^9 cells/ml
+D,0,,,Dead cells,10^9 cells/ml
+F_U,0.015,,,Unbound interferon,pg/ml
+F_B,1.1e-8,,,Bound interferon,pg/ml

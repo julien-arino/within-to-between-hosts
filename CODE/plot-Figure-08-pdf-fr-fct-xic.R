@@ -14,13 +14,16 @@ if (basename(project_dir) == "CODE") {
   project_dir <- dirname(project_dir)
 }
 output_dir <- file.path(project_dir, "OUTPUT")
+if(!exists("N_QS_THREADS")) {
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+}
 
 # --- Find and load pre-computed distributions ---
 dist_files <- list.files(output_dir, pattern = "^cohort_distributions_P.*_gamma\\.qs$", full.names = TRUE)
 if (length(dist_files) == 0) stop("No gamma distributions file found in OUTPUT")
 latest_dist <- dist_files[which.max(file.mtime(dist_files))]
 cat("Loading newest gamma distributions:", basename(latest_dist), "\n")
-gamma_overall <- qs_read(latest_dist)
+gamma_overall <- qs_read(latest_dist, nthreads = N_QS_THREADS)
 
 # ------------------------------------------------------------
 # 2. Format to long (gamma_all) for plotting
