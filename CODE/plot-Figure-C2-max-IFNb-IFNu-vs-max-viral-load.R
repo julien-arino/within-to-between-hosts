@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R
 # Purpose: Plot max(F_B) and max(F_U) against max(V) for the cohort
@@ -22,7 +23,7 @@ if (basename(project_dir) == "CODE") {
 
 output_dir <- file.path(project_dir, "OUTPUT")
 if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 
 # 1a. Load simulation parameters (contains the max metrics)

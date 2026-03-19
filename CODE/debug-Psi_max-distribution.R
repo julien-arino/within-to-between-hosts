@@ -1,6 +1,7 @@
+#!/usr/bin/env Rscript
 library(qs2)
 if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 df <- qs_read("OUTPUT/cohort_times_P1000000_DT20260312-210843_xih_70_xid_95.qs", nthreads = N_QS_THREADS)
 

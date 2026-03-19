@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 ## process-PRCC.R
 # Computes PRCC from simulation results and saves outputs.
 
@@ -16,7 +17,7 @@ if (basename(project_dir) == "CODE") {
 
 OUTPUT_dir <- file.path(project_dir, "OUTPUT")
 if(!exists("N_QS_THREADS")) {
-  source(file.path(project_dir, "CODE", "functions-all.R"))
+  source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 }
 
 # Find the latest sensitivity_* file

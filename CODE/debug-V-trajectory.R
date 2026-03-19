@@ -1,8 +1,9 @@
+#!/usr/bin/env Rscript
 library(qs2)
 library(dplyr)
 library(ggplot2)
 if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 
 latest_file <- list.files("OUTPUT", pattern = "^cohort_P.*\\.qs$", full.names = TRUE) %>% 

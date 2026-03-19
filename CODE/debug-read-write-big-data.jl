@@ -1,3 +1,4 @@
+#!/usr/bin/env julia
 using RCall, Arrow, DataFrames, Serialization, Random, Printf
 
 println("Generating 1 Million DataFrames inside an Array... (This may take a minute)")

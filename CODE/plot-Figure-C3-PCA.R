@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-C3-PCA.R
 # Purpose: PCA biplot including ψ[max] (maximum Psi per patient)
@@ -26,7 +27,7 @@ if (basename(project_dir) == "CODE") {
 
 output_dir <- file.path(project_dir, "OUTPUT")
 if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 
 # 1a. Load simulation parameters (contains the max metrics)

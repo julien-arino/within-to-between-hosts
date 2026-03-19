@@ -1,3 +1,4 @@
+#!/usr/bin/env julia
 ## plot-random-individuals.jl
 # This script selects a random subset of individuals from a cohort simulation
 # and plots their viral load and tissue damage over time.

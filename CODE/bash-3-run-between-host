@@ -1,4 +1,4 @@
-git #!/bin/bash
+#!/bin/bash
 
 # Logical gates to control pipeline execution (1 = run, 0 = skip)
 PLOT=1

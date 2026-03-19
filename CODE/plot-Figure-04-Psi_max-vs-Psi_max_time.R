@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Psi_max-vs-Psi_max_time-Figure-04.R
 # Goal:
@@ -27,7 +28,7 @@ dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRU
 
 output_dir <- file.path(project_dir, "OUTPUT")
 if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 
 # 1a) Find latest processed status file (xi_h=75, xi_d=85)

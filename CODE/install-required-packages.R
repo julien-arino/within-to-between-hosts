@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 ## install-required-packages.R
 # Ensure that all R packages required by the project are installed.
 

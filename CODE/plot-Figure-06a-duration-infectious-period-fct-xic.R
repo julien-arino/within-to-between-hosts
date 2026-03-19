@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 ## plot-Figure-06a-duration-infectious-period-fct-xic.R
 # Generates a boxplot showing the duration of the infectious period 
 # (tau_r - tau_c) for varying infectiousness onset thresholds (xi^c),
@@ -22,7 +23,7 @@ if (basename(project_dir) == "CODE") {
 }
 output_dir <- file.path(project_dir, "OUTPUT")
 if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 
 # Load all available files for dynamic tracking

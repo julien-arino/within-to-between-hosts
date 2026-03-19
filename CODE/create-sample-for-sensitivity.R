@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # Set up the sample for the sensitivity analysis
 
 suppressWarnings(suppressPackageStartupMessages({
@@ -14,7 +15,7 @@ if (basename(project_dir) == "CODE") {
 
 # The sampling is executed inside Julia via RCall, so N is defined
 # by the julia script. However, we load our utility R functions first
-source(file.path(project_dir, "CODE", "functions-all.R"))
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
 # Use the same order as in plot-sensitivity-from-julia.R
 cols <- c(

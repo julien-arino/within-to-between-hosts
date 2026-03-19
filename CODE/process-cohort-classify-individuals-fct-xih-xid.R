@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # ==============================================================================
 # File: process-cohort-classify-individuals-fct-xih-xid.R
 # Description:
@@ -23,7 +24,7 @@ suppressWarnings(suppressPackageStartupMessages(library(data.table)))
 if (basename(getwd()) == "CODE") {
   output_dir <- normalizePath(file.path(getwd(), "..", "OUTPUT"))
   if (!exists("N_QS_THREADS")) {
-    if (exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+    if (exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
   }
 } else {
   output_dir <- normalizePath(file.path(getwd(), "OUTPUT"))

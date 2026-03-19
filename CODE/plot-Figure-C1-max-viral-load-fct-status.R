@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-C1-max-viral-load-fct-status.R
 # Purpose: Plot maximum viral load per individual (colored by status)
@@ -21,7 +22,7 @@ if (basename(project_dir) == "CODE") {
 
 output_dir <- file.path(project_dir, "OUTPUT")
 if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 files <- list.files(output_dir, pattern = "^cohort_status_P.*_xid_[0-9]+\\.qs$", full.names = TRUE)
 

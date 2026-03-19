@@ -1,3 +1,4 @@
+#!/usr/bin/env julia
 # This script creates a virtual cohort of individuals and runs simulations
 # for each individual in parallel, saving the results in various formats.
 # The script saves results as Rds files for later exploitation in R.
@@ -26,7 +27,7 @@ OUTPUT = OUTPUT_LOCAL
 mkpath(OUTPUT)
 
 # Load external functions
-include("functions-all.jl")
+include("functions-and-definitions.jl")
 
 # Run parallel?
 PARALLEL = true
@@ -84,7 +85,7 @@ if PARALLEL
     @everywhere using DifferentialEquations  # Import DifferentialEquations
     @everywhere using Serialization
     @everywhere using DataFrames
-    @everywhere include("functions-all.jl")
+    @everywhere include("functions-and-definitions.jl")
 
     # Ensure all workers have the required variables
     @everywhere IC = $IC

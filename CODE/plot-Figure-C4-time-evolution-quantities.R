@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-C4-time-evolution-quantities.R
 # Purpose: 6-panel plot showing time evolution of V, beta, I, Psi, FB, FU
@@ -25,7 +26,7 @@ if (basename(project_dir) == "CODE") {
 }
 output_dir <- file.path(project_dir, "OUTPUT")
 if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 
 # Load sim_state instead of truncated state

@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # ============================================================
 # File : plot-PRCC-within-host-new.R
 # category-based plots for PRCC values
@@ -20,7 +21,7 @@ if (basename(project_dir) == "CODE") {
 
 OUTPUT <- file.path(project_dir, "OUTPUT")
 if(!exists("N_QS_THREADS")) {
-  source(file.path(project_dir, "CODE", "functions-all.R"))
+  source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 }
 FIGS <- file.path(project_dir, "FIGS")
 

@@ -1,9 +1,10 @@
+#!/usr/bin/env Rscript
 library(qs2)
 
 # Find the original unfiltered cohort simulation files
 output_dir <- file.path(getwd(), "OUTPUT")
 if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 
 # Match cohort_P*.qs but exclude cohort_times and cohort_censored

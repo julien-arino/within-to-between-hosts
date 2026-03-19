@@ -1,3 +1,4 @@
+#!/usr/bin/env julia
 # This script creates a set of parameter values for individuals, varying
 # all parameters according to a Sobol sequence, and runs simulations
 # for each individual in parallel, saving the results in various formats.
@@ -27,7 +28,7 @@ OUTPUT = OUTPUT_LOCAL
 mkpath(OUTPUT)
 
 # Load external functions
-include("functions-all.jl")
+include("functions-and-definitions.jl")
 
 # Run parallel?
 PARALLEL = true
@@ -54,7 +55,7 @@ type_output = "maxima"
 N = 1_000_000
 
 # Build the absolute path to the R scripts to use FOR WITH_V0 PIPELINE
-r_functions_path = joinpath(SCRIPT_DIR, "functions-all.R")
+r_functions_path = joinpath(SCRIPT_DIR, "functions-and-definitions.R")
 r_script_path = joinpath(SCRIPT_DIR, "create-sample-for-sensitivity.R")
 
 ## Generate the sample in R
@@ -111,7 +112,7 @@ if PARALLEL
     # Ensure all workers have the required functions and modules
     @everywhere using DifferentialEquations  # Import the DifferentialEquations package
     @everywhere using Serialization
-    @everywhere include("functions-all.jl")
+    @everywhere include("functions-and-definitions.jl")
 end
 
 # INTERCEPT function to extract dynamic V0 from the individual dataframe before running the ODE wrapper

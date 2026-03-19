@@ -1,4 +1,5 @@
-## functions-all.R
+#!/usr/bin/env Rscript
+## functions-and-definitions.R
 #
 # This file contains shared configurations and initial conditions used in the R scope.
 #

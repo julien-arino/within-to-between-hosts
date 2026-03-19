@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 # ============================================================
 # File: plot-Figure-D4-incidence-fct-time-same-R0P-different-summaries.R
 # Purpose: BETWEEN-HOST SIMULATOR – Compare 4 transmission profiles
@@ -33,7 +34,7 @@ R0_target <- 2.5
 # ------------------------------------------------------------
 output_dir <- file.path(project_dir, "OUTPUT")
 if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 
 get_latest_dist <- function(pattern) {

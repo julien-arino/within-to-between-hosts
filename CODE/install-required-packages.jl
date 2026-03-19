@@ -1,3 +1,4 @@
+#!/usr/bin/env julia
 ## install-required-packages.jl
 # Ensure that all Julia packages required by the project are installed.
 

@@ -1,3 +1,4 @@
+#!/usr/bin/env Rscript
 ## plot-Figure-05a-length-of-hospital-stay.R
 # Generates a boxplot showing the length of stay in hospital for varying 
 # hospitalisation thresholds (xi^h) while holding the death threshold (xi^d) fixed.
@@ -25,7 +26,7 @@ if (basename(project_dir) == "CODE") {
 }
 output_dir <- file.path(project_dir, "OUTPUT")
 if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 
 # Function to load threshold data and compute hospitalization

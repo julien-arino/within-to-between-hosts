@@ -1,3 +1,4 @@
+#!/usr/bin/env julia
 ###################
 #
 # This file contains most functions used in the code.
@@ -369,7 +370,7 @@ function compute_R0_cohort!(individuals::DataFrame)
 end
 
 # Example usage of R0 (uncomment to test):
-# include("functions-all.jl")
+# include("functions-and-definitions.jl")
 # params = set_parameters()
 # println("Equilibrium F_U: ", equilibrium_FU(params))
 # println("R0: ", reproduction_number(params))

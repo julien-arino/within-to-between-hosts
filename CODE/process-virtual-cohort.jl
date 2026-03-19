@@ -1,3 +1,4 @@
+#!/usr/bin/env julia
 ## process-virtual-cohort.jl
 # Processes output files from run-virtual-cohort-sims.jl and computes the
 # various tau times defined in the manuscript.
