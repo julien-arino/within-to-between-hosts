@@ -4,6 +4,7 @@
 # and plots their viral load and tissue damage over time.
 # This is intended only for debugging purposes.
 
+println("\n\n>>> Running debug-plot-random-individuals.jl ...\n\n")
 using RCall
 using Glob
 using Random
@@ -104,3 +105,5 @@ savefig(plt_Psi, out_psi)
 
 println("Saved V plot to: $out_v")
 println("Saved Psi plot to: $out_psi")
+
+println("\n\n>>> debug-plot-random-individuals.jl successfully finished running ✅\n\n")

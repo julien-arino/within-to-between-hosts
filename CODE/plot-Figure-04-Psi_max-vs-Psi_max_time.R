@@ -9,13 +9,12 @@
 #   - FIGS/plot_Psi_max_vs_Psi_max_time_Figure_04.png and .pdf
 # ============================================================
 
+cat("\n\n>>> Running plot-Figure-04-Psi_max-vs-Psi_max_time.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(patchwork)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(here)))
-
-cat("\n\n>>> Running plot-Figure-04-Psi_max-vs-Psi_max_time.R ...\n\n")
 
 # Set project root automatically relative to the .git tracking directory
 project_dir <- here()
@@ -144,3 +143,5 @@ ggsave(filename = out_pdf, plot = p2, width = 25, height = 15, units = "cm", dpi
 
 cat("\nFigure 4 saved to:\n  -", out_png, "\n  -", out_pdf, "\n")
 cat("Note:", dropped_count, "individuals who hit the simulation horizon (t >= 100 days) were omitted from this plot.\n")
+
+cat("\n\n>>> plot-Figure-04-Psi_max-vs-Psi_max_time.R successfully finished running ✅\n\n")

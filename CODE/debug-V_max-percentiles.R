@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+cat("\n\n>>> Running debug-V_max-percentiles.R ...\n\n")
 library(qs2)
 
 # Find the original unfiltered cohort simulation files
@@ -44,3 +45,5 @@ cat("\n==== Percentiles of Unfiltered R0_within (0 to 100 by 10) ====\n")
 quantiles_R0 <- quantile(parameters$R0_within, probs = seq(0, 1, by = 0.1), na.rm = TRUE)
 print(quantiles_R0)
 cat("================================================================\n")
+
+cat("\n\n>>> debug-V_max-percentiles.R successfully finished running ✅\n\n")

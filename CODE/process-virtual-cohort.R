@@ -8,6 +8,7 @@
 # in RAM. It is often better to segment generation in the generation 
 # code (create-and-run-virtual-cohort.R).
 
+cat("\n\n>>> Running process-virtual-cohort.R ...\n\n")
 source("functions-and-definitions.R")
 
 # Set directory where the results are located. Typically, not somewhere
@@ -226,3 +227,5 @@ saveRDS(STATE_VARS, file = sprintf("%s/%s_state-vars.Rds",
 saveRDS(SUMMARIES, file = sprintf("%s/%s_summaries.Rds",
                                   OUTPUT_LOCAL, 
                                   file_name_base))
+
+cat("\n\n>>> process-virtual-cohort.R successfully finished running ✅\n\n")

@@ -3,6 +3,7 @@
 # Ensure that all R packages required by the project are installed.
 
 # List of required packages based on the project's source code
+cat("\n\n>>> Running install-required-packages.R ...\n\n")
 required_packages <- c(
     "cowplot",
     "deSolve",
@@ -60,3 +61,5 @@ for (pkg in required_packages) {
 }
 
 cat("All required R packages are installed.\n")
+
+cat("\n\n>>> install-required-packages.R successfully finished running ✅\n\n")

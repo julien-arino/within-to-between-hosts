@@ -7,12 +7,11 @@
 # hospitalisation period. Individuals who ultimately die (tau_d is not NA) 
 # are excluded from the duration calculations.
 
+cat("\n\n>>> Running plot-Figure-05a-length-of-hospital-stay.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
-
-cat("\n\n>>> Running plot-Figure-05a-length-of-hospital-stay.R ...\n\n")
 
 # USER SETTINGS
 xi_d_target <- 85
@@ -158,3 +157,5 @@ ggsave(
   dpi = 300
 )
 cat("\nSaved to:\n  -", out_pdf, "\n  -", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-05a-length-of-hospital-stay.R successfully finished running ✅\n\n")

@@ -4,11 +4,10 @@
 # (tau_r - tau_c) for varying infectiousness onset thresholds (xi^c),
 # while holding hospitalisation and death thresholds fixed.
 
+cat("\n\n>>> Running plot-Figure-06a-duration-infectious-period-fct-xic.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
-
-cat("\n\n>>> Running plot-Figure-06a-duration-infectious-period-fct-xic.R ...\n\n")
 
 # USER SETTINGS
 xi_h_target <- 75
@@ -177,3 +176,5 @@ ggsave(out_pdf, plot = p, width = 25, height = 15, units = "cm", dpi = 300)
 ggsave(out_png, plot = p, width = 25, height = 15, units = "cm", dpi = 300)
 
 cat("\nSaved to:\n  -", out_pdf, "\n  -", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-06a-duration-infectious-period-fct-xic.R successfully finished running ✅\n\n")

@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+cat("\n\n>>> Running debug-pull-indiividual-trajectory.R ...\n\n")
 library(qs2)
 library(dplyr)
 output_dir <- "/home/jarino/github/within-to-between-hosts/OUTPUT"
@@ -34,3 +35,5 @@ print(any(traj$V >= 4.0))
 cat("Peak interval:\n")
 max_idx <- argmax(traj$V)
 print(traj[(max(1, max_idx - 5)):(min(nrow(traj), max_idx + 5)), c("time", "V", "Psi")])
+
+cat("\n\n>>> debug-pull-indiividual-trajectory.R successfully finished running ✅\n\n")

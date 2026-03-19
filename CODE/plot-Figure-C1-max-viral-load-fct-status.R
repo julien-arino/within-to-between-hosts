@@ -4,6 +4,7 @@
 # Purpose: Plot maximum viral load per individual (colored by status)
 # ============================================================
 
+cat("\n\n>>> Running plot-Figure-C1-max-viral-load-fct-status.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
@@ -12,8 +13,6 @@ suppressWarnings(suppressPackageStartupMessages(library(here)))
 # ------------------------------------------------------------
 # 1. Automatically find the latest cohort_truncated file
 # ------------------------------------------------------------
-cat("\n\n>>> Running plot-Figure-C1-max-viral-load-fct-status.R ...\n\n")
-
 # Set project root automatically relative to the .git tracking directory
 project_dir <- here()
 if (basename(project_dir) == "CODE") {
@@ -95,3 +94,5 @@ ggsave(
 )
 
 cat("\n✅ Figures saved to", out_pdf, "and", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-C1-max-viral-load-fct-status.R successfully finished running ✅\n\n")

@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+cat("\n\n>>> Running plot-Figure-07b-pdf-fd-fct-xid.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
@@ -7,8 +8,6 @@ suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
 # ------------------------------------------------------------
 # 1. Setup paths and load dynamically matched cohort_status files
 # ------------------------------------------------------------
-cat("\n\n>>> Running plot-Figure-07b-pdf-fd-fct-xid.R ...\n\n")
-
 suppressWarnings(suppressPackageStartupMessages(library(here)))
 project_dir <- here()
 if (basename(project_dir) == "CODE") {
@@ -88,3 +87,5 @@ ggsave(out_pdf, plot = p_mu, width = 25, height = 15, units = "cm", dpi = 300)
 ggsave(out_png, plot = p_mu, width = 25, height = 15, units = "cm", dpi = 300)
 
 cat("\n✅ Figures saved to", out_pdf, "and", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-07b-pdf-fd-fct-xid.R successfully finished running ✅\n\n")

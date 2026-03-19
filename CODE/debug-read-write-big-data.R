@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+cat("\n\n>>> Running debug-read-write-big-data.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(arrow)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(tictoc)))
@@ -29,3 +30,5 @@ list_from_arrow <- split(df_arrow, df_arrow$ID)
 toc()
 
 cat("\nBenchmark Complete!\n")
+
+cat("\n\n>>> debug-read-write-big-data.R successfully finished running ✅\n\n")

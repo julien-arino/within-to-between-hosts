@@ -12,6 +12,7 @@
 #   corresponding `_xic_X_xir_X.qs` suffixes for downstream plotting.
 # ==============================================================================
 
+cat("\n\n>>> Running process-cohort-times-fct-xih-xid-xic-xir.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(parallel)))
@@ -117,3 +118,5 @@ for (file_idx in seq_along(files)) {
 }
 
 cat("\nAll status time extractions successfully completed!\n")
+
+cat("\n\n>>> process-cohort-times-fct-xih-xid-xic-xir.R successfully finished running ✅\n\n")

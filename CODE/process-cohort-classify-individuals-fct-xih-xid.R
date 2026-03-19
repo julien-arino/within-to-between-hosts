@@ -15,6 +15,7 @@
 #   The cleaned and truncated data is saved for each combination of cutpoints.
 # ==============================================================================
 
+cat("\n\n>>> Running process-cohort-classify-individuals-fct-xih-xid.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(parallel)))
@@ -239,3 +240,5 @@ for (xi_d in xi_d_vals) {
 
 stopCluster(cl)
 cat("\nAll thresholds and trajectories processed successfully.\n")
+
+cat("\n\n>>> process-cohort-classify-individuals-fct-xih-xid.R successfully finished running ✅\n\n")

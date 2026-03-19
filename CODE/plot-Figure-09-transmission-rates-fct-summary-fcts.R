@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+cat("\n\n>>> Running plot-Figure-09-transmission-rates-fct-summary-fcts.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages({
   library(qs2)
   library(dplyr)
@@ -10,8 +11,6 @@ suppressWarnings(suppressPackageStartupMessages({
 # ------------------------------------------------------------
 # 1. Automatically find the latest files
 # ------------------------------------------------------------
-cat("\n\n>>> Running plot-Figure-09-transmission-rates-fct-summary-fcts.R ...\n\n")
-
 project_dir <- here()
 if (basename(project_dir) == "CODE") {
   project_dir <- dirname(project_dir)
@@ -103,3 +102,5 @@ ggsave(out_pdf, plot = p, width = 20, height = 8, units = "cm")
 ggsave(out_png, plot = p, width = 20, height = 8, units = "cm")
 
 cat("\n✅ Figures saved to", out_pdf, "and", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-09-transmission-rates-fct-summary-fcts.R successfully finished running ✅\n\n")

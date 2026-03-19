@@ -6,6 +6,7 @@
 # All rescaled to the same R0^P = 2.5
 # ============================================================
 
+cat("\n\n>>> Running plot-Figure-D4-incidence-fct-time-same-R0P-different-summaries.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
@@ -237,3 +238,5 @@ ggsave(
 )
 
 cat("✅ Plot saved to", out_pdf, "and", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-D4-incidence-fct-time-same-R0P-different-summaries.R successfully finished running ✅\n\n")

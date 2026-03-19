@@ -4,6 +4,7 @@
 # The script saves results as Rds files for later exploitation in R.
 
 # Load required packages
+println("\n\n>>> Running run-virtual-cohort-sims.jl ...\n\n")
 using Dates
 using Distributed
 using Serialization
@@ -184,3 +185,4 @@ if PARALLEL
     end
 end
 
+println("\n\n>>> run-virtual-cohort-sims.jl successfully finished running ✅\n\n")

@@ -4,6 +4,7 @@
 # Purpose: Mean Psi-max vs Time to maximum tissue damage
 # ============================================================
 
+cat("\n\n>>> Running plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
@@ -13,8 +14,6 @@ SHOW_TITLES <- FALSE
 # ------------------------------------------------------------
 # 1. Setup paths and load dynamically matched cohort_status files
 # ------------------------------------------------------------
-cat("\n\n>>> Running plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R ...\n\n")
-
 # Set project root automatically relative to the .git tracking directory
 suppressWarnings(suppressPackageStartupMessages(library(here)))
 project_dir <- here()
@@ -146,3 +145,5 @@ ggsave(
 )
 
 cat("✅ Plot saved to", out_pdf, "and", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R successfully finished running ✅\n\n")

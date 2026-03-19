@@ -5,6 +5,7 @@
 # ============================================================
 
 # 1. Load libraries
+cat("\n\n>>> Running plot-Figure-C3-PCA.R ...\n\n")
 suppressPackageStartupMessages({
   library(qs2)
   library(dplyr)
@@ -17,8 +18,6 @@ suppressWarnings(suppressPackageStartupMessages(library(here)))
 # ------------------------------------------------------------
 # 2. Automatically find the latest cohort_truncated file
 # ------------------------------------------------------------
-cat("\n\n>>> Running plot-Figure-C3-PCA.R ...\n\n")
-
 # Set project root automatically relative to the .git tracking directory
 project_dir <- here()
 if (basename(project_dir) == "CODE") {
@@ -158,3 +157,5 @@ out_png <- file.path(project_dir, "FIGS", "Figure-C3-PCA.png")
 } else {
   message("⚠️ PCA computation failed. No plot generated.")
 }
+
+cat("\n\n>>> plot-Figure-C3-PCA.R successfully finished running ✅\n\n")

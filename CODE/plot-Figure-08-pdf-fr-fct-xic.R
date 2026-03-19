@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+cat("\n\n>>> Running plot-Figure-08-pdf-fr-fct-xic.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
@@ -7,8 +8,6 @@ suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
 # ------------------------------------------------------------
 # 1. Setup paths and load the full continuous state array
 # ------------------------------------------------------------
-cat("\n\n>>> Running plot-Figure-08-pdf-fr-fct-xic.R ...\n\n")
-
 suppressWarnings(suppressPackageStartupMessages(library(here)))
 project_dir <- here()
 if (basename(project_dir) == "CODE") {
@@ -89,3 +88,5 @@ ggsave(out_pdf, plot = p, width = 20, height = 8, units = "cm", dpi = 300)
 ggsave(out_png, plot = p, width = 20, height = 8, units = "cm", dpi = 300)
 
 cat("\n✅ Figures saved to", out_pdf, "and", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-08-pdf-fr-fct-xic.R successfully finished running ✅\n\n")

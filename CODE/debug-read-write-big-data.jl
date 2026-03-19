@@ -1,4 +1,5 @@
 #!/usr/bin/env julia
+println("\n\n>>> Running debug-read-write-big-data.jl ...\n\n")
 using RCall, Arrow, DataFrames, Serialization, Random, Printf
 
 println("Generating 1 Million DataFrames inside an Array... (This may take a minute)")
@@ -40,3 +41,5 @@ println("  >> Timing the save to disk natively via `Arrow.write`...")
 @time Arrow.write("shared_data_from_julia.arrow", df_flat)
 
 println("\nJulia sequence complete! Run the R script next to benchmark the loading.")
+
+println("\n\n>>> debug-read-write-big-data.jl successfully finished running ✅\n\n")

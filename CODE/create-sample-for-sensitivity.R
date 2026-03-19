@@ -1,6 +1,7 @@
 #!/usr/bin/env Rscript
 # Set up the sample for the sensitivity analysis
 
+cat("\n\n>>> Running create-sample-for-sensitivity.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages({
     library(sensitivity)
     library(randtoolbox)
@@ -114,3 +115,5 @@ rm(list = c(
   "IC",
   "avo"
 ))
+
+cat("\n\n>>> create-sample-for-sensitivity.R successfully finished running ✅\n\n")

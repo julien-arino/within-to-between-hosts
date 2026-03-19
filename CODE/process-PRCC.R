@@ -2,6 +2,7 @@
 ## process-PRCC.R
 # Computes PRCC from simulation results and saves outputs.
 
+cat("\n\n>>> Running process-PRCC.R ...\n\n")
 suppressPackageStartupMessages({
     library(dplyr)
     library(sensitivity)
@@ -105,3 +106,5 @@ write.csv(PRCC_global, file.path(OUTPUT_dir, paste0(file_prefix, "-PRCC-summary.
 qs_save(list(PRCC_vals = PRCC_vals, PRCC_times = PRCC_times), file.path(OUTPUT_dir, paste0(file_prefix, "-PRCC-results.qs")), nthreads = N_QS_THREADS)
 
 cat("PRCC computation finished. Results saved in OUTPUT.\n")
+
+cat("\n\n>>> process-PRCC.R successfully finished running ✅\n\n")

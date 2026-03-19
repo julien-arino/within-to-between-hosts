@@ -4,6 +4,7 @@
 # Purpose: Violin plots of Psi_max fct xid
 # ============================================================
 
+cat("\n\n>>> Running plot-Figure-C5b-violins-Psi_max-fct-xid.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
@@ -11,8 +12,6 @@ suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 # ------------------------------------------------------------
 # 1. Setup paths and load dynamically matched cohort_status files
 # ------------------------------------------------------------
-cat("\n\n>>> Running plot-Figure-C5b-violins-Psi_max-fct-xid.R ...\n\n")
-
 # Set project root automatically relative to the .git tracking directory
 suppressWarnings(suppressPackageStartupMessages(library(here)))
 project_dir <- here()
@@ -115,3 +114,5 @@ ggsave(
 )
 
 cat("✅ Plot saved to", out_pdf, "and", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-C5b-violins-Psi_max-fct-xid.R successfully finished running ✅\n\n")

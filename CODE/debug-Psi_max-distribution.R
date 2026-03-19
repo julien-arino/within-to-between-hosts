@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+cat("\n\n>>> Running debug-Psi_max-distribution.R ...\n\n")
 library(qs2)
 if(!exists("N_QS_THREADS")) {
   if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
@@ -16,3 +17,5 @@ cat("\nPercentages for xih = 70, xid = 75:\n")
 cat(sprintf("Mild (< 70%%):      %.2f%%\n", pct_mild))
 cat(sprintf("ICU  (70%% to < 75%%): %.2f%%\n", pct_icu))
 cat(sprintf("Dead (>= 75%%):      %.2f%%\n", pct_dead))
+
+cat("\n\n>>> debug-Psi_max-distribution.R successfully finished running ✅\n\n")

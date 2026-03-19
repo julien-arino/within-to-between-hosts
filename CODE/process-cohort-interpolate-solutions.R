@@ -5,14 +5,13 @@
 # standardized 0.1 day step grid over parallel forks and saves the bound
 # dataframe back to disk for plotting and distribution matrices.
 
+cat("\n\n>>> Running process-cohort-interpolate-solutions.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages({
   library(qs2)
   library(dplyr)
   library(future.apply)
   library(here)
 }))
-
-cat("\n\n>>> Running process-interpolate-solutions.R ...\n\n")
 
 project_dir <- here()
 if (basename(project_dir) == "CODE") {
@@ -108,3 +107,5 @@ cat("\nSaving interpolated flat matrix to QS...\n")
 qs_save(beta_df_raw, out_interp_path, nthreads = N_QS_THREADS)
 
 cat("✅ Interpolation complete and saved to", out_filename, "\n")
+
+cat("\n\n>>> process-cohort-interpolate-solutions.R successfully finished running ✅\n\n")

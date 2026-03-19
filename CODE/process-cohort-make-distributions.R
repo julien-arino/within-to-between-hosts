@@ -10,6 +10,7 @@
 #   for downstream numerical models (like incidence plotting).
 # ==============================================================================
 
+cat("\n\n>>> Running process-cohort-make-distributions.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages({
   library(qs2)
   library(dplyr)
@@ -17,8 +18,6 @@ suppressWarnings(suppressPackageStartupMessages({
   library(future.apply)
   library(here)
 }))
-
-cat("\n\n>>> Running process-cohort-make-distributions.R ...\n\n")
 
 project_dir <- here()
 if (basename(project_dir) == "CODE") {
@@ -269,3 +268,5 @@ qs_save(beta_overall, out_beta, nthreads = N_QS_THREADS)
 cat("\n\tBeta matrix saved to", basename(out_beta), "\n")
 
 cat("\n✅ All cohort distributions successfully computed and saved!\n")
+
+cat("\n\n>>> process-cohort-make-distributions.R successfully finished running ✅\n\n")

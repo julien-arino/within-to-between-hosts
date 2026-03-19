@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+cat("\n\n>>> Running debug-V-trajectory.R ...\n\n")
 library(qs2)
 library(dplyr)
 library(ggplot2)
@@ -28,3 +29,5 @@ i_vec <- cohort[[idx]]$vars$I
 # Look at the first 10 time steps
 cat("\nFirst 10 timesteps:\n")
 print(data.frame(time = time_vec[1:10], V = v_vec[1:10], I = i_vec[1:10]))
+
+cat("\n\n>>> debug-V-trajectory.R successfully finished running ✅\n\n")

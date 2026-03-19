@@ -6,6 +6,7 @@
 #   Case 2: β(a), γ(a), μ(a)  (all age-dependent)
 # ============================================================
 
+cat("\n\n>>> Running plot-Figure-10-incidence-fct-time.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
@@ -258,3 +259,5 @@ ggsave(
 )
 
 cat("✅ Extracted between-host simulation plot saved to", out_pdf, "and", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-10-incidence-fct-time.R successfully finished running ✅\n\n")

@@ -2,6 +2,7 @@
 ## install-required-packages.jl
 # Ensure that all Julia packages required by the project are installed.
 
+println("\n\n>>> Running install-required-packages.jl ...\n\n")
 using Pkg
 
 # List of required packages based on the project's source code
@@ -40,3 +41,5 @@ for pkg in required_packages
 end
 
 println("All required Julia packages are installed.")
+
+println("\n\n>>> install-required-packages.jl successfully finished running ✅\n\n")

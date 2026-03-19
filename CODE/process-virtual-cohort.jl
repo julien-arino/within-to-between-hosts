@@ -3,6 +3,7 @@
 # Processes output files from run-virtual-cohort-sims.jl and computes the
 # various tau times defined in the manuscript.
 
+println("\n\n>>> Running process-virtual-cohort.jl ...\n\n")
 using RCall
 using DataFrames
 using Glob
@@ -485,3 +486,5 @@ if(!requireNamespace("qs2", quietly=TRUE)) {
 }
 """
 println("Saved right-censored cohort successfully to $out_truncated_qs")
+
+println("\n\n>>> process-virtual-cohort.jl successfully finished running ✅\n\n")

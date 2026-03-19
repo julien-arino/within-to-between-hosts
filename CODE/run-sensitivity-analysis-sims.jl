@@ -6,6 +6,7 @@
 # Rds or qs files for later exploitation in R.
 
 # Load required packages
+println("\n\n>>> Running run-sensitivity-analysis-sims.jl ...\n\n")
 using Dates
 using Distributed
 using Serialization
@@ -234,3 +235,5 @@ if SAVE_CSV
 
     println("Results saved to $save_path_csv")
 end
+
+println("\n\n>>> run-sensitivity-analysis-sims.jl successfully finished running ✅\n\n")

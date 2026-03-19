@@ -4,6 +4,7 @@
 # category-based plots for PRCC values
 # ============================================================
 
+cat("\n\n>>> Running plot-Figure-03-B1-PRCC-within-host.R ...\n\n")
 suppressPackageStartupMessages({
     library(dplyr)
     library(ggplot2)
@@ -255,3 +256,5 @@ cat("\nFigures saved in", FIGS, ":\n")
 cat("  - Figure-B1a-PRCC-values (.png, .pdf)\n")
 cat("  - Figure-B1b-PRCC-values-times (.png, .pdf)\n")
 cat("  - Figure-03c-PRCC-global (.png, .pdf)\n\n")
+
+cat("\n\n>>> plot-Figure-03-B1-PRCC-within-host.R successfully finished running ✅\n\n")

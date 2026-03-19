@@ -4,6 +4,7 @@
 # Purpose: 6-panel plot showing time evolution of V, beta, I, Psi, FB, FU
 # ============================================================
 
+cat("\n\n>>> Running plot-Figure-C4-time-evolution-quantities.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages({
   library(qs2)
   library(dplyr)
@@ -17,8 +18,6 @@ suppressWarnings(suppressPackageStartupMessages({
 # ------------------------------------------------------------
 # 1. Automatically find the latest files
 # ------------------------------------------------------------
-cat("\n\n>>> Running plot-Figure-C4-time-evolution-quantities.R ...\n\n")
-
 # Set project root automatically relative to the .git tracking directory
 project_dir <- here()
 if (basename(project_dir) == "CODE") {
@@ -314,3 +313,5 @@ ggsave(
 )
 
 cat("✅ 6-panel evolution plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-C4-time-evolution-quantities.R successfully finished running ✅\n\n")

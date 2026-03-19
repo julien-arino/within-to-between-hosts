@@ -1,4 +1,5 @@
 #!/usr/bin/env Rscript
+cat("\n\n>>> Running plot-Figure-06b-max-transmission-rate-fct-xic.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
@@ -158,3 +159,5 @@ ggsave(
 )
 
 cat("\nSaved to", out_pdf, "and", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-06b-max-transmission-rate-fct-xic.R successfully finished running ✅\n\n")

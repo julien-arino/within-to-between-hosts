@@ -1,10 +1,9 @@
 #!/usr/bin/env Rscript
+cat("\n\n>>> Running plot-Figure-05b-pct-outcomes-fct-xid.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
-
-cat("\n\n>>> Running plot-Figure-05b-pct-outcomes-fct-xid.R ...\n\n")
 
 # USER SETTINGS
 xi_h_target <- 70
@@ -139,3 +138,5 @@ ggsave(
 )
 
 cat("\nSaved Figure 05b to:\n  -", out_pdf, "\n  -", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-05b-pct-outcomes-fct-xid.R successfully finished running ✅\n\n")

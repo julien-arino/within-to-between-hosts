@@ -3,12 +3,11 @@
 # Generates a horizontal violin plot showing the time to death (tau_d)
 # for two different death thresholds (xi^d = 85 and 95).
 
+cat("\n\n>>> Running plot-Figure-07a-death-time-fct-xid.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(here)))
-
-cat("\n\n>>> Running plot-Figure-07a-death-time-fct-xid.R ...\n\n")
 
 # USER SETTINGS
 xi_h_target <- 70 # Fixed xi_h just to find a valid file (tau_d is independent of xi_h)
@@ -119,3 +118,5 @@ ggsave(out_pdf, plot = p_violin, width = 20, height = 8, units = "cm", dpi = 300
 ggsave(out_png, plot = p_violin, width = 20, height = 8, units = "cm", dpi = 300)
 
 cat("\nSaved to:\n  -", out_pdf, "\n  -", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-07a-death-time-fct-xid.R successfully finished running ✅\n\n")

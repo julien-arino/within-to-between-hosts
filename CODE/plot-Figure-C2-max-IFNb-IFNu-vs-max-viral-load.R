@@ -4,6 +4,7 @@
 # Purpose: Plot max(F_B) and max(F_U) against max(V) for the cohort
 # ============================================================
 
+cat("\n\n>>> Running plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
@@ -13,8 +14,6 @@ suppressWarnings(suppressPackageStartupMessages(library(here)))
 # ------------------------------------------------------------
 # 1. Automatically find the latest parameter and status files
 # ------------------------------------------------------------
-cat("\n\n>>> Running plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R ...\n\n")
-
 # Set project root automatically relative to the .git tracking directory
 project_dir <- here()
 if (basename(project_dir) == "CODE") {
@@ -118,3 +117,5 @@ ggsave(
 )
 
 cat("✅ Plots saved to:", out_pdf, "and", out_png, "\n")
+
+cat("\n\n>>> plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R successfully finished running ✅\n\n")

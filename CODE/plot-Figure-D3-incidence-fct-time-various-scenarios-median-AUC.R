@@ -6,6 +6,7 @@
 # SAME R0 WITHIN EACH PANEL (calibrated)
 # ============================================================
 
+cat("\n\n>>> Running plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R ...\n\n")
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
@@ -197,3 +198,5 @@ out_png <- file.path(fig_dir, "Figure-D3-incidence-fct-time-various-scenarios-me
 ggsave(out_pdf, p, width=22, height=12, units="cm")
 ggsave(out_png, p, width=22, height=12, units="cm")
 cat("✅ Plot saved to", out_pdf, "\n")
+
+cat("\n\n>>> plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R successfully finished running ✅\n\n")
