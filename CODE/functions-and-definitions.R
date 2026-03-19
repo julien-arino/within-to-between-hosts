@@ -59,5 +59,16 @@ project_colors <- c(
 status_cols <- c(
     "Mild" = "dodgerblue3",
     "ICU"  = "orange",
-    "Dead" = "red3"
+"Dead" = "red3"
 )
+
+# ==============================================================================
+# Timing formatting
+# ==============================================================================
+print_end_time <- function(start_time, script_name) {
+  end_time <- Sys.time()
+  time_diff <- as.numeric(difftime(end_time, start_time, units = "secs"))
+  mins <- floor(time_diff / 60)
+  secs <- round(time_diff %% 60, 1)
+  cat(sprintf("\n\n>>> Finished %s in %d minutes and %.1f seconds ✅\n\n", script_name, mins, secs))
+}

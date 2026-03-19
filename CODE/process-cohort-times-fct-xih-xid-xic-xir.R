@@ -13,6 +13,7 @@
 # ============================================================
 
 cat("\n\n>>> Running process-cohort-times-fct-xih-xid-xic-xir.R ...\n\n")
+start_time <- Sys.time()
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(parallel)))
@@ -24,9 +25,7 @@ xi_r <- 1.0 # End of infectious period
 # Find the latest truncated cohort file
 if (basename(getwd()) == "CODE") {
   output_dir <- normalizePath(file.path(getwd(), "..", "OUTPUT"))
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-}
+  source(file.path(getwd(), "functions-and-definitions.R"))
 } else {
   output_dir <- normalizePath(file.path(getwd(), "OUTPUT"))
 }
@@ -118,5 +117,4 @@ for (file_idx in seq_along(files)) {
 }
 
 cat("\nAll status time extractions successfully completed!\n")
-
-cat("\n\n>>> process-cohort-times-fct-xih-xid-xic-xir.R successfully finished running ✅\n\n")
+print_end_time(start_time, "process-cohort-times-fct-xih-xid-xic-xir.R")

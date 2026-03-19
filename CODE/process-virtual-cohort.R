@@ -10,7 +10,8 @@
 # ============================================================
 
 cat("\n\n>>> Running process-virtual-cohort.R ...\n\n")
-source("functions-and-definitions.R")
+start_time <- Sys.time()
+
 
 # Set directory where the results are located. Typically, not somewhere
 # synced to GitHub (100,000 individuals => 100 GB raw output).
@@ -22,6 +23,7 @@ if (grepl("node", Sys.info()["nodename"])) {
 }
 
 # Load the file. Let's do the latest one for now..
+source("functions-and-definitions.R")
 file_name_base = "sim_P0100000_DT20240526-225526"
 cohort = 
   readRDS(sprintf("%s/%s_merged.Rds",
@@ -228,5 +230,4 @@ saveRDS(STATE_VARS, file = sprintf("%s/%s_state-vars.Rds",
 saveRDS(SUMMARIES, file = sprintf("%s/%s_summaries.Rds",
                                   OUTPUT_LOCAL, 
                                   file_name_base))
-
-cat("\n\n>>> process-virtual-cohort.R successfully finished running ✅\n\n")
+print_end_time(start_time, "process-virtual-cohort.R")

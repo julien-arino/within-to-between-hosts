@@ -6,6 +6,7 @@
 # ============================================================
 
 cat("\n\n>>> Running process-PRCC.R ...\n\n")
+start_time <- Sys.time()
 suppressPackageStartupMessages({
     library(dplyr)
     library(sensitivity)
@@ -20,9 +21,7 @@ if (basename(project_dir) == "CODE") {
 }
 
 OUTPUT_dir <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
-}
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
 # Find the latest sensitivity_* file
 sensitivity_files <- list.files(OUTPUT_dir, pattern = "^sensitivity_.*\\.qs$", full.names = TRUE)
@@ -109,5 +108,4 @@ write.csv(PRCC_global, file.path(OUTPUT_dir, paste0(file_prefix, "-PRCC-summary.
 qs_save(list(PRCC_vals = PRCC_vals, PRCC_times = PRCC_times), file.path(OUTPUT_dir, paste0(file_prefix, "-PRCC-results.qs")), nthreads = N_QS_THREADS)
 
 cat("PRCC computation finished. Results saved in OUTPUT.\n")
-
-cat("\n\n>>> process-PRCC.R successfully finished running ✅\n\n")
+print_end_time(start_time, "process-PRCC.R")

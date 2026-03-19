@@ -9,6 +9,7 @@
 # ============================================================
 
 cat("\n\n>>> Running process-cohort-interpolate-solutions.R ...\n\n")
+start_time <- Sys.time()
 suppressWarnings(suppressPackageStartupMessages({
   library(qs2)
   library(dplyr)
@@ -21,9 +22,7 @@ if (basename(project_dir) == "CODE") {
   project_dir <- dirname(project_dir)
 }
 output_dir <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-}
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
 # ------------------------------------------------------------
 # 1. LOAD RAW TRAJECTORIES
@@ -110,5 +109,4 @@ cat("\nSaving interpolated flat matrix to QS...\n")
 qs_save(beta_df_raw, out_interp_path, nthreads = N_QS_THREADS)
 
 cat("✅ Interpolation complete and saved to", out_filename, "\n")
-
-cat("\n\n>>> process-cohort-interpolate-solutions.R successfully finished running ✅\n\n")
+print_end_time(start_time, "process-cohort-interpolate-solutions.R")

@@ -16,6 +16,7 @@
 # ============================================================
 
 cat("\n\n>>> Running process-cohort-classify-individuals-fct-xih-xid.R ...\n\n")
+start_time <- Sys.time()
 suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
 suppressWarnings(suppressPackageStartupMessages(library(qs2)))
 suppressWarnings(suppressPackageStartupMessages(library(parallel)))
@@ -24,9 +25,7 @@ suppressWarnings(suppressPackageStartupMessages(library(data.table)))
 # Find the latest cohort_sim_parameters_P* file
 if (basename(getwd()) == "CODE") {
   output_dir <- normalizePath(file.path(getwd(), "..", "OUTPUT"))
-  if (!exists("N_QS_THREADS")) {
-    if (exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-  }
+  source(file.path(getwd(), "functions-and-definitions.R"))
 } else {
   output_dir <- normalizePath(file.path(getwd(), "OUTPUT"))
 }
@@ -240,5 +239,4 @@ for (xi_d in xi_d_vals) {
 
 stopCluster(cl)
 cat("\nAll thresholds and trajectories processed successfully.\n")
-
-cat("\n\n>>> process-cohort-classify-individuals-fct-xih-xid.R successfully finished running ✅\n\n")
+print_end_time(start_time, "process-cohort-classify-individuals-fct-xih-xid.R")
