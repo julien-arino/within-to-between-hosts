@@ -27,6 +27,13 @@ if (length(sensitivity_files) == 0) {
 latest_file <- sensitivity_files[which.max(file.info(sensitivity_files)$mtime)]
 cat("Loading simulation data from:", latest_file, "\n")
 
+# Extract the base prefix to use for output files
+file_prefix <- sub("^(sensitivity_P[0-9]+_DT[0-9]+-[0-9]+).*\\.qs$", "\\1", basename(latest_file))
+# Fallback if the pattern doesn't match
+if (file_prefix == basename(latest_file)) {
+    file_prefix <- sub("\\.qs$", "", basename(latest_file))
+}
+
 # Load exactly what was exported from the simulation phase
 sim_data <- qs_read(latest_file, nthreads = N_QS_THREADS)
 
@@ -37,7 +44,14 @@ param_names <- setdiff(names(sim_data$parameters), exclude_cols)
 X <- sim_data$parameters[, param_names]
 
 # Extract cohort results
-res_df <- dplyr::bind_rows(sim_data$cohort)
+if ("maxima" %in% names(sim_data$cohort[[1]])) {
+  # New format: nested list containing vars, maxima, R0_within
+  maxima_list <- lapply(sim_data$cohort, function(x) x$maxima)
+  res_df <- dplyr::bind_rows(maxima_list)
+} else {
+  # Old format: flat list
+  res_df <- dplyr::bind_rows(sim_data$cohort)
+}
 
 ##
 ## 1. PRCC computation
@@ -86,7 +100,7 @@ PRCC_global <- merge(
 PRCC_global$sum_total <- PRCC_global$sum_abs.x + PRCC_global$sum_abs.y
 PRCC_global <- PRCC_global[order(-PRCC_global$sum_total), ]
 
-write.csv(PRCC_global, file.path(OUTPUT_dir, "PRCC_global_summary.csv"), row.names = FALSE)
-qs_save(list(PRCC_vals = PRCC_vals, PRCC_times = PRCC_times), file.path(OUTPUT_dir, "PRCC_results.qs"), nthreads = N_QS_THREADS)
+write.csv(PRCC_global, file.path(OUTPUT_dir, paste0(file_prefix, "-PRCC-summary.csv")), row.names = FALSE)
+qs_save(list(PRCC_vals = PRCC_vals, PRCC_times = PRCC_times), file.path(OUTPUT_dir, paste0(file_prefix, "-PRCC-results.qs")), nthreads = N_QS_THREADS)
 
 cat("PRCC computation finished. Results saved in OUTPUT.\n")

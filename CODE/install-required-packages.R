@@ -41,7 +41,7 @@ for (pkg in required_packages) {
         # Wrapped in a try-catch equivalent to avoid stopping script on single package failure
         tryCatch(
             {
-                install.packages(pkg, quiet = TRUE)
+                install.packages(pkg, quiet = TRUE, Ncpus = 16)
                 # Verify it actually installed
                 if (require(pkg, character.only = TRUE, quietly = TRUE)) {
                     cat("Successfully installed", pkg, "\n")

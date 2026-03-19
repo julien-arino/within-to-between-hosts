@@ -2,7 +2,7 @@
 
 # Logical gates to control pipeline execution (1 = run, 0 = skip)
 RUN=0
-PROCESS=0
+PROCESS=1
 PLOT=1
 
 if [ "$RUN" -eq 1 ]; then
@@ -11,13 +11,17 @@ if [ "$RUN" -eq 1 ]; then
 fi
 
 if [ "$PROCESS" -eq 1 ]; then
-    echo "Processing cohort classification (Grid Search xi_h, xi_d)..."
+    echo "Processing individuals as a function of xi_h & xi_d..."
+    echo "(Determining individual outcomes, time of hospitalisation and death)"
     Rscript process-cohort-classify-individuals-fct-xih-xid.R
     
-    echo "Processing cohort transmission times (Grid Search xi_c, xi_r)..."
-    Rscript process-cohort-times-fct-xic-xir.R
+    echo "Processing individuals transmission related times (xi_h, xi_d, xi_c & xi_r)..."
+    Rscript process-cohort-times-fct-xih-xid-xic-xir.R
 
-    echo "Creating overall distributions for plots (gamma, mu, beta)..."
+    echo "Interpolating solutions for distribution work..."
+    Rscript process-cohort-interpolate-solutions.R
+
+    echo "Creating distributions (gamma, mu, beta)..."
     Rscript process-cohort-make-distributions.R
 fi
 

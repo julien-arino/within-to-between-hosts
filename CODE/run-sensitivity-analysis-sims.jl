@@ -121,7 +121,7 @@ end
     # The sampled V0 is attached directly to the individuals dataframe now
     local_IC[1] = individuals_df[idx, :V0]
 
-    return run_one_individual(idx, individuals_df, local_IC; type_output=type_output)
+    return run_one_individual(idx, individuals_df, local_IC)
 end
 
 # Run computation via our intercept function

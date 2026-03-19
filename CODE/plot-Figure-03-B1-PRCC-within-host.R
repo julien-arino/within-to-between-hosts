@@ -27,10 +27,19 @@ FIGS <- file.path(project_dir, "FIGS")
 dir.create(FIGS, showWarnings = FALSE, recursive = TRUE)
 
 # Load data
-prcc_data <- qs_read(file.path(OUTPUT, "PRCC_results.qs"), nthreads = N_QS_THREADS)
+prcc_result_files <- list.files(OUTPUT, pattern = "^sensitivity_P.*-PRCC-results\\.qs$", full.names = TRUE)
+if (length(prcc_result_files) == 0) {
+    stop("Cannot find PRCC results qs file in ", OUTPUT)
+}
+LATEST_PRCC_FILE <- prcc_result_files[which.max(file.mtime(prcc_result_files))]
+cat("Loading PRCC data from:", basename(LATEST_PRCC_FILE), "\n")
+
+prcc_data <- qs_read(LATEST_PRCC_FILE, nthreads = N_QS_THREADS)
 PRCC_vals <- prcc_data$PRCC_vals
 PRCC_times <- prcc_data$PRCC_times
-PRCC_global <- read.csv(file.path(OUTPUT, "PRCC_global_summary.csv"))
+
+PRCC_summary_file <- sub("-PRCC-results\\.qs$", "-PRCC-summary.csv", LATEST_PRCC_FILE)
+PRCC_global <- read.csv(PRCC_summary_file)
 
 # ------------------------------------------------------------
 # 8. Plot configuration
@@ -241,4 +250,7 @@ ggsave(
     width = 25, height = 15, units = "cm", dpi = 300, device = cairo_pdf
 )
 
-cat("\nGlobal PRCC plot saved:", file.path(FIGS, "Figure-03-PRCC-global.pdf"), "\n")
+cat("\nFigures saved in", FIGS, ":\n")
+cat("  - Figure-B1a-PRCC-values (.png, .pdf)\n")
+cat("  - Figure-B1b-PRCC-values-times (.png, .pdf)\n")
+cat("  - Figure-03c-PRCC-global (.png, .pdf)\n\n")

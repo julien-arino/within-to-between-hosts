@@ -22,9 +22,9 @@ suppressWarnings(suppressPackageStartupMessages(library(data.table)))
 # Find the latest cohort_sim_parameters_P* file
 if (basename(getwd()) == "CODE") {
   output_dir <- normalizePath(file.path(getwd(), "..", "OUTPUT"))
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
-}
+  if (!exists("N_QS_THREADS")) {
+    if (exists("project_dir")) source(file.path(project_dir, "CODE", "functions-all.R")) else source("functions-all.R")
+  }
 } else {
   output_dir <- normalizePath(file.path(getwd(), "OUTPUT"))
 }
@@ -41,10 +41,10 @@ cat("Loading newest cohort parameters:", basename(latest_param_file), "\n")
 # Infer the state file
 state_file <- file.path(output_dir, sub("^cohort_sim_parameters_", "cohort_sim_state_", basename(latest_param_file)))
 if (!file.exists(state_file)) {
-    stop("Matching state file not found: ", state_file)
+  stop("Matching state file not found: ", state_file)
 }
 
-# Instead of a full Cartesian grid (45 pairs), explicitly define the 11 pairs 
+# Instead of a full Cartesian grid (45 pairs), explicitly define the 11 pairs
 # specifically requested by downstream plotting scripts (Fig 05a, 05b, 07a, etc.)
 threshold_pairs <- list(
   c(50.0, 85.0),
@@ -54,7 +54,7 @@ threshold_pairs <- list(
   c(70.0, 85.0),
   c(70.0, 90.0),
   c(70.0, 95.0),
-  c(75.0, 85.0), # The global baseline anchor
+  c(75.0, 85.0), # Default value pair
   c(75.0, 90.0),
   c(75.0, 95.0),
   c(80.0, 85.0)
@@ -62,6 +62,7 @@ threshold_pairs <- list(
 
 # We still need unique xi_h_vals to compute the tau_h bounds optimally just once
 xi_h_vals <- unique(sapply(threshold_pairs, `[`, 1))
+xi_d_vals <- unique(sapply(threshold_pairs, `[`, 2))
 
 # ====================================================================
 # PART 1: PROCESS TABLES
@@ -89,16 +90,16 @@ n_cores <- parallel::detectCores()
 workers_to_use <- min(24, max(2, n_cores - 2))
 
 tau_h_list <- mclapply(cohort_state, function(ind_list) {
-  time <- ind_list[[1]]  # or ind_list$time
-  psi  <- ind_list[[2]]  # or ind_list$Psi
+  time <- ind_list[[1]] # or ind_list$time
+  psi <- ind_list[[2]] # or ind_list$Psi
   res_start <- numeric(length(xi_h_vals))
-  res_end   <- numeric(length(xi_h_vals))
-  
+  res_end <- numeric(length(xi_h_vals))
+
   for (i in seq_along(xi_h_vals)) {
     xi <- xi_h_vals[i]
     idx_start <- which(psi >= xi)[1]
     res_start[i] <- if (is.na(idx_start)) NA_real_ else time[idx_start]
-    
+
     if (is.na(idx_start)) {
       res_end[i] <- NA_real_
     } else {
@@ -106,7 +107,7 @@ tau_h_list <- mclapply(cohort_state, function(ind_list) {
       post_onset_psi <- psi[idx_start:length(psi)]
       post_onset_time <- time[idx_start:length(time)]
       idx_end <- which(post_onset_psi < xi)[1]
-      
+
       res_end[i] <- if (is.na(idx_end)) NA_real_ else post_onset_time[idx_end]
     }
   }
@@ -115,7 +116,7 @@ tau_h_list <- mclapply(cohort_state, function(ind_list) {
 
 # Separate the start and end lists
 tau_h_start_list <- lapply(tau_h_list, `[[`, "start")
-tau_h_end_list   <- lapply(tau_h_list, `[[`, "end")
+tau_h_end_list <- lapply(tau_h_list, `[[`, "end")
 
 # Extremely fast O(1) allocation: unspool single vector and reshape to matrix natively
 tau_h_start_mat <- matrix(unlist(tau_h_start_list, use.names = FALSE), ncol = length(xi_h_vals), byrow = TRUE)
@@ -125,7 +126,7 @@ tau_h_end_mat <- matrix(unlist(tau_h_end_list, use.names = FALSE), ncol = length
 colnames(tau_h_end_mat) <- paste0("tau_h_end_", xi_h_vals)
 
 base_summary_df <- bind_cols(
-  base_summary_df, 
+  base_summary_df,
   as.data.frame(tau_h_start_mat),
   as.data.frame(tau_h_end_mat)
 )
@@ -138,36 +139,36 @@ cat("Computing and saving status tables for strictly required thresholds...\n")
 for (pair in threshold_pairs) {
   xi_h <- pair[1]
   xi_d <- pair[2]
-  
+
   if (xi_h >= xi_d) {
-      next
-    }
+    next
+  }
 
-    tau_h_start_col <- paste0("tau_h_start_", xi_h)
-    tau_h_end_col   <- paste0("tau_h_end_", xi_h)
+  tau_h_start_col <- paste0("tau_h_start_", xi_h)
+  tau_h_end_col <- paste0("tau_h_end_", xi_h)
 
-    current_summary_df <- base_summary_df %>%
-      mutate(
-        status = case_when(
-          max_Psi < xi_h ~ "Mild",
-          max_Psi < xi_d ~ "ICU",
-          TRUE ~ "Dead"
-        ),
-        tau_d = ifelse(status == "Dead", tau_max_Psi, NA_real_),
-        tau_h_start = ifelse(status %in% c("ICU", "Dead"), .data[[tau_h_start_col]], NA_real_),
-        tau_h_end   = ifelse(status %in% c("ICU", "Dead"), .data[[tau_h_end_col]], NA_real_)
-      ) %>%
-      select(-any_of(c(paste0("tau_h_start_", xi_h_vals), paste0("tau_h_end_", xi_h_vals)))) # Clear numeric trackers
+  current_summary_df <- base_summary_df %>%
+    mutate(
+      status = case_when(
+        max_Psi < xi_h ~ "Mild",
+        max_Psi < xi_d ~ "ICU",
+        TRUE ~ "Dead"
+      ),
+      tau_d = ifelse(status == "Dead", tau_max_Psi, NA_real_),
+      tau_h_start = ifelse(status %in% c("ICU", "Dead"), .data[[tau_h_start_col]], NA_real_),
+      tau_h_end = ifelse(status %in% c("ICU", "Dead"), .data[[tau_h_end_col]], NA_real_)
+    ) %>%
+    select(-any_of(c(paste0("tau_h_start_", xi_h_vals), paste0("tau_h_end_", xi_h_vals)))) # Clear numeric trackers
 
-    h_str <- ifelse(xi_h %% 1 == 0, as.character(as.integer(xi_h)), as.character(xi_h))
-    d_str <- ifelse(xi_d %% 1 == 0, as.character(as.integer(xi_d)), as.character(xi_d))
+  h_str <- ifelse(xi_h %% 1 == 0, as.character(as.integer(xi_h)), as.character(xi_h))
+  d_str <- ifelse(xi_d %% 1 == 0, as.character(as.integer(xi_d)), as.character(xi_d))
 
-    new_base <- sub("cohort_", "cohort_status_", base_name)
-    new_base <- paste0(new_base, "_xih_", h_str, "_xid_", d_str)
+  new_base <- sub("cohort_", "cohort_status_", base_name)
+  new_base <- paste0(new_base, "_xih_", h_str, "_xid_", d_str)
 
-    out_file <- file.path(output_dir, paste0(new_base, ".qs"))
-    qs_save(current_summary_df, out_file, nthreads = N_QS_THREADS)
-    cat("  -> Saved:", basename(out_file), "\n")
+  out_file <- file.path(output_dir, paste0(new_base, ".qs"))
+  qs_save(current_summary_df, out_file, nthreads = N_QS_THREADS)
+  cat("  -> Saved:", basename(out_file), "\n")
 }
 
 
