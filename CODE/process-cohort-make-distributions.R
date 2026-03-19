@@ -61,128 +61,133 @@ cat(sprintf("Constructed V matrix with %d rows (time) and %d columns (individual
 # ============================================================
 # 2. LOAD STATUS FILE AND COMPUTE ACTIVE INDIVIDUALS
 # ============================================================
-cat("\nLoading status metadata...\n")
-status_pattern <- "^cohort_status_P.*_xih_75_xid_85_xic_4_xir_1\\.qs$"
-status_files <- list.files(output_dir, pattern = status_pattern, full.names = TRUE)
-if (length(status_files) == 0) stop("No cohort_status file found matching the required thresholds!")
-target_status_file <- status_files[which.max(file.mtime(status_files))]
+cat("\nExecuting batch distribution pipeline for all available status thresholds...\n")
+status_pattern <- paste0("^cohort_status_", base_prefix, "_xih_75_xid_85_xic_(4|6)_xir_1\\.qs$")
+target_status_files <- list.files(output_dir, pattern = status_pattern, full.names = TRUE)
 
-cat("Loading status file:", basename(target_status_file), "\n")
-cohort_status <- qs_read(target_status_file, nthreads = N_QS_THREADS)
+if (length(target_status_files) == 0) stop("No cohort_status files found matching the required thresholds!")
 
-cat("Computing active individuals over time...\n")
-# Active individuals: have not yet died or recovered
-# Therefore, an individual is active at time t if: t < tau_d AND t < tau_r
-# We can find the exit time for each individual
-library(tidyr)
-exit_times <- pmin(
-  replace_na(cohort_status$tau_d, Inf),
-  replace_na(cohort_status$tau_r, Inf)
-)
+for (target_status_file in target_status_files) {
+  cat("\n============================================================\n")
+  cat("Processing status file:", basename(target_status_file), "\n")
 
-# Convert to active counts across all time_pts efficiently
-# sapply is perfectly fine since length(time_pts) is just 1001
-active_counts <- sapply(time_pts, function(t_val) {
-  sum(t_val < exit_times)
-})
+  threshold_suffix <- sub(paste0("^cohort_status_", base_prefix, "(.*)\\.qs$"), "\\1", basename(target_status_file))
+  cohort_status <- qs_read(target_status_file, nthreads = N_QS_THREADS)
 
-distributions_df <- data.frame(
-  time = time_pts,
-  active = active_counts,
-  N_total = N
-)
-distributions_df$empirical_survival <- distributions_df$active / distributions_df$N_total
+  cat("Computing active individuals over time...\n")
+  # Active individuals: have not yet died or recovered
+  # Therefore, an individual is active at time t if: t < tau_d AND t < tau_r
+  # We can find the exit time for each individual
+  library(tidyr)
+  exit_times <- pmin(
+    replace_na(cohort_status$tau_d, Inf),
+    replace_na(cohort_status$tau_r, Inf)
+  )
 
-# ============================================================
-# 3. COMPUTE MU (DEATH TIME DENSITIES)
-# ============================================================
-cat("\nComputing mu (death time) density probabilities...\n")
+  # Convert to active counts across all time_pts efficiently
+  # sapply is perfectly fine since length(time_pts) is just 1001
+  active_counts <- sapply(time_pts, function(t_val) {
+    sum(t_val < exit_times)
+  })
 
-dead_cohort <- cohort_status %>% filter(status == "Dead")
+  distributions_df <- data.frame(
+    time = time_pts,
+    active = active_counts,
+    N_total = N
+  )
+  distributions_df$empirical_survival <- distributions_df$active / distributions_df$N_total
 
-if (nrow(dead_cohort) < 2) {
-  cat("Not enough dead patients to compute density.\n")
-  distributions_df$f_d <- 0
-  distributions_df$mu_P <- 0
-} else {
-  # Compute KDE over the time grid we established
-  # Evaluate exactly over the 0 to 100 domain in 0.1 steps to perfectly match our existing time_pts
-  dens <- density(dead_cohort$tau_d, from = 0, to = max(time_pts), n = length(time_pts))
+  # ============================================================
+  # 3. COMPUTE MU (DEATH TIME DENSITIES)
+  # ============================================================
+  cat("\nComputing mu (death time) density probabilities...\n")
 
-  # Proportion of deaths
-  p_d <- nrow(dead_cohort) / N
+  dead_cohort <- cohort_status %>% filter(status == "Dead")
 
-  distributions_df$f_d <- dens$y
-  distributions_df$mu_P <- (p_d * distributions_df$f_d) / distributions_df$empirical_survival
-}
+  if (nrow(dead_cohort) < 2) {
+    cat("Not enough dead patients to compute density.\n")
+    distributions_df$f_d <- 0
+    distributions_df$mu_P <- 0
+  } else {
+    # Compute KDE over the time grid we established
+    # Evaluate exactly over the 0 to 100 domain in 0.1 steps to perfectly match our existing time_pts
+    dens <- density(dead_cohort$tau_d, from = 0, to = max(time_pts), n = length(time_pts))
 
-# ============================================================
-# 4. COMPUTE GAMMA (RECOVERY TIME DENSITIES)
-# ============================================================
-cat("\nComputing gamma (recovery time) density probabilities...\n")
+    # Proportion of deaths
+    p_d <- nrow(dead_cohort) / N
 
-recovered_cohort <- cohort_status %>% filter(!is.na(tau_r))
+    distributions_df$f_d <- dens$y
+    distributions_df$mu_P <- (p_d * distributions_df$f_d) / distributions_df$empirical_survival
+  }
 
-if (nrow(recovered_cohort) < 2) {
-  cat("Not enough recovered patients to compute density.\n")
-  distributions_df$f_r <- 0
-  distributions_df$gamma_P <- 0
-} else {
-  dens_r <- density(recovered_cohort$tau_r, from = 0, to = max(time_pts), n = length(time_pts))
-  p_r <- nrow(recovered_cohort) / N
+  # ============================================================
+  # 4. COMPUTE GAMMA (RECOVERY TIME DENSITIES)
+  # ============================================================
+  cat("\nComputing gamma (recovery time) density probabilities...\n")
 
-  distributions_df$f_r <- dens_r$y
-  distributions_df$gamma_P <- (p_r * distributions_df$f_r) / distributions_df$empirical_survival
-}
+  recovered_cohort <- cohort_status %>% filter(!is.na(tau_r))
 
-# ============================================================
-# ============================================================
-# 5. COMPUTE BETA (TRANSMISSION RATES IN TIME)
-# ============================================================
-cat("\nIsolating active transmission periods in V matrix...\n")
+  if (nrow(recovered_cohort) < 2) {
+    cat("Not enough recovered patients to compute density.\n")
+    distributions_df$f_r <- 0
+    distributions_df$gamma_P <- 0
+  } else {
+    dens_r <- density(recovered_cohort$tau_r, from = 0, to = max(time_pts), n = length(time_pts))
+    p_r <- nrow(recovered_cohort) / N
 
-# Make a copy of V_mat to apply the specific status filters
-V_mat_active <- V_mat
+    distributions_df$f_r <- dens_r$y
+    distributions_df$gamma_P <- (p_r * distributions_df$f_r) / distributions_df$empirical_survival
+  }
 
-# Ensure status thresholds map exactly to the matrix columns by matching the IDs
-tau_c_v <- cohort_status$tau_c[match(cohort_ids, cohort_status$ID)]
-tau_r_v <- cohort_status$tau_r[match(cohort_ids, cohort_status$ID)]
-tau_d_v <- cohort_status$tau_d[match(cohort_ids, cohort_status$ID)]
-tau_h_start_v <- cohort_status$tau_h_start[match(cohort_ids, cohort_status$ID)]
-tau_h_end_v <- cohort_status$tau_h_end[match(cohort_ids, cohort_status$ID)]
+  # ============================================================
+  # ============================================================
+  # 5. COMPUTE BETA (TRANSMISSION RATES IN TIME)
+  # ============================================================
+  cat("\nIsolating active transmission periods in V matrix...\n")
 
-# Apply masks iteratively to save massive amounts of RAM
-V_mat_active[outer(time_pts, replace_na(tau_c_v, Inf), "<")] <- 0
-V_mat_active[outer(time_pts, replace_na(tau_r_v, -Inf), ">")] <- 0
-V_mat_active[outer(time_pts, replace_na(tau_d_v, Inf), ">=")] <- 0
-V_mat_active[outer(time_pts, replace_na(tau_h_start_v, Inf), ">=") &
-  outer(time_pts, replace_na(tau_h_end_v, -Inf), "<=")] <- 0
+  # Make a copy of V_mat to apply the specific status filters
+  V_mat_active <- V_mat
 
-cat("V matrix copied and masked! 0s successfully assigned to non-transmitting phases.\n")
+  # Ensure status thresholds map exactly to the matrix columns by matching the IDs
+  tau_c_v <- cohort_status$tau_c[match(cohort_ids, cohort_status$ID)]
+  tau_r_v <- cohort_status$tau_r[match(cohort_ids, cohort_status$ID)]
+  tau_d_v <- cohort_status$tau_d[match(cohort_ids, cohort_status$ID)]
+  tau_h_start_v <- cohort_status$tau_h_start[match(cohort_ids, cohort_status$ID)]
+  tau_h_end_v <- cohort_status$tau_h_end[match(cohort_ids, cohort_status$ID)]
 
-cat("Mapping V to beta transmission scale...\n")
-alpha_v <- 16.422
-k_v <- 7.49
-V_mat_active <- (V_mat_active^alpha_v) / (V_mat_active^alpha_v + k_v^alpha_v)
-# Where V_mat_active was 0, beta_hat correctly maps to 0.
+  # Apply masks iteratively to save massive amounts of RAM
+  V_mat_active[outer(time_pts, replace_na(tau_c_v, Inf), "<")] <- 0
+  V_mat_active[outer(time_pts, replace_na(tau_r_v, -Inf), ">")] <- 0
+  V_mat_active[outer(time_pts, replace_na(tau_d_v, Inf), ">=")] <- 0
+  V_mat_active[outer(time_pts, replace_na(tau_h_start_v, Inf), ">=") &
+    outer(time_pts, replace_na(tau_h_end_v, -Inf), "<=")] <- 0
 
-cat("Computing row-wise beta statistics (this may take a moment)...\n")
-# Using apply over rows (1)
-distributions_df$beta_mean <- apply(V_mat_active, 1, mean)
-distributions_df$beta_Q10 <- apply(V_mat_active, 1, quantile, probs = 0.10, names = FALSE)
-distributions_df$beta_median <- apply(V_mat_active, 1, median)
-distributions_df$beta_Q90 <- apply(V_mat_active, 1, quantile, probs = 0.90, names = FALSE)
+  cat("V matrix copied and masked! 0s successfully assigned to non-transmitting phases.\n")
 
-# Clean up memory safely!
-rm(V_mat_active)
-gc()
+  cat("Mapping V to beta transmission scale...\n")
+  alpha_v <- 16.422
+  k_v <- 7.49
+  V_mat_active <- (V_mat_active^alpha_v) / (V_mat_active^alpha_v + k_v^alpha_v)
+  # Where V_mat_active was 0, beta_hat correctly maps to 0.
 
-# ============================================================
-# 6. SAVE FINAL DISTRIBUTIONS DATAFRAME
-# ============================================================
-cat("\nSaving final distributions dataframe...\n")
+  cat("Computing row-wise beta statistics (this may take a moment)...\n")
+  # Using apply over rows (1)
+  distributions_df$beta_mean <- apply(V_mat_active, 1, mean)
+  distributions_df$beta_Q10 <- apply(V_mat_active, 1, quantile, probs = 0.10, names = FALSE)
+  distributions_df$beta_median <- apply(V_mat_active, 1, median)
+  distributions_df$beta_Q90 <- apply(V_mat_active, 1, quantile, probs = 0.90, names = FALSE)
 
-out_dist <- file.path(output_dir, paste0("cohort_distributions_", base_prefix, ".qs"))
-qs_save(distributions_df, out_dist, nthreads = N_QS_THREADS)
-cat("Final distributions saved to", basename(out_dist), "\n")
+  # Clean up memory safely!
+  rm(V_mat_active)
+  gc()
+
+  # ============================================================
+  # 6. SAVE FINAL DISTRIBUTIONS DATAFRAME
+  # ============================================================
+  cat("\nSaving final distributions dataframe...\n")
+
+  out_dist <- file.path(output_dir, paste0("cohort_distributions_", base_prefix, threshold_suffix, ".qs"))
+  qs_save(distributions_df, out_dist, nthreads = N_QS_THREADS)
+  cat("Final distributions saved to", basename(out_dist), "\n")
+} # END FOR LOOP OVER STATUS FILES
 print_end_time(start_time, "process-cohort-make-distributions.R")

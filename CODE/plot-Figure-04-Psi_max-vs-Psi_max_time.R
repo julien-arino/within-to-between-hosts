@@ -10,26 +10,16 @@
 #   - FIGS/plot_Psi_max_vs_Psi_max_time_Figure_04.png and .pdf
 # ============================================================
 
-cat("\n\n>>> Running plot-Figure-04-Psi_max-vs-Psi_max_time.R ...\n\n")
-suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
-suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
-suppressWarnings(suppressPackageStartupMessages(library(patchwork)))
-suppressWarnings(suppressPackageStartupMessages(library(qs2)))
-suppressWarnings(suppressPackageStartupMessages(library(here)))
+# First things first: locate project directory and load helper functions
+# and constants
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
-# Set project root automatically relative to the .git tracking directory
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
+# Say what we are running and start the clock
+start_time <- start_time_and_hello("plot-Figure-04-Psi_max-vs-Psi_max_time.R")
 
-dir.create(file.path(project_dir, "OUTPUT"), showWarnings = FALSE, recursive = TRUE)
-dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
-
-output_dir <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-}
+# Load libraries
+load_libraries(c("ggplot2", "dplyr", "qs2", "tidyr", "patchwork"))
 
 # 1a) Find latest processed status file (xi_h=75, xi_d=85)
 status_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xih_75_xid_85\\.qs$", full.names = TRUE)
@@ -74,7 +64,7 @@ summary_df <- summary_df %>% filter(t_Psi_max < 100)
 # 5) Create plot
 # ---------------------------
 p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = Psi_max)) +
-  
+
   # Patients with R0 >= 1 (colored by status)
   geom_point(
     data = subset(summary_df, R0 >= 1),
@@ -82,7 +72,7 @@ p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = Psi_max)) +
     alpha = 0.18,
     size = 0.6
   ) +
-  
+
   # Patients with R0 < 1 (DARK GREEN)
   geom_point(
     data = subset(summary_df, R0 < 1),
@@ -90,26 +80,22 @@ p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = Psi_max)) +
     alpha = 0.4,
     size = 0.8
   ) +
-  
-  coord_cartesian(xlim=c(0,100), ylim=c(0,100)) +
-  
+  coord_cartesian(xlim = c(0, 100), ylim = c(0, 100)) +
   scale_color_manual(
     values = status_colors,
     drop = FALSE,
     na.value = "grey70"
   ) +
-  
   theme_minimal(base_size = 14) +
   theme(
     legend.position = "top",
     legend.title = element_blank()
   ) +
   labs(
-    x = expression("Time to maximum tissue damage"~tau[Psi[max]]~"(days)"),
-    y = expression("Maximum tissue damage"~Psi[max]),
+    x = expression("Time to maximum tissue damage" ~ tau[Psi[max]] ~ "(days)"),
+    y = expression("Maximum tissue damage" ~ Psi[max]),
     parse = TRUE
   ) +
-  
   guides(
     color = guide_legend(
       override.aes = list(size = 2, alpha = 1)
@@ -118,31 +104,33 @@ p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = Psi_max)) +
 
 p2 <- p2 +
   annotate("text",
-           x = 1, y = 15,
-           label = "R[0] < 1",
-           size = 4,
-           color = "darkgreen",
-           parse = TRUE,
-           fontface = "bold") +
+    x = 1, y = 15,
+    label = "R[0] < 1",
+    size = 4,
+    color = "darkgreen",
+    parse = TRUE,
+    fontface = "bold"
+  ) +
   annotate("text",
-           x = 45, y = 95,
-           label = "R[0] >= 1",
-           size = 4,
-           color = "black",
-           parse = TRUE,
-           fontface = "bold")
+    x = 45, y = 95,
+    label = "R[0] >= 1",
+    size = 4,
+    color = "black",
+    parse = TRUE,
+    fontface = "bold"
+  )
 print(p2)
 
 # ---------------------------
 # 6) Save figure
 # ---------------------------
-out_png <- file.path(project_dir, "FIGS", "Figure-04-Psi_max-vs-Psi_max_time.png")
-out_pdf <- file.path(project_dir, "FIGS", "Figure-04-Psi_max-vs-Psi_max_time.pdf")
+out_png <- file.path(figs_dir, "Figure-04-Psi_max-vs-Psi_max_time.png")
+out_pdf <- file.path(figs_dir, "Figure-04-Psi_max-vs-Psi_max_time.pdf")
 
 ggsave(filename = out_png, plot = p2, width = 25, height = 15, units = "cm", dpi = 300)
-ggsave(filename = out_pdf, plot = p2, width = 25, height = 15, units = "cm", dpi = 300)
+ggsave(filename = out_pdf, plot = p2, width = 25, height = 15, units = "cm", dpi = 300, device = cairo_pdf)
 
 cat("\nFigure 4 saved to:\n  -", out_png, "\n  -", out_pdf, "\n")
 cat("Note:", dropped_count, "individuals who hit the simulation horizon (t >= 100 days) were omitted from this plot.\n")
 
-cat("\n\n>>> plot-Figure-04-Psi_max-vs-Psi_max_time.R successfully finished running ✅\n\n")
+print_end_time(start_time, "plot-Figure-04-Psi_max-vs-Psi_max_time.R")

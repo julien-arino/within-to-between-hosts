@@ -23,33 +23,49 @@ if(!exists("N_QS_THREADS")) {
   if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
 }
 
-# --- Find and load pre-computed distributions ---
-dist_files <- list.files(output_dir, pattern = "^cohort_distributions_P.*_mu\\.qs$", full.names = TRUE)
-if (length(dist_files) == 0) stop("No mu distributions file found in OUTPUT")
-latest_dist <- dist_files[which.max(file.mtime(dist_files))]
-cat("Loading newest mu distributions:", basename(latest_dist), "\n")
-mu_overall <- qs_read(latest_dist, nthreads = N_QS_THREADS)
+# --- Load pre-computed distributions for xid=85 ---
+dist_files <- list.files(output_dir, pattern = "^cohort_distributions_P.*_xih_75_xid_85_xic_4_xir_1\\.qs$", full.names = TRUE)
+if (length(dist_files) == 0) stop("No distributions files found for xid=85 in OUTPUT")
 
-# ------------------------------------------------------------
-# 2. Format to long (mu_all) for plotting
-# ------------------------------------------------------------
-mu_all <- mu_overall %>%
-  tidyr::pivot_longer(
-    cols = starts_with("mu_xid_"),
-    names_to = "xi_label",
-    values_to = "mu_a"
-  ) %>%
+latest_dist_file <- dist_files[which.max(file.mtime(dist_files))]
+cat("Loading newest distribution for xid=85:", basename(latest_dist_file), "\n")
+df_85_raw <- qs_read(latest_dist_file, nthreads = N_QS_THREADS)
+
+df_85 <- df_85_raw %>%
   mutate(
-    xi_d = sub("mu_xid_", "", xi_label),
-    a = time
-  ) %>%
-  mutate(xi_d = factor(xi_d, levels = c("95", "85")))
+    a = time,
+    f_d_val = f_d,
+    xi_d = factor("85", levels = c("85", "95"))
+  ) %>% select(a, f_d_val, xi_d)
+
+# --- Compute distributions locally for xid=95 ---
+status_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xih_75_xid_95_xic_4_xir_1\\.qs$", full.names = TRUE)
+if (length(status_files) == 0) stop("No cohort_status file found for xid=95 in OUTPUT")
+latest_status_file <- status_files[which.max(file.mtime(status_files))]
+cat("Loading newest cohort status for xid=95:", basename(latest_status_file), "\n")
+cohort_status_95 <- qs_read(latest_status_file, nthreads = N_QS_THREADS)
+
+cat("Computing f_d for xid=95 locally...\n")
+time_pts <- seq(0, 100.0, by = 0.1)
+
+dead_cohort_95 <- cohort_status_95 %>% filter(status == "Dead")
+dens_95 <- density(dead_cohort_95$tau_d, from = 0, to = max(time_pts), n = length(time_pts))
+f_d_95 <- dens_95$y
+
+df_95 <- data.frame(
+  a = time_pts,
+  f_d_val = f_d_95,
+  xi_d = factor("95", levels = c("85", "95"))
+)
+
+# Combine both for plotting
+mu_all <- dplyr::bind_rows(df_85, df_95)
 
 
 # ------------------------------------------------------------
 # 5. Plot all μ_P(a) densities together
 # ------------------------------------------------------------
-p_mu <- ggplot(mu_all, aes(x = a, y = mu_a, color = xi_d, fill = xi_d)) +
+p_mu <- ggplot(mu_all, aes(x = a, y = f_d_val, color = xi_d, fill = xi_d)) +
   geom_area(alpha = 0.15, position = "identity") +
   geom_line(linewidth = 0.8) +
   labs(
@@ -70,7 +86,7 @@ p_mu <- ggplot(mu_all, aes(x = a, y = mu_a, color = xi_d, fill = xi_d)) +
       "85" = expression(xi^d == 85),
       "95" = expression(xi^d == 95)
     ))+
-  coord_cartesian(xlim = c(0, 20), ylim = c(0, max(mu_all$mu_a, na.rm=TRUE) + 0.1)) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0, max(mu_all$f_d_val, na.rm=TRUE) + 0.01)) +
   theme_minimal(base_size = 14) +
   theme(
     legend.position = "right",

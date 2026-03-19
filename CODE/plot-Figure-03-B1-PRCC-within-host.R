@@ -6,35 +6,20 @@
 #   category-based plots for PRCC values
 # ============================================================
 
-cat("\n\n>>> Running plot-Figure-03-B1-PRCC-within-host.R ...\n\n")
+# First things first: locate project directory and load helper functions
+# and constants
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
-suppressPackageStartupMessages({
-    library(dplyr)
-    library(ggplot2)
-    library(reshape2)
-    library(latex2exp)
-    library(qs2)
-    library(here)
-})
+# Say what we are running and start the clock
+start_time <- start_time_and_hello("plot-Figure-03-B1-PRCC-within-host.R")
 
-# Set project root automatically relative to the .git tracking directory
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-    project_dir <- dirname(project_dir)
-}
-
-OUTPUT <- file.path(project_dir, "OUTPUT")
-if (!exists("N_QS_THREADS")) {
-    source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
-}
-FIGS <- file.path(project_dir, "FIGS")
-
-dir.create(FIGS, showWarnings = FALSE, recursive = TRUE)
+load_libraries(c("dplyr", "ggplot2", "reshape2", "latex2exp", "qs2"))
 
 # Load data
-prcc_result_files <- list.files(OUTPUT, pattern = "^sensitivity_P.*-PRCC-results\\.qs$", full.names = TRUE)
+prcc_result_files <- list.files(output_dir, pattern = "^sensitivity_P.*-PRCC-results\\.qs$", full.names = TRUE)
 if (length(prcc_result_files) == 0) {
-    stop("Cannot find PRCC results qs file in ", OUTPUT)
+    stop("Cannot find PRCC results qs file in ", output_dir)
 }
 LATEST_PRCC_FILE <- prcc_result_files[which.max(file.mtime(prcc_result_files))]
 cat("Loading PRCC data from:", basename(LATEST_PRCC_FILE), "\n")
@@ -130,11 +115,11 @@ P_max <- ggplot() +
 
 print(P_max)
 ggsave(
-    filename = file.path(FIGS, "Figure-B1a-PRCC-values.png"),
+    filename = file.path(figs_dir, "Figure-B1a-PRCC-values.png"),
     plot = P_max, width = 25, height = 15, units = "cm", dpi = 300
 )
 ggsave(
-    filename = file.path(FIGS, "Figure-B1a-PRCC-values.pdf"),
+    filename = file.path(figs_dir, "Figure-B1a-PRCC-values.pdf"),
     plot = P_max, width = 25, height = 15, units = "cm", dpi = 300, device = cairo_pdf
 )
 
@@ -188,11 +173,11 @@ P_tmax <- ggplot() +
 
 print(P_tmax)
 ggsave(
-    filename = file.path(FIGS, "Figure-B1b-PRCC-values-times.png"),
+    filename = file.path(figs_dir, "Figure-B1b-PRCC-values-times.png"),
     plot = P_tmax, width = 25, height = 15, units = "cm", dpi = 300
 )
 ggsave(
-    filename = file.path(FIGS, "Figure-B1b-PRCC-values-times.pdf"),
+    filename = file.path(figs_dir, "Figure-B1b-PRCC-values-times.pdf"),
     plot = P_tmax, width = 25, height = 15, units = "cm", dpi = 300, device = cairo_pdf
 )
 
@@ -245,19 +230,19 @@ P_global <- ggplot() +
 print(P_global)
 
 ggsave(
-    filename = file.path(FIGS, "Figure-03c-PRCC-global.png"),
+    filename = file.path(figs_dir, "Figure-03c-PRCC-global.png"),
     plot = P_global,
     width = 25, height = 15, units = "cm", dpi = 300
 )
 ggsave(
-    filename = file.path(FIGS, "Figure-03c-PRCC-global.pdf"),
+    filename = file.path(figs_dir, "Figure-03c-PRCC-global.pdf"),
     plot = P_global,
     width = 25, height = 15, units = "cm", dpi = 300, device = cairo_pdf
 )
 
-cat("\nFigures saved in", FIGS, ":\n")
+cat("\nFigures saved in", figs_dir, ":\n")
 cat("  - Figure-B1a-PRCC-values (.png, .pdf)\n")
 cat("  - Figure-B1b-PRCC-values-times (.png, .pdf)\n")
 cat("  - Figure-03c-PRCC-global (.png, .pdf)\n\n")
 
-cat("\n\n>>> plot-Figure-03-B1-PRCC-within-host.R successfully finished running ✅\n\n")
+print_end_time(start_time, "plot-Figure-03-B1-PRCC-within-host.R")

@@ -26,10 +26,10 @@ if(!exists("N_QS_THREADS")) {
 }
 
 # --- Find and load pre-computed distributions ---
-dist_files <- list.files(output_dir, pattern = "^cohort_distributions_P.*_beta\\.qs$", full.names = TRUE)
+dist_files <- list.files(output_dir, pattern = "^cohort_distributions_P.*_xic_[0-9]+_.*\\.qs$", full.names = TRUE)
 if (length(dist_files) == 0) stop("No beta distributions file found in OUTPUT")
 latest_dist <- dist_files[which.max(file.mtime(dist_files))]
-cat("Loading newest beta distributions:", basename(latest_dist), "\n")
+cat("Loading newest distributions:", basename(latest_dist), "\n")
 beta_overall <- qs_read(latest_dist, nthreads = N_QS_THREADS)
 
 # ------------------------------------------------------------
@@ -39,9 +39,9 @@ p <- ggplot(beta_overall, aes(x=time)) +
   
   geom_ribbon(
     aes(
-      ymin = pmax(beta_mean-beta_sd,0),
-      ymax = beta_mean+beta_sd,
-      fill="mean ± SD"
+      ymin = pmax(beta_Q10, 0),
+      ymax = beta_Q90,
+      fill="Q10 to Q90"
     ),
     alpha=0.15,
     color=NA
@@ -53,7 +53,7 @@ p <- ggplot(beta_overall, aes(x=time)) +
   )+
   
   geom_line(
-    aes(y=beta_q10,color="Q10"),
+    aes(y=beta_Q10,color="Q10"),
     linetype="22",
     linewidth=0.7
   )+
@@ -64,7 +64,7 @@ p <- ggplot(beta_overall, aes(x=time)) +
   )+
   
   geom_line(
-    aes(y=beta_q90,color="Q90"),
+    aes(y=beta_Q90,color="Q90"),
     linetype="22",
     linewidth=0.7
   )+
@@ -80,7 +80,7 @@ p <- ggplot(beta_overall, aes(x=time)) +
   )+
   
   scale_fill_manual(
-    values=c("mean ± SD"="dodgerblue4")
+    values=c("Q10 to Q90"="dodgerblue4")
   )+
   
   coord_cartesian(xlim=c(0,80))+
