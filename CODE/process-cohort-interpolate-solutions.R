@@ -65,10 +65,11 @@ interpolate_trajectory <- function(lst_element) {
     res$F_B <- approx(df$time, df$F_B, xout = t_interp, rule = 2, ties = mean)$y
   }
   
-  if ("F_P" %in% names(df)) {
-    res$F_P <- approx(df$time, df$F_P, xout = t_interp, rule = 2, ties = mean)$y
+  if ("F_U" %in% names(df)) {
+    res$F_U <- approx(df$time, df$F_U, xout = t_interp, rule = 2, ties = mean)$y
   }
   
+
   if ("I" %in% names(df)) {
     res$I <- approx(df$time, df$I, xout = t_interp, rule = 2, ties = mean)$y
   } else {
