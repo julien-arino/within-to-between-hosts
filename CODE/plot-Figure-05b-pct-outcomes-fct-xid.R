@@ -4,26 +4,20 @@
 # Description:
 # ============================================================
 
-cat("\n\n>>> Running plot-Figure-05b-pct-outcomes-fct-xid.R ...\n\n")
-suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
-suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
-suppressWarnings(suppressPackageStartupMessages(library(qs2)))
-suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
+# First things first: locate project directory and load helper functions
+# and constants
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+# Say what we are running and start the clock
+start_time <- start_time_and_hello("plot-Figure-05b-pct-outcomes-fct-xid.R")
+
+# Load libraries
+load_libraries(c("ggplot2", "dplyr", "qs2", "tidyr"))
 
 # USER SETTINGS
 xi_h_target <- 70
 xi_values <- c(75, 80, 85, 90, 95)
-
-# Set project root automatically relative to the .git tracking directory
-suppressWarnings(suppressPackageStartupMessages(library(here)))
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
-output_dir <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-}
 
 # Load all available base files (excluding the _xic_..._xir_... extensions)
 all_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xid_[0-9]+\\.qs$", full.names = TRUE)
@@ -37,20 +31,20 @@ for (f in all_files) {
   # Extract threshold digits from filename
   match <- regexpr("_xih_([0-9]+)_xid_([0-9]+)", basename(f))
   if (match == -1) next
-  
+
   # Only add if it's the latest generation (avoid double counting old runs)
   # The filenames differentiate themselves by timestamp, so we group by the prefixes
   # Note: A simpler approach is to read it, since we're just plotting aggregates of whatever latest data exists!
-  
+
   cohort_df <- qs_read(f, nthreads = N_QS_THREADS)
-  
+
   # If the file didn't actually contain xi_h and xi_d inside, we extract it from the path string
   xih_val <- as.numeric(gsub(".*_xih_([0-9]+).*", "\\1", basename(f)))
   xid_val <- as.numeric(gsub(".*_xid_([0-9]+).*", "\\1", basename(f)))
-  
+
   # Skip processing if we only want one specific xi_h line (e.g. tracking purely xi_d curves)
   # BUT gracefully fallback to whatever exists if 70 isn't available
-  
+
   class_df <- cohort_df %>%
     mutate(
       outcome = case_when(
@@ -61,7 +55,7 @@ for (f in all_files) {
       xi_d = xid_val,
       xi_h = xih_val
     )
-  
+
   counts <- class_df %>% count(xi_h, xi_d, outcome)
   results[[basename(f)]] <- counts
 }
@@ -101,7 +95,7 @@ summary_table <- prop_df %>%
   arrange(xi_d) %>%
   # We can reorder columns for display: xi_d, Mild, ICU, Dead
   select(xi_d, Mild, ICU, Dead) %>%
-  mutate(across(c(Mild, ICU, Dead), ~sprintf("%.2f%%", .x)))
+  mutate(across(c(Mild, ICU, Dead), ~ sprintf("%.2f%%", .x)))
 
 print(as.data.frame(summary_table), row.names = FALSE)
 cat("===============================================\n\n")
@@ -114,7 +108,7 @@ p_outcomes <- ggplot(prop_df, aes(x = factor(xi_d), y = percent, fill = outcome)
     breaks = c("Mild", "ICU", "Dead")
   ) +
   labs(
-    x = expression(xi^d~"(%)"),
+    x = expression(xi^d ~ "(%)"),
     y = "Percentage of individuals (%)",
     fill = "Status"
   ) +
@@ -126,9 +120,8 @@ p_outcomes <- ggplot(prop_df, aes(x = factor(xi_d), y = percent, fill = outcome)
 print(p_outcomes)
 
 # Save both PNG and PDF versions
-dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
-out_pdf <- file.path(project_dir, "FIGS", "Figure-05b-pct-outcomes-fct-xid.pdf")
-out_png <- file.path(project_dir, "FIGS", "Figure-05b-pct-outcomes-fct-xid.png")
+out_pdf <- file.path(figs_dir, "Figure-05b-pct-outcomes-fct-xid.pdf")
+out_png <- file.path(figs_dir, "Figure-05b-pct-outcomes-fct-xid.png")
 
 ggsave(
   filename = out_pdf,
@@ -144,4 +137,4 @@ ggsave(
 
 cat("\nSaved Figure 05b to:\n  -", out_pdf, "\n  -", out_png, "\n")
 
-cat("\n\n>>> plot-Figure-05b-pct-outcomes-fct-xid.R successfully finished running ✅\n\n")
+print_end_time(start_time, "plot-Figure-05b-pct-outcomes-fct-xid.R")

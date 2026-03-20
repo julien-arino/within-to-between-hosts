@@ -54,5 +54,6 @@ OUTPUT/*
 
 # FIGS folder content: don't sync pdf as they can be large
 FIGS/*.pdf
-# Remove the occasional Rplots.pdf
+# Ignore the occasional Rplots.pdf
 *.Rplots.pdf
+Rplots.pdf

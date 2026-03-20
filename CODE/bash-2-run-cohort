@@ -2,7 +2,7 @@
 
 # Logical gates to control pipeline execution (1 = run, 0 = skip)
 RUN=0
-PROCESS=1
+PROCESS=0
 PLOT=1
 
 if [ "$RUN" -eq 1 ]; then
@@ -35,7 +35,8 @@ if [ "$PLOT" -eq 1 ]; then
     Rscript plot-Figure-06b-max-transmission-rate-fct-xic.R
     Rscript plot-Figure-07a-death-time-fct-xid.R
     Rscript plot-Figure-07b-pdf-fd-fct-xid.R
-    Rscript plot-Figure-08-pdf-fr-fct-xic.R
+    Rscript plot-Figure-08a-pdf-fr-fct-xic.R
+    Rscript plot-Figure-08b-muP-fct-xic.R
     Rscript plot-Figure-09-transmission-rates-fct-summary-fcts.R
 
     echo "Plotting Figures C1 to C5b..."

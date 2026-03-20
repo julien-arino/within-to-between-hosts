@@ -1,0 +1,32 @@
+#!/bin/bash
+# ============================================================
+# Script: bash-plot-all-figures
+# Description: Executes all plotting R scripts sequentially to generate every figure
+# ============================================================
+
+# Exit immediately if a command exits with a non-zero status
+set -e
+
+# Record start time
+start_time=$(date +%s)
+
+echo "Plotting all accessible figure scripts in CODE/..."
+
+for script in plot-Figure-*.R; do
+    if [ -f "$script" ]; then
+        echo "--> Running $script"
+        Rscript "$script"
+    fi
+done
+
+# Record end time
+end_time=$(date +%s)
+duration=$((end_time - start_time))
+
+# Convert to hours, minutes, seconds
+hours=$((duration / 3600))
+minutes=$(( (duration % 3600) / 60 ))
+seconds=$((duration % 60))
+
+echo "=== All plotting scripts finished successfully ==="
+printf "Total run time: %02d:%02d:%02d\n" $hours $minutes $seconds
