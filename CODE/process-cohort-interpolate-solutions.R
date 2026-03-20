@@ -8,21 +8,12 @@
 #   dataframe back to disk for plotting and distribution matrices.
 # ============================================================
 
-cat("\n\n>>> Running process-cohort-interpolate-solutions.R ...\n\n")
-start_time <- Sys.time()
-suppressWarnings(suppressPackageStartupMessages({
-  library(qs2)
-  library(dplyr)
-  library(future.apply)
-  library(here)
-}))
-
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
-output_dir <- file.path(project_dir, "OUTPUT")
+project_dir <- here::here()
 source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+start_time <- start_time_and_hello("process-cohort-interpolate-solutions.R")
+
+load_libraries(c("qs2", "dplyr", "future.apply", "here"))
 
 # ------------------------------------------------------------
 # 1. LOAD RAW TRAJECTORIES
@@ -74,8 +65,14 @@ interpolate_trajectory <- function(lst_element) {
     res$F_B <- approx(df$time, df$F_B, xout = t_interp, rule = 2, ties = mean)$y
   }
   
-  if ("F_U" %in% names(df)) {
-    res$F_U <- approx(df$time, df$F_U, xout = t_interp, rule = 2, ties = mean)$y
+  if ("F_P" %in% names(df)) {
+    res$F_P <- approx(df$time, df$F_P, xout = t_interp, rule = 2, ties = mean)$y
+  }
+  
+  if ("I" %in% names(df)) {
+    res$I <- approx(df$time, df$I, xout = t_interp, rule = 2, ties = mean)$y
+  } else {
+    res$I <- NA
   }
   
   return(res)

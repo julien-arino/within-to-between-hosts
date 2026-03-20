@@ -62,12 +62,14 @@ N = 1_000_000
 # Build the absolute path to the R scripts to use FOR WITH_V0 PIPELINE
 r_functions_path = joinpath(SCRIPT_DIR, "functions-and-definitions.R")
 r_script_path = joinpath(SCRIPT_DIR, "create-sample-for-sensitivity.R")
+project_dir_jl = normpath(joinpath(SCRIPT_DIR, ".."))
 
 ## Generate the sample in R
 # Send the Julia objects to R
-@rput N r_functions_path r_script_path
+@rput N r_functions_path r_script_path project_dir_jl
 # Source the R script to generate the sample
 R"""
+project_dir <- project_dir_jl
 source(r_functions_path)
 source(r_script_path)
 """

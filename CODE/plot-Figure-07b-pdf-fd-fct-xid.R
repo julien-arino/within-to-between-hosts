@@ -4,39 +4,36 @@
 # Description:
 # ============================================================
 
-cat("\n\n>>> Running plot-Figure-07b-pdf-fd-fct-xid.R ...\n\n")
-suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
-suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
-suppressWarnings(suppressPackageStartupMessages(library(qs2)))
-suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
+# First things first: locate project directory and load helper functions
+# and constants
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+# Say what we are running and start the clock
+start_time <- start_time_and_hello("plot-Figure-07b-pdf-fd-fct-xid.R")
+
+# Load libraries
+load_libraries(c("ggplot2", "dplyr", "qs2", "tidyr"))
 
 # ------------------------------------------------------------
 # 1. Setup paths and load dynamically matched cohort_status files
 # ------------------------------------------------------------
-suppressWarnings(suppressPackageStartupMessages(library(here)))
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
-output_dir <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-}
 
 # --- Load pre-computed distributions for xid=85 ---
-dist_files <- list.files(output_dir, pattern = "^cohort_distributions_P.*_xih_75_xid_85_xic_4_xir_1\\.qs$", full.names = TRUE)
+dist_files <- list.files(output_dir, pattern = "^cohort_distribution_filters_P.*_xih_75_xid_85_xic_4_xir_1\\.qs$", full.names = TRUE)
 if (length(dist_files) == 0) stop("No distributions files found for xid=85 in OUTPUT")
 
 latest_dist_file <- dist_files[which.max(file.mtime(dist_files))]
 cat("Loading newest distribution for xid=85:", basename(latest_dist_file), "\n")
 df_85_raw <- qs_read(latest_dist_file, nthreads = N_QS_THREADS)
 
-df_85 <- df_85_raw %>%
+df_85 <- df_85_raw$rolling_average %>%
   mutate(
     a = time,
     f_d_val = f_d,
     xi_d = factor("85", levels = c("85", "95"))
-  ) %>% select(a, f_d_val, xi_d)
+  ) %>%
+  select(a, f_d_val, xi_d)
 
 # --- Compute distributions locally for xid=95 ---
 status_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xih_75_xid_95_xic_4_xir_1\\.qs$", full.names = TRUE)
@@ -72,26 +69,28 @@ p_mu <- ggplot(mu_all, aes(x = a, y = f_d_val, color = xi_d, fill = xi_d)) +
     x = expression("Time since infection (days)"),
     y = "Density",
     color = expression(xi^d ~ "(%)"),
-    fill  = expression(xi^d ~ "(%)")
+    fill = expression(xi^d ~ "(%)")
   ) +
   scale_color_manual(
     values = c("85" = "firebrick3", "95" = "mistyrose3"),
     labels = c(
       "85" = expression(xi^d == 85),
       "95" = expression(xi^d == 95)
-    )) +
+    )
+  ) +
   scale_fill_manual(
     values = c("85" = "firebrick3", "95" = "mistyrose3"),
     labels = c(
       "85" = expression(xi^d == 85),
       "95" = expression(xi^d == 95)
-    ))+
-  coord_cartesian(xlim = c(0, 20), ylim = c(0, max(mu_all$f_d_val, na.rm=TRUE) + 0.01)) +
+    )
+  ) +
+  coord_cartesian(xlim = c(0, 20), ylim = c(0, max(mu_all$f_d_val, na.rm = TRUE) + 0.01)) +
   theme_minimal(base_size = 14) +
   theme(
     legend.position = "right",
     legend.title = element_text(size = 12, face = "italic"),
-    legend.text  = element_text(size = 11)
+    legend.text = element_text(size = 11)
   )
 
 print(p_mu)
@@ -100,13 +99,12 @@ print(p_mu)
 # 3. Save outputs
 # ------------------------------------------------------------
 
-dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
-out_pdf <- file.path(project_dir, "FIGS", "Figure-07b-pdf-fd-fct-xid.pdf")
-out_png <- file.path(project_dir, "FIGS", "Figure-07b-pdf-fd-fct-xid.png")
+out_pdf <- file.path(figs_dir, "Figure-07b-pdf-fd-fct-xid.pdf")
+out_png <- file.path(figs_dir, "Figure-07b-pdf-fd-fct-xid.png")
 
 ggsave(out_pdf, plot = p_mu, width = 25, height = 15, units = "cm", dpi = 300)
 ggsave(out_png, plot = p_mu, width = 25, height = 15, units = "cm", dpi = 300)
 
-cat("\n✅ Figures saved to", out_pdf, "and", out_png, "\n")
+cat("Figures saved:\n -", out_pdf, "\n -", out_png, "\n")
 
-cat("\n\n>>> plot-Figure-07b-pdf-fd-fct-xid.R successfully finished running ✅\n\n")
+print_end_time(start_time, "plot-Figure-07b-pdf-fd-fct-xid.R")

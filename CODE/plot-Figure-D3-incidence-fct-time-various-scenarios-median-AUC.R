@@ -8,18 +8,12 @@
 #   SAME R0 WITHIN EACH PANEL (calibrated)
 # ============================================================
 
-cat("\n\n>>> Running plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R ...\n\n")
-suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
-suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
-suppressWarnings(suppressPackageStartupMessages(library(qs2)))
-suppressWarnings(suppressPackageStartupMessages(library(tidyr)))
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
-# Set project root automatically relative to the .git tracking directory
-suppressWarnings(suppressPackageStartupMessages(library(here)))
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
+start_time <- start_time_and_hello("plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R")
+
+load_libraries(c("dplyr", "ggplot2", "qs2", "tidyr", "here"))
 
 R0_targets <- c(2.5, 5)
 S0    <- 2000
@@ -29,10 +23,7 @@ b_P   <- 0
 Tmax  <- 300
 Tplot <- 300
 
-output_dir <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-}
+
 
 get_latest_dist <- function(pattern) {
   files <- list.files(output_dir, pattern = pattern, full.names = TRUE)
@@ -193,12 +184,11 @@ p <- ggplot(res_all,aes(time,U,color=R0))+
 
 print(p)
 
-fig_dir <- file.path(project_dir, "FIGS")
-dir.create(fig_dir, showWarnings = FALSE, recursive = TRUE)
-out_pdf <- file.path(fig_dir, "Figure-D3-incidence-fct-time-various-scenarios-median-AUC.pdf")
-out_png <- file.path(fig_dir, "Figure-D3-incidence-fct-time-various-scenarios-median-AUC.png")
+out_pdf <- file.path(figs_dir, "Figure-D3-incidence-fct-time-various-scenarios-median-AUC.pdf")
+out_png <- file.path(figs_dir, "Figure-D3-incidence-fct-time-various-scenarios-median-AUC.png")
+
 ggsave(out_pdf, p, width=22, height=12, units="cm")
 ggsave(out_png, p, width=22, height=12, units="cm")
-cat("✅ Plot saved to", out_pdf, "\n")
 
-cat("\n\n>>> plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R successfully finished running ✅\n\n")
+cat("Plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
+print_end_time(start_time, "plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R")

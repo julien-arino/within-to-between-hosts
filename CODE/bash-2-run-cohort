@@ -1,8 +1,9 @@
 #!/bin/bash
+set -e
 
 # Logical gates to control pipeline execution (1 = run, 0 = skip)
-RUN=0
-PROCESS=0
+RUN=1
+PROCESS=1
 PLOT=1
 
 if [ "$RUN" -eq 1 ]; then
@@ -22,7 +23,11 @@ if [ "$PROCESS" -eq 1 ]; then
     Rscript process-cohort-interpolate-solutions.R
 
     echo "Creating distributions (gamma, mu, beta)..."
-    Rscript process-cohort-make-distributions.R
+    Rscript process-cohort-make-raw-distributions.R
+    Rscript process-cohort-filter-raw-distributions.R
+
+    echo "Preparing aggregated timelines for Figure C4..."
+    Rscript process-cohort-prepare-Figure-C4.R
 fi
 
 
@@ -35,8 +40,8 @@ if [ "$PLOT" -eq 1 ]; then
     Rscript plot-Figure-06b-max-transmission-rate-fct-xic.R
     Rscript plot-Figure-07a-death-time-fct-xid.R
     Rscript plot-Figure-07b-pdf-fd-fct-xid.R
-    Rscript plot-Figure-08a-pdf-fr-fct-xic.R
-    Rscript plot-Figure-08b-muP-fct-xic.R
+    Rscript plot-Figure-08a-pdf-fr-fct-xir.R
+    Rscript plot-Figure-08b-gammaP-fct-xir.R
     Rscript plot-Figure-09-transmission-rates-fct-summary-fcts.R
 
     echo "Plotting Figures C1 to C5b..."

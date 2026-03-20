@@ -25,6 +25,19 @@ if (length(all_files) == 0) {
   stop("No base cohort_status files found directly ending in _xid_XX.qs in ", output_dir)
 }
 
+# Filter down dynamically to only parse the absolute newest execution per parameter pair
+files_df <- data.frame(path = all_files) %>%
+  mutate(
+    xih = as.numeric(gsub(".*_xih_([0-9]+).*", "\\1", basename(path))),
+    xid = as.numeric(gsub(".*_xid_([0-9]+).*", "\\1", basename(path))),
+    mtime = file.mtime(path)
+  ) %>%
+  group_by(xih, xid) %>%
+  slice_max(mtime, n = 1, with_ties = FALSE) %>%
+  ungroup()
+
+all_files <- files_df$path
+
 results <- list()
 
 for (f in all_files) {

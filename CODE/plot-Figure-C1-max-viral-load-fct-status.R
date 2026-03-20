@@ -6,25 +6,16 @@
 #   Plot maximum viral load per individual (colored by status)
 # ============================================================
 
-cat("\n\n>>> Running plot-Figure-C1-max-viral-load-fct-status.R ...\n\n")
-suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
-suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
-suppressWarnings(suppressPackageStartupMessages(library(qs2)))
-suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+start_time <- start_time_and_hello("plot-Figure-C1-max-viral-load-fct-status.R")
+
+load_libraries(c("ggplot2", "dplyr", "qs2", "here"))
 
 # ------------------------------------------------------------
-# 1. Automatically find the latest cohort_truncated file
+# 1. Automatically find the latest cohort_status file
 # ------------------------------------------------------------
-# Set project root automatically relative to the .git tracking directory
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
-
-output_dir <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-}
 files <- list.files(output_dir, pattern = "^cohort_status_P.*_xid_[0-9]+\\.qs$", full.names = TRUE)
 
 if (length(files) == 0) {
@@ -82,9 +73,8 @@ print(p_Vmax)
 # 6️⃣ Save plot to PDF and PNG
 # ------------------------------------------------------------
 
-dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
-out_pdf <- file.path(project_dir, "FIGS", "Figure-C1-max-viral-load-fct-status.pdf")
-out_png <- file.path(project_dir, "FIGS", "Figure-C1-max-viral-load-fct-status.png")
+out_pdf <- file.path(figs_dir, "Figure-C1-max-viral-load-fct-status.pdf")
+out_png <- file.path(figs_dir, "Figure-C1-max-viral-load-fct-status.png")
 
 ggsave(
   filename = out_png, 
@@ -95,6 +85,5 @@ ggsave(
   plot = p_Vmax, width = 9, height = 5, units = "in", dpi = 300
 )
 
-cat("\n✅ Figures saved to", out_pdf, "and", out_png, "\n")
-
-cat("\n\n>>> plot-Figure-C1-max-viral-load-fct-status.R successfully finished running ✅\n\n")
+cat("Figures saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
+print_end_time(start_time, "plot-Figure-C1-max-viral-load-fct-status.R")

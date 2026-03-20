@@ -5,23 +5,12 @@
 #   Computes PRCC from simulation results and saves outputs.
 # ============================================================
 
-cat("\n\n>>> Running process-PRCC.R ...\n\n")
-start_time <- Sys.time()
-suppressPackageStartupMessages({
-    library(dplyr)
-    library(sensitivity)
-    library(qs2)
-    library(here)
-})
-
-# Set project root automatically relative to the .git tracking directory
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
-
-OUTPUT_dir <- file.path(project_dir, "OUTPUT")
+project_dir <- here::here()
 source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+start_time <- start_time_and_hello("process-PRCC.R")
+
+load_libraries(c("dplyr", "sensitivity", "qs2", "here"))
 
 # Find the latest sensitivity_* file
 sensitivity_files <- list.files(OUTPUT_dir, pattern = "^sensitivity_.*\\.qs$", full.names = TRUE)
@@ -107,5 +96,4 @@ PRCC_global <- PRCC_global[order(-PRCC_global$sum_total), ]
 write.csv(PRCC_global, file.path(OUTPUT_dir, paste0(file_prefix, "-PRCC-summary.csv")), row.names = FALSE)
 qs_save(list(PRCC_vals = PRCC_vals, PRCC_times = PRCC_times), file.path(OUTPUT_dir, paste0(file_prefix, "-PRCC-results.qs")), nthreads = N_QS_THREADS)
 
-cat("PRCC computation finished. Results saved in OUTPUT.\n")
 print_end_time(start_time, "process-PRCC.R")

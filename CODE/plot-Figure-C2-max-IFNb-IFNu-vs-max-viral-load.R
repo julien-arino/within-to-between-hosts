@@ -6,26 +6,16 @@
 #   Plot max(F_B) and max(F_U) against max(V) for the cohort
 # ============================================================
 
-cat("\n\n>>> Running plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R ...\n\n")
-suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
-suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
-suppressWarnings(suppressPackageStartupMessages(library(qs2)))
-suppressWarnings(suppressPackageStartupMessages(library(patchwork)))
-suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+start_time <- start_time_and_hello("plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R")
+
+load_libraries(c("ggplot2", "dplyr", "qs2", "patchwork", "here"))
 
 # ------------------------------------------------------------
 # 1. Automatically find the latest parameter and status files
 # ------------------------------------------------------------
-# Set project root automatically relative to the .git tracking directory
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
-
-output_dir <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-}
 
 # 1a. Load simulation parameters (contains the max metrics)
 param_files <- list.files(output_dir, pattern = "^cohort_sim_parameters_P.*\\.qs$", full.names = TRUE)
@@ -104,9 +94,8 @@ print(combined)
 # ------------------------------------------------------------
 # 7️⃣ Save to PDF & PNG
 # ------------------------------------------------------------
-dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
-out_pdf <- file.path(project_dir, "FIGS", "Figure-C2-max-IFNb-IFNu-vs-max-viral-load.pdf")
-out_png <- file.path(project_dir, "FIGS", "Figure-C2-max-IFNb-IFNu-vs-max-viral-load.png")
+out_pdf <- file.path(figs_dir, "Figure-C2-max-IFNb-IFNu-vs-max-viral-load.pdf")
+out_png <- file.path(figs_dir, "Figure-C2-max-IFNb-IFNu-vs-max-viral-load.png")
 
 ggsave(
   filename = out_pdf, 
@@ -118,6 +107,5 @@ ggsave(
   plot = combined, width = 9, height = 4, units = "in", dpi = 300
 )
 
-cat("✅ Plots saved to:", out_pdf, "and", out_png, "\n")
-
-cat("\n\n>>> plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R successfully finished running ✅\n\n")
+cat("Plots saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
+print_end_time(start_time, "plot-Figure-C2-max-IFNb-IFNu-vs-max-viral-load.R")

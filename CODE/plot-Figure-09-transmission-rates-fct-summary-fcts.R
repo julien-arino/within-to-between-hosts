@@ -4,33 +4,43 @@
 # Description:
 # ============================================================
 
-cat("\n\n>>> Running plot-Figure-09-transmission-rates-fct-summary-fcts.R ...\n\n")
-suppressWarnings(suppressPackageStartupMessages({
-  library(qs2)
-  library(dplyr)
-  library(ggplot2)
-  library(here)
-  library(future.apply)
-}))
+# First things first: locate project directory and load helper functions
+# and constants
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+# Say what we are running and start the clock
+start_time <- start_time_and_hello("plot-Figure-09-transmission-rates-fct-summary-fcts.R")
+
+# Load libraries
+load_libraries(c("ggplot2", "dplyr", "qs2", "tidyr"))
 
 # ------------------------------------------------------------
 # 1. Automatically find the latest files
 # ------------------------------------------------------------
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
-output_dir <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-}
 
 # --- Find and load pre-computed distributions ---
-dist_files <- list.files(output_dir, pattern = "^cohort_distributions_P.*_xic_[0-9]+_.*\\.qs$", full.names = TRUE)
-if (length(dist_files) == 0) stop("No beta distributions file found in OUTPUT")
+pattern_str <- "^cohort_distribution_filters_P.*_xic_[0-9]+_.*\\.qs$"
+dist_files <- list.files(
+  output_dir,
+  pattern = pattern_str,
+  full.names = TRUE
+)
+
+if (length(dist_files) == 0) {
+  stop("No beta distributions file found in OUTPUT")
+}
+
 latest_dist <- dist_files[which.max(file.mtime(dist_files))]
 cat("Loading newest distributions:", basename(latest_dist), "\n")
-beta_overall <- qs_read(latest_dist, nthreads = N_QS_THREADS)
+
+beta_list <- qs_read(latest_dist, nthreads = N_QS_THREADS)
+
+if (!is.null(beta_list$rolling_average$beta_mean)) {
+  beta_overall <- beta_list$rolling_average
+} else {
+  beta_overall <- beta_list$raw
+}
 
 # ------------------------------------------------------------
 # 7. Plot
@@ -99,13 +109,12 @@ print(p)
 # ------------------------------------------------------------
 # 8. Save
 # ------------------------------------------------------------
-dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
-out_pdf <- file.path(project_dir, "FIGS", "Figure-09-transmission-rates-fct-summary-fcts.pdf")
-out_png <- file.path(project_dir, "FIGS", "Figure-09-transmission-rates-fct-summary-fcts.png")
+out_pdf <- file.path(figs_dir, "Figure-09-transmission-rates-fct-summary-fcts.pdf")
+out_png <- file.path(figs_dir, "Figure-09-transmission-rates-fct-summary-fcts.png")
 
 ggsave(out_pdf, plot = p, width = 20, height = 8, units = "cm")
 ggsave(out_png, plot = p, width = 20, height = 8, units = "cm")
 
-cat("\n✅ Figures saved to", out_pdf, "and", out_png, "\n")
+cat("\nFigures saved:\n  - ", out_pdf, "\n  - ", out_png, "\n")
 
-cat("\n\n>>> plot-Figure-09-transmission-rates-fct-summary-fcts.R successfully finished running ✅\n\n")
+print_end_time(start_time, "plot-Figure-09-transmission-rates-fct-summary-fcts.R")

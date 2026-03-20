@@ -15,20 +15,14 @@
 #   The cleaned and truncated data is saved for each combination of cutpoints.
 # ============================================================
 
-cat("\n\n>>> Running process-cohort-classify-individuals-fct-xih-xid.R ...\n\n")
-start_time <- Sys.time()
-suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
-suppressWarnings(suppressPackageStartupMessages(library(qs2)))
-suppressWarnings(suppressPackageStartupMessages(library(parallel)))
-suppressWarnings(suppressPackageStartupMessages(library(data.table)))
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+start_time <- start_time_and_hello("process-cohort-classify-individuals-fct-xih-xid.R")
+
+load_libraries(c("dplyr", "qs2", "parallel", "data.table", "here"))
 
 # Find the latest cohort_sim_parameters_P* file
-if (basename(getwd()) == "CODE") {
-  output_dir <- normalizePath(file.path(getwd(), "..", "OUTPUT"))
-  source(file.path(getwd(), "functions-and-definitions.R"))
-} else {
-  output_dir <- normalizePath(file.path(getwd(), "OUTPUT"))
-}
 files <- list.files(output_dir, pattern = "^cohort_sim_parameters_P.*\\.qs$", full.names = TRUE)
 
 if (length(files) == 0) {
@@ -174,69 +168,11 @@ for (pair in threshold_pairs) {
 
 
 # ====================================================================
-# PART 2: PROCESS TRAJECTORIES
+# [PART 2: PROCESS TRAJECTORIES] -> REMOVED IN OPTIMIZATION REFACTOR
+# We no longer manually truncate full array sequences to write gigabytes 
+# of matrices back to disk. Instead, `process-cohort-times...` computes
+# tau_c and tau_r purely effectively over the lightweight arrays natively.
 # ====================================================================
-cat("\n[PART 2] Loading newest cohort state AGAIN for trajectories...\n")
-cohort_list_raw <- qs_read(state_file, nthreads = N_QS_THREADS)
 
-# Set up parallel backend using PSOCK cluster to prevent memory duplication and SIGPIPEs
-n_cores <- parallel::detectCores()
-if (n_cores >= 64) {
-  workers_to_use <- max(2, round(n_cores * 2 / 3))
-} else {
-  workers_to_use <- max(2, n_cores - 2)
-}
-
-# Function to interpolate and truncate based purely on xi_d
-interpolate_and_truncate <- function(df_element, xi_d) {
-  df <- as.data.frame(df_element)
-
-  if ("Psi" %in% names(df) && length(df$Psi) > 0) {
-    psi_max <- max(df$Psi)
-    if (psi_max >= xi_d) {
-      t_max <- df$time[which.max(df$Psi)]
-    } else {
-      t_max <- max(df$time)
-    }
-  } else {
-    t_max <- max(df$time)
-  }
-
-  t_interp <- seq(0, t_max, by = 0.1)
-  v_interp <- approx(df$time, df$V, xout = t_interp, ties = mean)$y
-
-  data.frame(
-    time = t_interp,
-    V = v_interp,
-    row.names = NULL
-  )
-}
-
-cat("\nStarting PSOCK cluster...\n")
-cl <- makeCluster(workers_to_use)
-
-for (xi_d in xi_d_vals) {
-  cat("\n========================================\n")
-  cat("Processing trajectories for xi_d =", xi_d, "\n")
-  cat("========================================\n")
-
-  processed_list <- parLapply(
-    cl,
-    cohort_list_raw,
-    interpolate_and_truncate,
-    xi_d = xi_d
-  )
-
-  d_str <- ifelse(xi_d %% 1 == 0, as.character(as.integer(xi_d)), as.character(xi_d))
-
-  new_base <- sub("cohort_", "cohort_truncated_state_", base_name)
-  new_base <- paste0(new_base, "_xid_", d_str)
-
-  out_file <- file.path(output_dir, paste0(new_base, ".qs"))
-  qs_save(processed_list, out_file, nthreads = N_QS_THREADS)
-  cat("Saved:", basename(out_file), "\n")
-}
-
-stopCluster(cl)
-cat("\nAll thresholds and trajectories processed successfully.\n")
+cat("\nAll thresholds and status files processed successfully.\n")
 print_end_time(start_time, "process-cohort-classify-individuals-fct-xih-xid.R")

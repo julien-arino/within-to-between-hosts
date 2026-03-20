@@ -219,6 +219,7 @@ function run_one_individual(idx, individuals, IC)
     df_vars = DataFrame(
         time = sol.t,
         V = sol[1, :],
+        I = sol[3, :],
         F_U = sol[6, :],
         F_B = sol[7, :]
     )

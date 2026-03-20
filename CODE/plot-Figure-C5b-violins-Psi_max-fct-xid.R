@@ -6,24 +6,16 @@
 #   Violin plots of Psi_max fct xid
 # ============================================================
 
-cat("\n\n>>> Running plot-Figure-C5b-violins-Psi_max-fct-xid.R ...\n\n")
-suppressWarnings(suppressPackageStartupMessages(library(ggplot2)))
-suppressWarnings(suppressPackageStartupMessages(library(dplyr)))
-suppressWarnings(suppressPackageStartupMessages(library(qs2)))
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+start_time <- start_time_and_hello("plot-Figure-C5b-violins-Psi_max-fct-xid.R")
+
+load_libraries(c("ggplot2", "dplyr", "qs2", "here"))
 
 # ------------------------------------------------------------
 # 1. Setup paths and load dynamically matched cohort_status files
 # ------------------------------------------------------------
-# Set project root automatically relative to the .git tracking directory
-suppressWarnings(suppressPackageStartupMessages(library(here)))
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
-output_dir <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-}
 
 # --- Setup target xi_h and load all status files ---
 xi_h_target <- 75
@@ -99,9 +91,8 @@ p_violin <- ggplot(psi_groups,
 print(p_violin)
 
 # --- Save both PNG and PDF versions ---
-dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
-out_pdf <- file.path(project_dir, "FIGS", "Figure-C5b-violins-Psi_max-fct-xid.pdf")
-out_png <- file.path(project_dir, "FIGS", "Figure-C5b-violins-Psi_max-fct-xid.png")
+out_pdf <- file.path(figs_dir, "Figure-C5b-violins-Psi_max-fct-xid.pdf")
+out_png <- file.path(figs_dir, "Figure-C5b-violins-Psi_max-fct-xid.png")
 
 ggsave(
   filename = out_pdf,
@@ -115,6 +106,5 @@ ggsave(
   width = 25, height = 15, units = "cm", dpi = 300
 )
 
-cat("✅ Plot saved to", out_pdf, "and", out_png, "\n")
-
-cat("\n\n>>> plot-Figure-C5b-violins-Psi_max-fct-xid.R successfully finished running ✅\n\n")
+cat("Plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
+print_end_time(start_time, "plot-Figure-C5b-violins-Psi_max-fct-xid.R")

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Logical gates to control pipeline execution (1 = run, 0 = skip)
 PLOT=1
@@ -12,6 +13,7 @@ if [ "$PLOT" -eq 1 ]; then
     Rscript plot-Figure-D2-incidence-fct-time-various-scenarios-mean-AUC.R
     Rscript plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R
     Rscript plot-Figure-D4-incidence-fct-time-same-R0P-different-summaries.R
+    Rscript plot-Figure-E1-survival-fct-xir.R
 fi
 
 echo "Between-host simulation pipeline complete!"

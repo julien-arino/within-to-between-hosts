@@ -32,20 +32,14 @@ xi_pairs <- list(
   c(6, 4)
 )
 
-# Find the project directory and source globals
-suppressWarnings(suppressPackageStartupMessages(library(here)))
-project_dir <- here::here()
-source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
-output_dir <- file.path(project_dir, "OUTPUT")
-
-files <- list.files(output_dir, pattern = "^cohort_truncated_state_P.*\\.qs$", full.names = TRUE)
+files <- list.files(output_dir, pattern = "^cohort_sim_state_P.*\\.qs$", full.names = TRUE)
 
 if (length(files) == 0) {
-  stop("No cohort_truncated_state_P... file found in ", output_dir)
+  stop("No cohort_sim_state_P... file found in ", output_dir)
 }
 
-# We process the base truncated states, avoiding already padded ones
-files <- files[!grepl("_zerotrans\\.qs$", files)]
+# We process the base native simulation states, avoiding derived caches
+files <- files[!grepl("_zerotrans\\.qs$", files) & !grepl("_interp", files)]
 
 if (length(files) == 0) {
   cat("All files have already been processed.\n")

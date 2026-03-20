@@ -7,29 +7,16 @@
 #   1. Load libraries
 # ============================================================
 
-cat("\n\n>>> Running plot-Figure-C3-PCA.R ...\n\n")
-suppressPackageStartupMessages({
-  library(qs2)
-  library(dplyr)
-  library(FactoMineR)
-  library(factoextra)
-  library(ggplot2)
-})
-suppressWarnings(suppressPackageStartupMessages(library(here)))
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+start_time <- start_time_and_hello("plot-Figure-C3-PCA.R")
+
+load_libraries(c("qs2", "dplyr", "FactoMineR", "factoextra", "ggplot2", "here"))
 
 # ------------------------------------------------------------
 # 2. Automatically find the latest cohort_truncated file
 # ------------------------------------------------------------
-# Set project root automatically relative to the .git tracking directory
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
-
-output_dir <- file.path(project_dir, "OUTPUT")
-if(!exists("N_QS_THREADS")) {
-  if(exists("project_dir")) source(file.path(project_dir, "CODE", "functions-and-definitions.R")) else source("functions-and-definitions.R")
-}
 
 # 1a. Load simulation parameters (contains the max metrics)
 param_files <- list.files(output_dir, pattern = "^cohort_sim_parameters_P.*\\.qs$", full.names = TRUE)
@@ -138,9 +125,8 @@ if (!is.null(res.pca)) {
   # ------------------------------------------------------------
   # Save
   # ------------------------------------------------------------
-dir.create(file.path(project_dir, "FIGS"), showWarnings = FALSE, recursive = TRUE)
-out_pdf <- file.path(project_dir, "FIGS", "Figure-C3-PCA.pdf")
-out_png <- file.path(project_dir, "FIGS", "Figure-C3-PCA.png")
+  out_pdf <- file.path(figs_dir, "Figure-C3-PCA.pdf")
+  out_png <- file.path(figs_dir, "Figure-C3-PCA.png")
   
   ggsave(
     filename = out_pdf,
@@ -154,10 +140,10 @@ out_png <- file.path(project_dir, "FIGS", "Figure-C3-PCA.png")
     width = 25, height = 15, units = "cm", dpi = 300
   )
   
-  cat("✅ PCA plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
+  cat("PCA plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
   
 } else {
   message("⚠️ PCA computation failed. No plot generated.")
 }
 
-cat("\n\n>>> plot-Figure-C3-PCA.R successfully finished running ✅\n\n")
+print_end_time(start_time, "plot-Figure-C3-PCA.R")
