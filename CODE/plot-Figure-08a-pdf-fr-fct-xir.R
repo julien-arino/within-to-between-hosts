@@ -56,13 +56,13 @@ p <- ggplot(
   ) +
   coord_cartesian(xlim = c(0, 100)) +
   scale_color_manual(
-    values = c("1" = "#e7298a", "2" = "#1b9e77", "4" = "#d95f02"),
-    labels = c("1" = expression(1), "2" = expression(2), "4" = expression(4)),
+    values = c("1" = "firebrick3", "4" = "mistyrose3"),
+    labels = c("1" = expression(1), "4" = expression(4)),
     drop = FALSE
   ) +
   scale_fill_manual(
-    values = c("1" = "#e7298a", "2" = "#1b9e77", "4" = "#d95f02"),
-    labels = c("1" = expression(1), "2" = expression(2), "4" = expression(4)),
+    values = c("1" = "firebrick3", "4" = "mistyrose3"),
+    labels = c("1" = expression(1), "4" = expression(4)),
     drop = FALSE
   ) +
   theme_minimal(base_size = 14)

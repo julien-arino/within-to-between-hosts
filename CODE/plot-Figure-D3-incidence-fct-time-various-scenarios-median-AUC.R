@@ -31,24 +31,29 @@ get_latest_dist <- function(pattern) {
   files[which.max(file.mtime(files))]
 }
 
-beta_df       <- qs_read(get_latest_dist("^cohort_distributions_P.*_beta\\.qs$"), nthreads = N_QS_THREADS)
-gamma_overall <- qs_read(get_latest_dist("^cohort_distributions_P.*_gamma\\.qs$"), nthreads = N_QS_THREADS)
-mu_overall    <- qs_read(get_latest_dist("^cohort_distributions_P.*_mu\\.qs$"), nthreads = N_QS_THREADS)
-
 xi_r_target <- "4"
 xi_d_target <- "85"
 
-gamma_col <- paste0("gamma_xi_", xi_r_target)
-mu_col    <- paste0("mu_xid_",   xi_d_target)
+pattern_str <- paste0("^cohort_distribution_filters_P.*_xid_", xi_d_target, "_.*_xir_", xi_r_target, "\\.qs$")
+latest_dist <- get_latest_dist(pattern_str)
+dist_list <- qs_read(latest_dist, nthreads = N_QS_THREADS)
 
-combined_df <- beta_df %>%
-  select(time, beta_median) %>%
-  left_join(gamma_overall %>% select(time, all_of(gamma_col)), by = "time") %>%
-  left_join(mu_overall %>% select(time, all_of(mu_col)), by = "time") %>%
+if (!is.null(dist_list$rolling_average$beta_median)) {
+  dist_df <- dist_list$rolling_average
+} else {
+  dist_df <- dist_list$raw
+}
+
+combined_df <- dist_df %>%
+  select(time, beta_median, gamma_P, mu_P) %>%
   mutate(
-    across(c(all_of(gamma_col), all_of(mu_col)), ~ replace_na(.x, 0))
+    gamma_P = tidyr::replace_na(gamma_P, 0),
+    mu_P = tidyr::replace_na(mu_P, 0)
   ) %>%
   arrange(time)
+
+gamma_col <- "gamma_P"
+mu_col    <- "mu_P"
 
 a_vals  <- combined_df$time
 beta_a  <- combined_df$beta_median
@@ -86,8 +91,12 @@ simulate_case <- function(beta_raw,kernel,panel_name){
   for(R0_target in R0_targets){
     
     R0_base <- compute_R0(beta_raw,kernel)
-    k <- R0_target/R0_base
-    beta_scaled <- k*beta_raw
+    if (R0_base > 0) {
+      k <- R0_target/R0_base
+      beta_scaled <- k*beta_raw
+    } else {
+      beta_scaled <- numeric(length(beta_raw))
+    }
     
     S <- numeric(nT)
     U <- numeric(nT)

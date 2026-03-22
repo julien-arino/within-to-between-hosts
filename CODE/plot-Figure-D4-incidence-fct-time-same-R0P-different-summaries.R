@@ -36,24 +36,32 @@ get_latest_dist <- function(pattern) {
   files[which.max(file.mtime(files))]
 }
 
-beta_df <- qs_read(get_latest_dist("^cohort_distributions_P.*_beta\\.qs$"), nthreads = N_QS_THREADS)
-gamma_overall <- qs_read(get_latest_dist("^cohort_distributions_P.*_gamma\\.qs$"), nthreads = N_QS_THREADS)
-mu_overall <- qs_read(get_latest_dist("^cohort_distributions_P.*_mu\\.qs$"), nthreads = N_QS_THREADS)
+xi_r_target <- "4"
+xi_d_target <- "85"
 
-gamma_col <- "gamma_xi_4"
-mu_col <- "mu_xid_85"
+pattern_str <- paste0("^cohort_distribution_filters_P.*_xid_", xi_d_target, "_.*_xir_", xi_r_target, "\\.qs$")
+latest_dist <- get_latest_dist(pattern_str)
+dist_list <- qs_read(latest_dist, nthreads = N_QS_THREADS)
+
+if (!is.null(dist_list$rolling_average$beta_mean)) {
+  dist_df <- dist_list$rolling_average
+} else {
+  dist_df <- dist_list$raw
+}
 
 # ------------------------------------------------------------
 # Align datasets
 # ------------------------------------------------------------
-combined_df <- beta_df %>%
-  select(time, beta_mean, beta_q10, beta_q90, beta_median) %>%
-  left_join(gamma_overall %>% select(time, all_of(gamma_col)), by = "time") %>%
-  left_join(mu_overall %>% select(time, all_of(mu_col)), by = "time") %>%
+combined_df <- dist_df %>%
+  select(time, beta_mean, beta_q10 = beta_Q10, beta_q90 = beta_Q90, beta_median, gamma_P, mu_P) %>%
   mutate(
-    across(c(all_of(gamma_col), all_of(mu_col)), ~ replace_na(.x, 0))
+    gamma_P = tidyr::replace_na(gamma_P, 0),
+    mu_P = tidyr::replace_na(mu_P, 0)
   ) %>%
   arrange(time)
+
+gamma_col <- "gamma_P"
+mu_col <- "mu_P"
 
 a_vals <- combined_df$time
 
@@ -125,15 +133,18 @@ R0_median <- compute_R0(beta_median)
 # ------------------------------------------------------------
 # Scaling factors
 # ------------------------------------------------------------
-k_mean <- R0_target / R0_mean
-k_q10 <- R0_target / R0_q10
-k_q90 <- R0_target / R0_q90
-k_median <- R0_target / R0_median
+scale_beta <- function(beta, R0_base) {
+  if (R0_base > 0) {
+    (R0_target / R0_base) * beta
+  } else {
+    numeric(length(beta))
+  }
+}
 
-beta_mean_scaled <- k_mean * beta_mean
-beta_q10_scaled <- k_q10 * beta_q10
-beta_q90_scaled <- k_q90 * beta_q90
-beta_median_scaled <- k_median * beta_median
+beta_mean_scaled <- scale_beta(beta_mean, R0_mean)
+beta_q10_scaled <- scale_beta(beta_q10, R0_q10)
+beta_q90_scaled <- scale_beta(beta_q90, R0_q90)
+beta_median_scaled <- scale_beta(beta_median, R0_median)
 
 # ------------------------------------------------------------
 # Simulations
