@@ -1,15 +1,15 @@
 #!/usr/bin/env Rscript
 # ============================================================
-# File: plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R
+# File: plot-Figure-C5b-max-tissue-damage-fct-time-to-max-damage.R
 # Description:
-#   File: plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R
+#   File: plot-Figure-C5b-max-tissue-damage-fct-time-to-max-damage.R
 #   Mean Psi-max vs Time to maximum tissue damage
 # ============================================================
 
 project_dir <- here::here()
 source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
-start_time <- start_time_and_hello("plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R")
+start_time <- start_time_and_hello("plot-Figure-C5b-max-tissue-damage-fct-time-to-max-damage.R")
 
 load_libraries(c("ggplot2", "dplyr", "qs2", "here"))
 
@@ -112,7 +112,7 @@ p_multi <- ggplot(psi_tau_all,
     color = expression(xi^d~"(%)"),
     fill  = expression(xi^d~"(%)")
   ) +
-  coord_cartesian(xlim=c(0,20), ylim=c(80,100)) +
+  coord_cartesian(xlim=c(0,20), ylim=c(82,100)) +
   theme_minimal(base_size=14) +
   theme(
     plot.title = element_text(hjust=0.5, face="bold"),
@@ -122,8 +122,8 @@ p_multi <- ggplot(psi_tau_all,
 print(p_multi)
 
 # --- Save both PNG and PDF versions ---
-out_pdf <- file.path(figs_dir, "Figure-C5a-max-tissue-damage-fct-time-to-max-damage.pdf")
-out_png <- file.path(figs_dir, "Figure-C5a-max-tissue-damage-fct-time-to-max-damage.png")
+out_pdf <- file.path(figs_dir, "Figure-C5b-max-tissue-damage-fct-time-to-max-damage.pdf")
+out_png <- file.path(figs_dir, "Figure-C5b-max-tissue-damage-fct-time-to-max-damage.png")
 
 ggsave(
   filename = out_pdf,
@@ -138,4 +138,4 @@ ggsave(
 )
 
 cat("Plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
-print_end_time(start_time, "plot-Figure-C5a-max-tissue-damage-fct-time-to-max-damage.R")
+print_end_time(start_time, "plot-Figure-C5b-max-tissue-damage-fct-time-to-max-damage.R")

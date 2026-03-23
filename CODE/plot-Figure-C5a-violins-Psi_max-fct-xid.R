@@ -1,15 +1,15 @@
 #!/usr/bin/env Rscript
 # ============================================================
-# File: plot-Figure-C5b-violins-Psi_max-fct-xid.R
+# File: plot-Figure-C5a-violins-Psi_max-fct-xid.R
 # Description:
-#   File: plot-Figure-C5b-violins-Psi_max-fct-xid.R
+#   File: plot-Figure-C5a-violins-Psi_max-fct-xid.R
 #   Violin plots of Psi_max fct xid
 # ============================================================
 
 project_dir <- here::here()
 source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
-start_time <- start_time_and_hello("plot-Figure-C5b-violins-Psi_max-fct-xid.R")
+start_time <- start_time_and_hello("plot-Figure-C5a-violins-Psi_max-fct-xid.R")
 
 load_libraries(c("ggplot2", "dplyr", "qs2", "here"))
 
@@ -56,9 +56,13 @@ psi_groups <- bind_rows(
       mutate(Psi_max = max_Psi)
     
     # 3. Filter and annotate groups
-    patient_summary %>%
-      filter(Psi_max >= th) %>%
-      mutate(xi_group = factor(th, levels = xi_values))
+    filtered_patients <- patient_summary %>% filter(Psi_max >= th)
+    
+    filtered_patients %>%
+      mutate(
+        xi_group = factor(th, levels = xi_values),
+        pct_dead_lbl = sprintf("%.1f%%", (nrow(filtered_patients) / nrow(status_df)) * 100)
+      )
   })
 )
 
@@ -67,6 +71,15 @@ print(psi_groups %>% count(xi_group))
 
 # --- Colors (one time only) ---
 col_map <- c("85"="red1", "90"="#ef8a62", "95"="darkred")
+
+# --- Create text labels dataframe ---
+label_df <- psi_groups %>%
+  group_by(xi_group) %>%
+  summarize(
+    pct_dead_lbl = first(pct_dead_lbl),
+    Psi_max = 101
+  ) %>%
+  ungroup()
 
 # ------------------------------------------------------------
 # Violin version
@@ -82,6 +95,10 @@ p_violin <- ggplot(psi_groups,
     x = expression(xi^d~"(%)"),
     y = expression(Psi[max]~"(%)")
   ) +
+  geom_text(data = label_df, aes(x = xi_group, y = Psi_max, label = pct_dead_lbl), 
+            size = 5, fontface = "bold", inherit.aes = FALSE) +
+  annotate("text", x = 2, y = 102, label = "Deaths (%)", size = 5, fontface = "italic") +
+  coord_cartesian(ylim = c(82, 103)) +
   theme_minimal(base_size = 15) +
   theme(
     legend.position = "none",
@@ -91,8 +108,8 @@ p_violin <- ggplot(psi_groups,
 print(p_violin)
 
 # --- Save both PNG and PDF versions ---
-out_pdf <- file.path(figs_dir, "Figure-C5b-violins-Psi_max-fct-xid.pdf")
-out_png <- file.path(figs_dir, "Figure-C5b-violins-Psi_max-fct-xid.png")
+out_pdf <- file.path(figs_dir, "Figure-C5a-violins-Psi_max-fct-xid.pdf")
+out_png <- file.path(figs_dir, "Figure-C5a-violins-Psi_max-fct-xid.png")
 
 ggsave(
   filename = out_pdf,
@@ -107,4 +124,4 @@ ggsave(
 )
 
 cat("Plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
-print_end_time(start_time, "plot-Figure-C5b-violins-Psi_max-fct-xid.R")
+print_end_time(start_time, "plot-Figure-C5a-violins-Psi_max-fct-xid.R")

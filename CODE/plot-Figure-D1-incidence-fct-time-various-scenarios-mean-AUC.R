@@ -13,7 +13,7 @@ source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
 start_time <- start_time_and_hello("plot-Figure-D1-incidence-fct-time-various-scenarios-mean-AUC.R")
 
-load_libraries(c("dplyr", "ggplot2", "qs2", "tidyr", "here"))
+load_libraries(c("dplyr", "ggplot2", "qs2", "here"))
 
 R0_targets <- c(2.5, 5)
 S0    <- 2000
@@ -48,8 +48,8 @@ if (!is.null(dist_list$rolling_average$beta_mean)) {
 combined_df <- dist_df %>%
   select(time, beta_mean, gamma_P, mu_P) %>%
   mutate(
-    gamma_P = tidyr::replace_na(gamma_P, 0),
-    mu_P = tidyr::replace_na(mu_P, 0)
+    gamma_P = coalesce(gamma_P, 0),
+    mu_P = coalesce(mu_P, 0)
   ) %>%
   arrange(time)
 

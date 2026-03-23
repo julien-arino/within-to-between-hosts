@@ -1,0 +1,128 @@
+#!/usr/bin/env Rscript
+# ============================================================
+# File: plot-Figure-C5c-violins-tau_max_Psi-fct-xid.R
+# Description:
+#   File: plot-Figure-C5c-violins-tau_max_Psi-fct-xid.R
+#   Violin plots of tau_max_Psi fct xid
+# ============================================================
+
+project_dir <- here::here()
+source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+start_time <- start_time_and_hello("plot-Figure-C5c-violins-tau_max_Psi-fct-xid.R")
+
+load_libraries(c("ggplot2", "dplyr", "qs2", "here"))
+
+# ------------------------------------------------------------
+# 1. Setup paths and load dynamically matched cohort_status files
+# ------------------------------------------------------------
+
+# --- Setup target xi_h and load all status files ---
+xi_h_target <- 75
+status_files <- list.files(output_dir, pattern = "^cohort_status_P.*\\.qs$", full.names = TRUE)
+# Exclude files with xic and xir changes
+status_files <- status_files[!grepl("_xic_|_xir_", status_files)]
+
+if (length(status_files) == 0) {
+  stop("No base cohort_status files found in ", output_dir)
+}
+
+valid_files <- data.frame(file = status_files, stringsAsFactors = FALSE) %>%
+  mutate(
+    xih = as.numeric(gsub(".*_xih_([0-9]+).*", "\\1", basename(file))),
+    xid = as.numeric(gsub(".*_xid_([0-9]+).*", "\\1", basename(file)))
+  )
+
+# --- Thresholds we want to compare ---
+xi_values <- c(85, 90, 95)
+
+# --- Build cumulative groups ---
+psi_groups <- bind_rows(
+  lapply(xi_values, function(th) {
+    
+    cat("Processing xi_d =", th, "\n")
+    # 1. Load the specific status file for this xi_d
+    target_file_df <- valid_files %>% filter(xih == xi_h_target, xid == th)
+    if (nrow(target_file_df) == 0) {
+      warning("No status data available for targeted xi_h=75 and xi_d=", th)
+      return(NULL)
+    }
+    
+    latest_status_file <- target_file_df$file[which.max(file.mtime(target_file_df$file))]
+    status_df <- qs_read(latest_status_file, nthreads = N_QS_THREADS)
+    
+    # 2. Extract Psi_max directly from status
+    patient_summary <- status_df %>%
+      mutate(tau_max_Psi = tau_max_Psi)
+    
+    # 3. Filter and annotate groups
+    filtered_patients <- patient_summary %>% filter(max_Psi >= th)
+    
+    filtered_patients %>%
+      mutate(
+        xi_group = factor(th, levels = xi_values),
+        pct_dead_lbl = sprintf("%.1f%%", (nrow(filtered_patients) / nrow(status_df)) * 100)
+      )
+  })
+)
+
+# Check counts
+print(psi_groups %>% count(xi_group))
+
+# --- Colors (one time only) ---
+col_map <- c("85"="red1", "90"="#ef8a62", "95"="darkred")
+
+# --- Create text labels dataframe ---
+global_max_y <- max(psi_groups$tau_max_Psi, na.rm = TRUE)
+label_df <- psi_groups %>%
+  group_by(xi_group) %>%
+  summarize(
+    pct_dead_lbl = first(pct_dead_lbl),
+    tau_max_Psi = global_max_y * 1.05
+  ) %>%
+  ungroup()
+
+# ------------------------------------------------------------
+# Violin version
+# ------------------------------------------------------------
+p_violin <- ggplot(psi_groups,
+                   aes(x = xi_group, y = tau_max_Psi, fill = xi_group)) +
+  geom_violin(trim = FALSE, alpha = 0.6) +
+  geom_boxplot(width = 0.12, outlier.alpha = 0.2, fill = "white") +
+  scale_fill_manual(values = col_map, labels = xi_values) +
+  scale_x_discrete(labels = xi_values) +
+  labs(
+    title = "",
+    x = expression(xi^d~"(%)"),
+    y = expression("Time to maximum tissue damage"~tau[i]^{Psi[max]})
+  ) +
+  geom_text(data = label_df, aes(x = xi_group, y = tau_max_Psi, label = pct_dead_lbl), 
+            size = 5, fontface = "bold", inherit.aes = FALSE) +
+  annotate("text", x = 2, y = global_max_y * 1.12, label = "Deaths (%)", size = 5, fontface = "italic") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.20))) +
+  theme_minimal(base_size = 15) +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(hjust = 0.5, face = "bold")
+  )
+
+print(p_violin)
+
+# --- Save both PNG and PDF versions ---
+out_pdf <- file.path(figs_dir, "Figure-C5c-violins-tau_max_Psi-fct-xid.pdf")
+out_png <- file.path(figs_dir, "Figure-C5c-violins-tau_max_Psi-fct-xid.png")
+
+ggsave(
+  filename = out_pdf,
+  plot = p_violin,
+  width = 25, height = 15, units = "cm", dpi = 300
+)
+
+ggsave(
+  filename = out_png,
+  plot = p_violin,
+  width = 25, height = 15, units = "cm", dpi = 300
+)
+
+cat("Plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
+print_end_time(start_time, "plot-Figure-C5c-violins-tau_max_Psi-fct-xid.R")

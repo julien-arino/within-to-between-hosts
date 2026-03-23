@@ -52,8 +52,8 @@ for (file_idx in seq_along(target_status_files)) {
 
   cat("- Computing active individuals over time...\n")
   exit_times <- pmin(
-    replace_na(cohort_status$tau_d, Inf),
-    replace_na(cohort_status$tau_r, Inf)
+    coalesce(cohort_status$tau_d, Inf),
+    coalesce(cohort_status$tau_r, Inf)
   )
 
   active_counts <- sapply(time_pts, function(t_val) {
@@ -98,10 +98,10 @@ for (file_idx in seq_along(target_status_files)) {
   tau_h_end_v <- cohort_status$tau_h_end[match(cohort_ids, cohort_status$ID)]
 
   V_mat_active[outer(time_pts, coalesce(tau_c_v, Inf), "<")] <- 0
-  V_mat_active[outer(time_pts, coalesce(tau_r_v, -Inf), ">")] <- 0
+  V_mat_active[outer(time_pts, coalesce(tau_r_v, Inf), ">")] <- 0
   V_mat_active[outer(time_pts, coalesce(tau_d_v, Inf), ">=")] <- 0
   V_mat_active[outer(time_pts, coalesce(tau_h_start_v, Inf), ">=") &
-    outer(time_pts, coalesce(tau_h_end_v, -Inf), "<=")] <- 0
+    outer(time_pts, coalesce(tau_h_end_v, Inf), "<=")] <- 0
 
   cat("- V matrix copied and masked! 0s successfully assigned to non-transmitting phases.\n")
 

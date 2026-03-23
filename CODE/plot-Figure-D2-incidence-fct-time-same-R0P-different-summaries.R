@@ -12,7 +12,7 @@ source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
 start_time <- start_time_and_hello("plot-Figure-D2-incidence-fct-time-same-R0P-different-summaries.R")
 
-load_libraries(c("dplyr", "ggplot2", "qs2", "tidyr", "here"))
+load_libraries(c("dplyr", "ggplot2", "qs2", "here"))
 
 # ------------------------------------------------------------
 # USER PARAMETERS
@@ -55,8 +55,8 @@ if (!is.null(dist_list$rolling_average$beta_mean)) {
 combined_df <- dist_df %>%
   select(time, beta_mean, beta_q10 = beta_Q10_positive_transmission, beta_q90 = beta_Q90_positive_transmission, beta_median = beta_median_positive_transmission, gamma_P, mu_P) %>%
   mutate(
-    gamma_P = tidyr::replace_na(gamma_P, 0),
-    mu_P = tidyr::replace_na(mu_P, 0)
+    gamma_P = coalesce(gamma_P, 0),
+    mu_P = coalesce(mu_P, 0)
   ) %>%
   arrange(time)
 

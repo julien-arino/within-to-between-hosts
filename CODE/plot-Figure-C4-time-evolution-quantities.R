@@ -97,8 +97,8 @@ p_FU <- make_plot(
 
 # Combine 2 rows x 3 columns
 combined_all <-
-  (p_V | p_beta | p_I) /
-    (p_Psi | p_FB | p_FU)
+  (p_Psi | p_V | p_beta) /
+    (p_I | p_FB | p_FU)
 
 combined_all <- combined_all +
   plot_layout(guides = "collect") &

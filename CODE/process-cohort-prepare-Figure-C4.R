@@ -81,9 +81,13 @@ cohort_df$beta_hat <- compute_beta_hat(cohort_df$V)
 # Build effective beta_c(a)
 cohort_df <- cohort_df %>%
   mutate(
-    in_window = (!is.na(tau_c) & time >= tau_c) & (!is.na(tau_r) & time <= tau_r),
-    in_hosp = (!is.na(tau_h_start) & time >= tau_h_start) & (!is.na(tau_h_end) & time <= tau_h_end),
-    beta_hat_window = if_else(in_window & !in_hosp, beta_hat, 0)
+    in_window = (!is.na(tau_c) & time >= tau_c) & (is.na(tau_r) | time <= tau_r),
+    in_hosp = (!is.na(tau_h_start) & time >= tau_h_start) & (is.na(tau_h_end) | time <= tau_h_end),
+    beta_hat_window = case_when(
+      is_dead & time > tau_max_Psi ~ NA_real_,
+      in_window & !in_hosp ~ beta_hat,
+      TRUE ~ 0
+    )
   )
 
 # Compute mean ± SD per status
