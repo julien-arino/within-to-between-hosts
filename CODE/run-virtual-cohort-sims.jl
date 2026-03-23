@@ -7,8 +7,8 @@
 #   The script saves results as Rds files for later exploitation in R.
 #   Load required packages
 # ============================================================
-
-println("\n\n>>> Running run-virtual-cohort-sims.jl ...\n\n")
+start_time_total = time()
+println("\n\n>>> Starting run-virtual-cohort-sims.jl ...\n\n")
 using Dates
 using Distributed
 using Serialization
@@ -121,8 +121,8 @@ individuals[!, :R0_within] = [r[:R0_within] for r in raw_results]
 COHORT = [r[:vars] for r in raw_results]
 
 # Print elapsed time
-elapsed_time = time() - start_time
-println("Computation completed in $(elapsed_time) seconds")
+elapsed_computation = time() - start_time
+println("Computation completed in $(elapsed_computation) seconds")
 
 # Record date-time for unique file naming (capture current time for each run)
 # Note: use UTC to avoid issues with compute nodes with time set incorrectly
@@ -189,4 +189,19 @@ if PARALLEL
     end
 end
 
-println("\n\n>>> run-virtual-cohort-sims.jl successfully finished running ✅\n\n")
+println("\nFiles saved in ", OUTPUT, ":")
+if SAVE_JLS
+    println("  - ", basename(save_path_params))
+    println("  - ", basename(save_path_ic))
+    println("  - ", basename(save_path_state))
+end
+if SAVE_QS
+    println("  - ", basename(save_path_qs_params))
+    println("  - ", basename(save_path_qs_ic))
+    println("  - ", basename(save_path_qs_state))
+end
+
+elapsed_total = time() - start_time_total
+mins = floor(Int, elapsed_total / 60)
+secs = round(elapsed_total - mins * 60, digits=1)
+println("\n>>> Finished run-virtual-cohort-sims.jl in $mins minutes and $(secs) seconds ✅\n")

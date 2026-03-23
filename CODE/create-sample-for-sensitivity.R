@@ -5,22 +5,13 @@
 #   Set up the sample for the sensitivity analysis
 # ============================================================
 
-cat("\n\n>>> Running create-sample-for-sensitivity.R ...\n\n")
-suppressWarnings(suppressPackageStartupMessages({
-    library(sensitivity)
-    library(randtoolbox)
-    library(here)
-}))
+project_dir <- here::here()
 
-# Set project root automatically relative to the .git tracking directory
-project_dir <- here()
-if (basename(project_dir) == "CODE") {
-  project_dir <- dirname(project_dir)
-}
-
-# The sampling is executed inside Julia via RCall, so N is defined
-# by the julia script. However, we load our utility R functions first
 source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
+
+start_time <- start_time_and_hello("create-sample-for-sensitivity.R")
+
+load_libraries(c("sensitivity", "randtoolbox"))
 
 # Use the same order as in plot-sensitivity-from-julia.R
 cols <- c(
@@ -71,7 +62,7 @@ pars_df$max <- tmp[, 2]
 
 # To use sensitivity::parameterSets, we need to convert the data frame to a list
 pars_list <- list()
-for (i in 1:dim(pars_df)[1]) {
+for (i in seq_len(dim(pars_df)[1])) {
   pars_list[[pars_df$params[i]]] <- c(pars_df$min[i], pars_df$max[i])
 }
 nb_pars <- length(pars_list)
@@ -120,4 +111,8 @@ rm(list = c(
   "avo"
 ))
 
-cat("\n\n>>> create-sample-for-sensitivity.R successfully finished running ✅\n\n")
+cat("\nSummary of generated sample:\n")
+cat("  - Number of individuals (N):", N, "\n")
+cat("  - Target output columns:", length(colnames(individuals)), "\n\n")
+
+print_end_time(start_time, "create-sample-for-sensitivity.R")

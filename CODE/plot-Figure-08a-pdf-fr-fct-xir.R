@@ -50,7 +50,7 @@ p <- ggplot(
   geom_area(alpha = 0.2, position = "identity") +
   labs(
     x = "Age of infection (days)",
-    y = "Probability density function",
+    y = expression(f[r](a)),
     color = expression(xi^r),
     fill = expression(xi^r)
   ) +
@@ -77,5 +77,25 @@ ggsave(out_pdf, plot = p, width = 20, height = 8, units = "cm", dpi = 300)
 ggsave(out_png, plot = p, width = 20, height = 8, units = "cm", dpi = 300)
 
 cat("\nFigures saved to", out_pdf, "and", out_png, "\n")
+
+cat("\nSummary Statistics of Recovery Time:\n")
+suppressWarnings({
+  stats_df <- gamma_all %>%
+    group_by(xi_r) %>%
+    arrange(a) %>%
+    mutate(da = c(a[2] - a[1], diff(a))) %>%
+    summarise(
+      mean_val = sum(a * f_r_a * da, na.rm = TRUE),
+      median_val = a[which(cumsum(f_r_a * da) >= 0.5)[1]],
+      .groups = 'drop'
+    )
+})
+
+for (i in seq_len(nrow(stats_df))) {
+  cat(sprintf("  - xi^r = %s: mean = %.2f days, median = %.2f days\n", 
+              as.character(stats_df$xi_r[i]), 
+              stats_df$mean_val[i], 
+              stats_df$median_val[i]))
+}
 
 print_end_time(start_time, "plot-Figure-08a-pdf-fr-fct-xic.R")

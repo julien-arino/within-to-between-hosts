@@ -10,7 +10,8 @@
 #   Load required packages
 # ============================================================
 
-println("\n\n>>> Running run-sensitivity-analysis-sims.jl ...\n\n")
+start_time_total = time()
+println("\n\n>>> Starting run-sensitivity-analysis-sims.jl ...\n\n")
 using Dates
 using Distributed
 using Serialization
@@ -64,6 +65,7 @@ r_functions_path = joinpath(SCRIPT_DIR, "functions-and-definitions.R")
 r_script_path = joinpath(SCRIPT_DIR, "create-sample-for-sensitivity.R")
 project_dir_jl = normpath(joinpath(SCRIPT_DIR, ".."))
 
+println("Generating the sample in R")
 ## Generate the sample in R
 # Send the Julia objects to R
 @rput N r_functions_path r_script_path project_dir_jl
@@ -146,8 +148,8 @@ if PARALLEL
 end
 
 # Print elapsed time
-elapsed_time = time() - start_time
-println("Computation completed in $(elapsed_time) seconds")
+elapsed_computation = time() - start_time
+println("Computation completed in $(elapsed_computation) seconds")
 
 # Record date-time for unique file naming (capture current time for each run)
 # Note: use UTC to avoid issues with compute nodes with time set incorrectly
@@ -242,4 +244,21 @@ if SAVE_CSV
     println("Results saved to $save_path_csv")
 end
 
-println("\n\n>>> run-sensitivity-analysis-sims.jl successfully finished running ✅\n\n")
+println("\nFiles saved in ", OUTPUT, ":")
+if SAVE_JLS
+    println("  - ", basename(save_path))
+end
+if SAVE_RDS
+    println("  - ", basename(save_path_rds))
+end
+if SAVE_QS
+    println("  - ", basename(save_path_qs))
+end
+if SAVE_CSV
+    println("  - ", basename(save_path_csv))
+end
+
+elapsed_total = time() - start_time_total
+mins = floor(Int, elapsed_total / 60)
+secs = round(elapsed_total - mins * 60, digits=1)
+println("\n>>> Finished run-sensitivity-analysis-sims.jl in $mins minutes and $(secs) seconds ✅\n")

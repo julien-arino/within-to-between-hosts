@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # ============================================================
-# File: plot-Figure-D3-incidence-fct-time-same-R0P-different-summaries.R
+# File: plot-Figure-D2-incidence-fct-time-same-R0P-different-summaries.R
 # Description:
 #   BETWEEN-HOST SIMULATOR – Compare 4 transmission profiles
 #   beta_mean, beta_median_positive_transmission, beta_Q10_positive_transmission, beta_Q90_positive_transmission
@@ -10,7 +10,7 @@
 project_dir <- here::here()
 source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
-start_time <- start_time_and_hello("plot-Figure-D3-incidence-fct-time-same-R0P-different-summaries.R")
+start_time <- start_time_and_hello("plot-Figure-D2-incidence-fct-time-same-R0P-different-summaries.R")
 
 load_libraries(c("dplyr", "ggplot2", "qs2", "tidyr", "here"))
 
@@ -210,8 +210,8 @@ print(p)
 # ------------------------------------------------------------
 # Save figure
 # ------------------------------------------------------------
-out_pdf <- file.path(figs_dir, "Figure-D3-incidence-fct-time-same-R0P-different-summaries.pdf")
-out_png <- file.path(figs_dir, "Figure-D3-incidence-fct-time-same-R0P-different-summaries.png")
+out_pdf <- file.path(figs_dir, "Figure-D2-incidence-fct-time-same-R0P-different-summaries.pdf")
+out_png <- file.path(figs_dir, "Figure-D2-incidence-fct-time-same-R0P-different-summaries.png")
 
 ggsave(
   filename = out_pdf,
@@ -230,4 +230,4 @@ ggsave(
 )
 
 cat("Plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
-print_end_time(start_time, "plot-Figure-D3-incidence-fct-time-same-R0P-different-summaries.R")
+print_end_time(start_time, "plot-Figure-D2-incidence-fct-time-same-R0P-different-summaries.R")

@@ -67,7 +67,7 @@ p_mu <- ggplot(mu_all, aes(x = a, y = f_d_val, color = xi_d, fill = xi_d)) +
   geom_line(linewidth = 0.8) +
   labs(
     x = expression("Time since infection (days)"),
-    y = "Density",
+    y = expression(f[d](a)),
     color = expression(xi^d ~ "(%)"),
     fill = expression(xi^d ~ "(%)")
   ) +

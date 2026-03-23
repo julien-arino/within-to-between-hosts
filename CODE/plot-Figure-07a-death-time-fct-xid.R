@@ -81,6 +81,15 @@ p_violin <- ggplot(
     alpha = 0.7,
     outlier.shape = NA
   ) +
+  geom_text(
+    data = tau_violin %>% count(threshold),
+    aes(x = 19, y = threshold, label = paste(format(n, big.mark = ","), "deaths")),
+    inherit.aes = FALSE,
+    vjust = -2,
+    hjust = 1,
+    size = 4,
+    color = "black"
+  ) +
   coord_cartesian(xlim = c(0, 20)) +
   labs(
     x = expression("Time to death" ~ tau[i]^d ~ "(days)"),
@@ -110,5 +119,11 @@ ggsave(out_pdf, plot = p_violin, width = 20, height = 8, units = "cm", dpi = 300
 ggsave(out_png, plot = p_violin, width = 20, height = 8, units = "cm", dpi = 300)
 
 cat("\nSaved to:\n  -", out_pdf, "\n  -", out_png, "\n")
+
+cat("\nNumber of individuals who died for each case of xi^d:\n")
+death_counts <- tau_violin %>% count(threshold)
+for (i in seq_len(nrow(death_counts))) {
+  cat(sprintf("  - xi^d = %s: %s\n", as.character(death_counts$threshold[i]), format(death_counts$n[i], big.mark = ",")))
+}
 
 print_end_time(start_time, "plot-Figure-07a-death-time-fct-xid.R")

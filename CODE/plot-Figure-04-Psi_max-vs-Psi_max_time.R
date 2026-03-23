@@ -133,4 +133,18 @@ ggsave(filename = out_pdf, plot = p2, width = 25, height = 15, units = "cm", dpi
 cat("\nFigure 4 saved to:\n  -", out_png, "\n  -", out_pdf, "\n")
 cat("Note:", dropped_count, "individuals who hit the simulation horizon (t >= 100 days) were omitted from this plot.\n")
 
+n_R0_less_1 <- sum(summary_df$R0 < 1, na.rm = TRUE)
+n_R0_geq_1 <- sum(summary_df$R0 >= 1, na.rm = TRUE)
+
+n_deads <- sum(summary_df$R0 >= 1 & summary_df$status == "Dead", na.rm = TRUE)
+n_icu_not_dead <- sum(summary_df$R0 >= 1 & summary_df$status == "ICU", na.rm = TRUE)
+n_mild <- sum(summary_df$R0 >= 1 & summary_df$status == "Mild", na.rm = TRUE)
+
+cat(sprintf("Among the plotted individuals:\n"))
+cat(sprintf("  - R_0 < 1: %s\n", format(n_R0_less_1, big.mark = ",")))
+cat(sprintf("  - R_0 >= 1: %s\n", format(n_R0_geq_1, big.mark = ",")))
+cat(sprintf("      * Dead: %s\n", format(n_deads, big.mark = ",")))
+cat(sprintf("      * ICU (but not dead): %s\n", format(n_icu_not_dead, big.mark = ",")))
+cat(sprintf("      * Mild: %s\n", format(n_mild, big.mark = ",")))
+
 print_end_time(start_time, "plot-Figure-04-Psi_max-vs-Psi_max_time.R")

@@ -13,7 +13,7 @@ start_time <- start_time_and_hello("process-PRCC.R")
 load_libraries(c("dplyr", "sensitivity", "qs2", "here"))
 
 # Find the latest sensitivity_* file
-sensitivity_files <- list.files(OUTPUT_dir, pattern = "^sensitivity_.*\\.qs$", full.names = TRUE)
+sensitivity_files <- list.files(output_dir, pattern = "^sensitivity_.*\\.qs$", full.names = TRUE)
 if (length(sensitivity_files) == 0) {
     stop("No sensitivity file found in OUTPUT directory. Run run-sensitivity-analysis-sims.jl first.")
 }
@@ -93,7 +93,7 @@ PRCC_global <- merge(
 PRCC_global$sum_total <- PRCC_global$sum_abs.x + PRCC_global$sum_abs.y
 PRCC_global <- PRCC_global[order(-PRCC_global$sum_total), ]
 
-write.csv(PRCC_global, file.path(OUTPUT_dir, paste0(file_prefix, "-PRCC-summary.csv")), row.names = FALSE)
-qs_save(list(PRCC_vals = PRCC_vals, PRCC_times = PRCC_times), file.path(OUTPUT_dir, paste0(file_prefix, "-PRCC-results.qs")), nthreads = N_QS_THREADS)
+write.csv(PRCC_global, file.path(output_dir, paste0(file_prefix, "-PRCC-summary.csv")), row.names = FALSE)
+qs_save(list(PRCC_vals = PRCC_vals, PRCC_times = PRCC_times), file.path(output_dir, paste0(file_prefix, "-PRCC-results.qs")), nthreads = N_QS_THREADS)
 
 print_end_time(start_time, "process-PRCC.R")

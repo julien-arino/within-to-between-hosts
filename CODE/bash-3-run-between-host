@@ -10,8 +10,7 @@ if [ "$PLOT" -eq 1 ]; then
     
     echo "Plotting additional between-host scenarios (Figures D1-D4)..."
     Rscript plot-Figure-D1-incidence-fct-time-various-scenarios-mean-AUC.R
-    Rscript plot-Figure-D2-incidence-fct-time-various-scenarios-median-AUC.R
-    Rscript plot-Figure-D3-incidence-fct-time-same-R0P-different-summaries.R
+    Rscript plot-Figure-D2-incidence-fct-time-same-R0P-different-summaries.R
     Rscript plot-Figure-E1-survival-fct-xir.R
 fi
 

@@ -1,17 +1,17 @@
 #!/usr/bin/env Rscript
 # ============================================================
-# File: plot-Figure-06a-duration-infectious-period-fct-xic.R
+# File: plot-Figure-06a-duration-transmission-period-fct-xic.R
 # Description:
-#   Generates a grouped boxplot showing the duration of the infectious period
-#   (tau_r - tau_c) for varying infectiousness onset thresholds (xi^c),
-#   color-coded by recovery threshold (xi^r), while holding hospitalisation 
+#   Generates a grouped boxplot showing the duration of the transmission period
+#   (tau_r - tau_c) for varying transmissionness onset thresholds (xi^c),
+#   color-coded by recovery threshold (xi^r), while holding hospitalisation
 #   and death thresholds fixed.
 # ============================================================
 
 project_dir <- here::here()
 source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
-start_time <- start_time_and_hello("plot-Figure-06a-duration-infectious-period-fct-xic.R")
+start_time <- start_time_and_hello("plot-Figure-06a-duration-transmission-period-fct-xic.R")
 
 load_libraries(c("ggplot2", "dplyr", "qs2"))
 
@@ -58,7 +58,7 @@ for (i in seq_len(nrow(valid_subset))) {
 
   tau_df <- cohort_df %>%
     mutate(
-      infectious_duration = case_when(
+      transmission_duration = case_when(
         is.na(tau_c) ~ NA_real_,
         !is.na(tau_d) ~ tau_d - tau_c,
         is.na(tau_r) ~ sim_end_time - tau_c,
@@ -67,7 +67,7 @@ for (i in seq_len(nrow(valid_subset))) {
       xi_c = xi_c,
       xi_r = xi_r
     ) %>%
-    filter(!is.na(infectious_duration) & infectious_duration > 0)
+    filter(!is.na(transmission_duration) & transmission_duration > 0)
 
   results[[f]] <- tau_df
 
@@ -98,7 +98,7 @@ percent_df <- percent_df %>% distinct(xi_c, percent)
 
 # Labels for percentages
 percent_df$label <- paste0(round(percent_df$percent, 1), "%")
-percent_df$ypos <- max(duration_df$infectious_duration, na.rm = TRUE) * 1.05
+percent_df$ypos <- max(duration_df$transmission_duration, na.rm = TRUE) * 1.05
 
 # Define custom color palette depending on what xi_r values exist
 unique_r <- as.character(sort(unique(duration_df$xi_r)))
@@ -112,7 +112,7 @@ p <- ggplot(
   duration_df,
   aes(
     x = factor(xi_c),
-    y = infectious_duration,
+    y = transmission_duration,
     fill = factor(xi_r)
   )
 ) +
@@ -147,14 +147,14 @@ p <- ggplot(
   ) +
   labs(
     x = expression(xi^c ~ "(log"[10] ~ "viral load threshold)"),
-    y = "Infectious period duration (days)"
+    y = "Transmission period duration (days)"
   ) +
   theme_minimal(base_size = 14) +
   theme(legend.position = "right") +
   annotate(
     "text",
     x = length(unique(duration_df$xi_c)) / 2 + 0.5,
-    y = max(duration_df$infectious_duration, na.rm = TRUE) * 1.15,
+    y = max(duration_df$transmission_duration, na.rm = TRUE) * 1.15,
     label = "Percentage of transmitters",
     size = 4,
     fontface = "italic"
@@ -163,12 +163,12 @@ p <- ggplot(
 print(p)
 
 # Save
-out_pdf <- file.path(figs_dir, "Figure-06a-duration-infectious-period-fct-xic.pdf")
-out_png <- file.path(figs_dir, "Figure-06a-duration-infectious-period-fct-xic.png")
+out_pdf <- file.path(figs_dir, "Figure-06a-duration-transmission-period-fct-xic.pdf")
+out_png <- file.path(figs_dir, "Figure-06a-duration-transmission-period-fct-xic.png")
 
 ggsave(out_pdf, plot = p, width = 25, height = 15, units = "cm", dpi = 300)
 ggsave(out_png, plot = p, width = 25, height = 15, units = "cm", dpi = 300)
 
 cat("\nSaved to:\n  -", out_pdf, "\n  -", out_png, "\n")
 
-print_end_time(start_time, "plot-Figure-06a-duration-infectious-period-fct-xic.R")
+print_end_time(start_time, "plot-Figure-06a-duration-transmission-period-fct-xic.R")
