@@ -1,15 +1,15 @@
 #!/usr/bin/env Rscript
 # ============================================================
-# File: plot-Figure-E2-R0P-vs-R0within.R
+# File: plot-Figure-E2test2-R0P-vs-Vmax.R
 # Description:
-#   Plots the difference between R0_P2P (R_0i^P) and R0_within 
-#   against time to maximum tissue damage (tau_max_Psi).
+#   Plots the normalized difference between R0_P2P and R0_within 
+#   against peak viral load (V_max)
 # ============================================================
 
 project_dir <- here::here()
 source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
-start_time <- start_time_and_hello("plot-Figure-E2-R0P-vs-R0within.R")
+start_time <- start_time_and_hello("plot-Figure-E2test2-R0P-vs-Vmax.R")
 
 load_libraries(c("ggplot2", "dplyr", "qs2", "tidyr", "patchwork"))
 
@@ -42,11 +42,11 @@ summary_df <- status_df %>%
 summary_df <- summary_df %>%
   mutate(
     R0 = R0_within,
-    t_Psi_max = tau_max_Psi,
+    x_var = max_V,
     R0_diff = (R0_P2P - R0_within) / R0_within
   ) %>%
-  filter(!is.na(R0) & !is.na(R0_P2P)) %>%
-  filter(t_Psi_max < 100)
+  filter(!is.na(R0) & !is.na(R0_P2P) & !is.na(x_var)) %>%
+  filter(x_var > 0) # Log10 requires positive
 
 summary_df$status <- factor(summary_df$status, levels = c("Mild", "ICU", "Dead"))
 
@@ -59,7 +59,7 @@ status_colors <- c(
 # ---------------------------
 # Plotting
 # ---------------------------
-p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = R0_diff)) +
+p2 <- ggplot(summary_df, aes(x = x_var, y = R0_diff)) +
 
   # Draw a zero-line across the difference axis
   geom_hline(yintercept = 0, linetype = "dashed", color = "black", alpha = 0.5) +
@@ -89,8 +89,8 @@ p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = R0_diff)) +
     trans = scales::pseudo_log_trans(base = 10),
     breaks = c(-1000, -100, -10, 0, 10, 100, 1000, 10000)
   ) +
-  coord_cartesian(
-    xlim = c(0, 100)
+  scale_x_log10(
+    labels = scales::trans_format("log10", scales::math_format(10^.x))
   ) +
   theme_minimal(base_size = 14) +
   theme(
@@ -98,7 +98,7 @@ p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = R0_diff)) +
     legend.title = element_blank()
   ) +
   labs(
-    x = expression("Time to maximum tissue damage" ~ tau[i]^{Psi[max]} ~ "(days)"),
+    x = expression("Maximum viral load" ~ V[i]^{max}),
     y = expression("Normalised difference" ~ (R["0i"]^P - R["0i"]) / R["0i"])
   ) +
   guides(
@@ -112,12 +112,12 @@ print(p2)
 # ---------------------------
 # Save figure
 # ---------------------------
-out_png <- file.path(figs_dir, "Figure-E2-R0P-vs-R0within.png")
-out_pdf <- file.path(figs_dir, "Figure-E2-R0P-vs-R0within.pdf")
+out_png <- file.path(figs_dir, "Figure-E2test2-R0P-vs-Vmax.png")
+out_pdf <- file.path(figs_dir, "Figure-E2test2-R0P-vs-Vmax.pdf")
 
 ggsave(filename = out_png, plot = p2, width = 25, height = 15, units = "cm", dpi = 300)
 ggsave(filename = out_pdf, plot = p2, width = 25, height = 15, units = "cm", dpi = 300, device = cairo_pdf)
-cat("\nFigure E2 saved to:\n  -", out_png, "\n  -", out_pdf, "\n")
+cat("\nFigure E2test2 saved to:\n  -", out_png, "\n  -", out_pdf, "\n")
 
 cat("\n--- Statistics ---\n")
 probs <- seq(0, 1, by = 0.1)
@@ -130,15 +130,12 @@ stats_df <- data.frame(
     mean(summary_df$R0_P2P, na.rm = TRUE)
   )
 )
-
 perc_within <- quantile(summary_df$R0_within, probs = probs, na.rm = TRUE)
 perc_P2P    <- quantile(summary_df$R0_P2P, probs = probs, na.rm = TRUE)
-
 for (i in seq_along(probs)) {
   stats_df[[perc_names[i]]] <- c(perc_within[i], perc_P2P[i])
 }
-
 print(stats_df, row.names = FALSE)
 cat("------------------\n")
 
-print_end_time(start_time, "plot-Figure-E2-R0P-vs-R0within.R")
+print_end_time(start_time, "plot-Figure-E2test2-R0P-vs-Vmax.R")
