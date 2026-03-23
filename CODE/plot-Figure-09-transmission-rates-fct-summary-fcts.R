@@ -13,13 +13,10 @@ source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 start_time <- start_time_and_hello("plot-Figure-09-transmission-rates-fct-summary-fcts.R")
 
 # Load libraries
-load_libraries(c("ggplot2", "dplyr", "qs2", "tidyr"))
+load_libraries(c("ggplot2", "dplyr", "qs2"))
 
-# ------------------------------------------------------------
-# 1. Automatically find the latest files
-# ------------------------------------------------------------
-
-# --- Find and load pre-computed distributions ---
+# Automatically find the latest files
+# Find and load pre-computed distributions
 pattern_str <- "^cohort_distribution_filters_P.*_xic_[0-9]+_.*\\.qs$"
 dist_files <- list.files(
   output_dir,
@@ -37,78 +34,71 @@ cat("Loading newest distributions:", basename(latest_dist), "\n")
 beta_list <- qs_read(latest_dist, nthreads = N_QS_THREADS)
 
 if (!is.null(beta_list$rolling_average$beta_mean)) {
-  beta_overall <- beta_list$rolling_average
+  beta_overall <- beta_list$rolling_average %>%
+    select(time, beta_mean_positive_transmission, beta_Q10 = beta_Q10_positive_transmission, beta_Q90 = beta_Q90_positive_transmission, beta_median = beta_median_positive_transmission)
 } else {
-  beta_overall <- beta_list$raw
+  beta_overall <- beta_list$raw %>%
+    select(time, beta_mean_positive_transmission, beta_Q10 = beta_Q10_positive_transmission, beta_Q90 = beta_Q90_positive_transmission, beta_median = beta_median_positive_transmission)
 }
 
-# ------------------------------------------------------------
-# 7. Plot
-# ------------------------------------------------------------
-p <- ggplot(beta_overall, aes(x=time)) +
-  
+# Plot
+p <- ggplot(beta_overall, aes(x = time)) +
   geom_ribbon(
     aes(
       ymin = pmax(beta_Q10, 0),
       ymax = beta_Q90,
-      fill="Q10 to Q90"
+      fill = "Q10 to Q90"
     ),
-    alpha=0.15,
-    color=NA
-  )+
-  
+    alpha = 0.15,
+    color = NA
+  ) +
   geom_line(
-    aes(y=beta_mean,color="mean"),
-    linewidth=1.3
-  )+
-  
+    aes(y = beta_mean_positive_transmission, color = "mean"),
+    linewidth = 1.3
+  ) +
   geom_line(
-    aes(y=beta_Q10,color="Q10"),
-    linetype="22",
-    linewidth=0.7
-  )+
-  
+    aes(y = beta_Q10, color = "Q10"),
+    linetype = "22",
+    linewidth = 0.7
+  ) +
   geom_line(
-    aes(y=beta_median,color="median"),
-    linewidth=1
-  )+
-  
+    aes(y = beta_median, color = "median"),
+    linewidth = 1
+  ) +
   geom_line(
-    aes(y=beta_Q90,color="Q90"),
-    linetype="22",
-    linewidth=0.7
-  )+
-  
+    aes(y = beta_Q90, color = "Q90"),
+    linetype = "22",
+    linewidth = 0.7
+  ) +
   scale_color_manual(
-    breaks = c("mean","Q10","median","Q90"),
+    breaks = c("mean", "Q10", "median", "Q90"),
     values = c(
       "mean"   = "dodgerblue4",
       "Q10"    = "black",
       "median" = "magenta4",
       "Q90"    = "orange"
     )
-  )+
-  
+  ) +
   scale_fill_manual(
-    values=c("Q10 to Q90"="dodgerblue4")
-  )+
-  
-  coord_cartesian(xlim=c(0,80))+
-  
+    values = c("Q10 to Q90" = "mistyrose3"),
+    guide = "none"
+  ) +
+  coord_cartesian(xlim = c(0, 20)) +
   labs(
-    x="Time (days)",
-    y="Transmission rate",
-    color="",
-    fill=""
-  )+
-  
-  theme_minimal(base_size=14)
+    x = "Time (days)",
+    y = "Transmission rate",
+    color = "",
+    fill = ""
+  ) +
+  theme_minimal(base_size = 14) +
+  theme(
+    axis.text.y = element_blank(),
+    axis.ticks.y = element_blank()
+  )
 
 print(p)
 
-# ------------------------------------------------------------
-# 8. Save
-# ------------------------------------------------------------
+# Save
 out_pdf <- file.path(figs_dir, "Figure-09-transmission-rates-fct-summary-fcts.pdf")
 out_png <- file.path(figs_dir, "Figure-09-transmission-rates-fct-summary-fcts.png")
 

@@ -1,16 +1,16 @@
 #!/usr/bin/env Rscript
 # ============================================================
-# File: plot-Figure-D4-incidence-fct-time-same-R0P-different-summaries.R
+# File: plot-Figure-D3-incidence-fct-time-same-R0P-different-summaries.R
 # Description:
 #   BETWEEN-HOST SIMULATOR – Compare 4 transmission profiles
-#   beta_mean, beta_median, beta_Q10, beta_Q90
+#   beta_mean, beta_median_positive_transmission, beta_Q10_positive_transmission, beta_Q90_positive_transmission
 #   All rescaled to the same R0^P = 2.5
 # ============================================================
 
 project_dir <- here::here()
 source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
-start_time <- start_time_and_hello("plot-Figure-D4-incidence-fct-time-same-R0P-different-summaries.R")
+start_time <- start_time_and_hello("plot-Figure-D3-incidence-fct-time-same-R0P-different-summaries.R")
 
 load_libraries(c("dplyr", "ggplot2", "qs2", "tidyr", "here"))
 
@@ -53,7 +53,7 @@ if (!is.null(dist_list$rolling_average$beta_mean)) {
 # Align datasets
 # ------------------------------------------------------------
 combined_df <- dist_df %>%
-  select(time, beta_mean, beta_q10 = beta_Q10, beta_q90 = beta_Q90, beta_median, gamma_P, mu_P) %>%
+  select(time, beta_mean, beta_q10 = beta_Q10_positive_transmission, beta_q90 = beta_Q90_positive_transmission, beta_median = beta_median_positive_transmission, gamma_P, mu_P) %>%
   mutate(
     gamma_P = tidyr::replace_na(gamma_P, 0),
     mu_P = tidyr::replace_na(mu_P, 0)
@@ -210,8 +210,8 @@ print(p)
 # ------------------------------------------------------------
 # Save figure
 # ------------------------------------------------------------
-out_pdf <- file.path(figs_dir, "Figure-D4-incidence-fct-time-same-R0P-different-summaries.pdf")
-out_png <- file.path(figs_dir, "Figure-D4-incidence-fct-time-same-R0P-different-summaries.png")
+out_pdf <- file.path(figs_dir, "Figure-D3-incidence-fct-time-same-R0P-different-summaries.pdf")
+out_png <- file.path(figs_dir, "Figure-D3-incidence-fct-time-same-R0P-different-summaries.png")
 
 ggsave(
   filename = out_pdf,
@@ -230,4 +230,4 @@ ggsave(
 )
 
 cat("Plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
-print_end_time(start_time, "plot-Figure-D4-incidence-fct-time-same-R0P-different-summaries.R")
+print_end_time(start_time, "plot-Figure-D3-incidence-fct-time-same-R0P-different-summaries.R")

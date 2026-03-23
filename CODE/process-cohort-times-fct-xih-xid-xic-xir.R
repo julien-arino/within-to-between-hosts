@@ -25,10 +25,14 @@ load_libraries(c("dplyr", "qs2", "parallel"))
 
 # Define explicit combinations of infectiousness thresholds (xi_c, xi_r)
 xi_pairs <- list(
+  c(2, 1),
+  c(2, 2),
+  c(2, 4),
   c(4, 1),
   c(4, 2),
   c(4, 4),
   c(6, 1),
+  c(6, 2),
   c(6, 4)
 )
 
@@ -46,11 +50,18 @@ if (length(files) == 0) {
   quit(save = "no")
 }
 
+# Keep only the latest file based on the DT timestamp in the file name
+dt_tags <- sapply(files, function(f) {
+  m <- regmatches(basename(f), regexpr("DT[0-9]{8}-[0-9]{6}", basename(f)))
+  if (length(m) > 0) m[[1]] else ""
+})
+if (any(dt_tags != "")) {
+  files <- files[dt_tags == max(dt_tags)]
+}
+
 for (file_idx in seq_along(files)) {
   current_file <- files[file_idx]
-  cat("\n========================================\n")
-  cat(sprintf("[%d/%d] Extracting event times from: %s\n", file_idx, length(files), basename(current_file)))
-  cat("========================================\n")
+  cat(sprintf(">>> [%d/%d] Extracting event times from: %s\n", file_idx, length(files), basename(current_file)))
 
   cohort_state <- qs_read(current_file, nthreads = N_QS_THREADS)
 

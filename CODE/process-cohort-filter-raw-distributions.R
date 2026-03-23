@@ -62,9 +62,10 @@ for (file_idx in seq_along(raw_files)) {
     f_d = raw_df$f_d,
     f_r = raw_df$f_r,
     beta_mean = raw_df$beta_mean,
-    beta_median = raw_df$beta_median,
-    beta_Q10 = raw_df$beta_Q10,
-    beta_Q90 = raw_df$beta_Q90,
+    beta_mean_positive_transmission = raw_df$beta_mean_positive_transmission,
+    beta_median_positive_transmission = raw_df$beta_median_positive_transmission,
+    beta_Q10_positive_transmission = raw_df$beta_Q10_positive_transmission,
+    beta_Q90_positive_transmission = raw_df$beta_Q90_positive_transmission,
     active = raw_df$active,
     N_total = raw_df$N_total
   )
@@ -83,9 +84,10 @@ for (file_idx in seq_along(raw_files)) {
   df_spline$f_d <- smooth.spline(raw_df$time, raw_df$f_d)$y
   df_spline$f_r <- smooth.spline(raw_df$time, raw_df$f_r)$y
   df_spline$beta_mean <- smooth.spline(raw_df$time, raw_df$beta_mean)$y
-  df_spline$beta_median <- smooth.spline(raw_df$time, raw_df$beta_median)$y
-  df_spline$beta_Q10 <- smooth.spline(raw_df$time, raw_df$beta_Q10)$y
-  df_spline$beta_Q90 <- smooth.spline(raw_df$time, raw_df$beta_Q90)$y
+  df_spline$beta_mean_positive_transmission <- smooth.spline(raw_df$time, raw_df$beta_mean_positive_transmission)$y
+  df_spline$beta_median_positive_transmission <- smooth.spline(raw_df$time, raw_df$beta_median_positive_transmission)$y
+  df_spline$beta_Q10_positive_transmission <- smooth.spline(raw_df$time, raw_df$beta_Q10_positive_transmission)$y
+  df_spline$beta_Q90_positive_transmission <- smooth.spline(raw_df$time, raw_df$beta_Q90_positive_transmission)$y
 
   # Compute derived hazard rates from splined components
   df_spline$mu_P <- ifelse(df_spline$survival > 0, (p_d * df_spline$f_d) / df_spline$survival, 0)
@@ -101,9 +103,10 @@ for (file_idx in seq_along(raw_files)) {
   df_rolling$f_d <- smooth_rolling(raw_df$f_d)
   df_rolling$f_r <- smooth_rolling(raw_df$f_r)
   df_rolling$beta_mean <- smooth_rolling(raw_df$beta_mean)
-  df_rolling$beta_median <- smooth_rolling(raw_df$beta_median)
-  df_rolling$beta_Q10 <- smooth_rolling(raw_df$beta_Q10)
-  df_rolling$beta_Q90 <- smooth_rolling(raw_df$beta_Q90)
+  df_rolling$beta_mean_positive_transmission <- smooth_rolling(raw_df$beta_mean_positive_transmission)
+  df_rolling$beta_median_positive_transmission <- smooth_rolling(raw_df$beta_median_positive_transmission)
+  df_rolling$beta_Q10_positive_transmission <- smooth_rolling(raw_df$beta_Q10_positive_transmission)
+  df_rolling$beta_Q90_positive_transmission <- smooth_rolling(raw_df$beta_Q90_positive_transmission)
 
   # Compute rolling average of the pure empirical hazard rates directly
   safe_roll <- function(x) {

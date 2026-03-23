@@ -11,10 +11,10 @@ source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
 start_time <- start_time_and_hello("process-cohort-make-raw-distributions.R")
 
-load_libraries(c("qs2", "dplyr", "tidyr", "future.apply"))
+load_libraries(c("qs2", "dplyr"))
 
 # Load interpolated trajectories and build V matrix
-cat("\n- Loading pre-interpolated monolithic simulation trajectories...\n")
+cat("\n- Loading interpolated simulation trajectories...\n")
 interp_files <- list.files(output_dir, pattern = "cohort_sim_state_interp_.*\\.qs$", full.names = TRUE)
 if (length(interp_files) == 0) stop("No interpolated trajectory files found! Run process-cohort-interpolate-solutions.R first.")
 latest_interp <- interp_files[which.max(file.mtime(interp_files))]
@@ -34,7 +34,7 @@ cohort_ids <- unique(beta_df_raw$ID)
 rm(beta_df_raw)
 gc()
 
-cat(sprintf("Constructed V matrix with %d rows (time) and %d columns (individuals).\n", nrow(V_mat), ncol(V_mat)))
+cat(sprintf("- Constructed V matrix with %d rows (time) and %d columns (individuals).\n", nrow(V_mat), ncol(V_mat)))
 
 # Load status file and compute raw metrics
 cat("\n- Executing batch raw distribution pipeline for all available status thresholds...\n")
@@ -45,7 +45,7 @@ if (length(target_status_files) == 0) stop("No cohort_status files found matchin
 
 for (file_idx in seq_along(target_status_files)) {
   target_status_file <- target_status_files[file_idx]
-  cat(sprintf("\n>>Processing status file %d/%d: %s\n", file_idx, length(target_status_files), basename(target_status_file)))
+  cat(sprintf("\n>> Processing status file %d/%d: %s\n", file_idx, length(target_status_files), basename(target_status_file)))
 
   threshold_suffix <- sub(paste0("^cohort_status_", base_prefix, "(.*)\\.qs$"), "\\1", basename(target_status_file))
   cohort_status <- qs_read(target_status_file, nthreads = N_QS_THREADS)
@@ -97,24 +97,40 @@ for (file_idx in seq_along(target_status_files)) {
   tau_h_start_v <- cohort_status$tau_h_start[match(cohort_ids, cohort_status$ID)]
   tau_h_end_v <- cohort_status$tau_h_end[match(cohort_ids, cohort_status$ID)]
 
-  V_mat_active[outer(time_pts, replace_na(tau_c_v, Inf), "<")] <- 0
-  V_mat_active[outer(time_pts, replace_na(tau_r_v, -Inf), ">")] <- 0
-  V_mat_active[outer(time_pts, replace_na(tau_d_v, Inf), ">=")] <- 0
-  V_mat_active[outer(time_pts, replace_na(tau_h_start_v, Inf), ">=") &
-    outer(time_pts, replace_na(tau_h_end_v, -Inf), "<=")] <- 0
+  V_mat_active[outer(time_pts, coalesce(tau_c_v, Inf), "<")] <- 0
+  V_mat_active[outer(time_pts, coalesce(tau_r_v, -Inf), ">")] <- 0
+  V_mat_active[outer(time_pts, coalesce(tau_d_v, Inf), ">=")] <- 0
+  V_mat_active[outer(time_pts, coalesce(tau_h_start_v, Inf), ">=") &
+    outer(time_pts, coalesce(tau_h_end_v, -Inf), "<=")] <- 0
 
   cat("- V matrix copied and masked! 0s successfully assigned to non-transmitting phases.\n")
 
-  cat("Mapping V to beta transmission scale...\n")
+  cat("- Mapping V to beta(V) = V^alpha / (V^alpha + k^alpha)...\n")
   alpha_v <- 16.422
   k_v <- 7.49
   V_mat_active <- (V_mat_active^alpha_v) / (V_mat_active^alpha_v + k_v^alpha_v)
 
   cat("- Computing row-wise beta statistics (this may take a moment)...\n")
   distributions_df$beta_mean <- apply(V_mat_active, 1, mean)
-  distributions_df$beta_Q10 <- apply(V_mat_active, 1, quantile, probs = 0.10, names = FALSE)
-  distributions_df$beta_median <- apply(V_mat_active, 1, median)
-  distributions_df$beta_Q90 <- apply(V_mat_active, 1, quantile, probs = 0.90, names = FALSE)
+
+  calc_quant <- function(x, p) {
+    active_x <- x[x > 0]
+    if (length(active_x) == 0) {
+      return(0)
+    }
+    quantile(active_x, probs = p, names = FALSE)
+  }
+
+  distributions_df$beta_mean_positive_transmission <- apply(V_mat_active, 1, function(x) {
+    active_x <- x[x > 0]
+    if (length(active_x) == 0) {
+      return(0)
+    }
+    mean(active_x)
+  })
+  distributions_df$beta_Q10_positive_transmission <- apply(V_mat_active, 1, calc_quant, p = 0.10)
+  distributions_df$beta_median_positive_transmission <- apply(V_mat_active, 1, calc_quant, p = 0.50)
+  distributions_df$beta_Q90_positive_transmission <- apply(V_mat_active, 1, calc_quant, p = 0.90)
 
   rm(V_mat_active)
   gc()

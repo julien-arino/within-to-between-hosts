@@ -1,9 +1,9 @@
 #!/usr/bin/env Rscript
 # ============================================================
-# File: plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R
+# File: plot-Figure-D1-incidence-fct-time-various-scenarios-mean-AUC.R
 # Description:
-#   File: plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R
-#   8 STRUCTURAL SCENARIOS (median beta) WITH AUC
+#   File: plot-Figure-D1-incidence-fct-time-various-scenarios-mean-AUC.R
+#   8 STRUCTURAL SCENARIOS (mean beta) WITH AUC
 #   2 R0 VALUES PER PANEL
 #   SAME R0 WITHIN EACH PANEL (calibrated)
 # ============================================================
@@ -11,7 +11,7 @@
 project_dir <- here::here()
 source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
-start_time <- start_time_and_hello("plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R")
+start_time <- start_time_and_hello("plot-Figure-D1-incidence-fct-time-various-scenarios-mean-AUC.R")
 
 load_libraries(c("dplyr", "ggplot2", "qs2", "tidyr", "here"))
 
@@ -20,8 +20,9 @@ S0    <- 2000
 U0    <- 1
 d_P   <- 0
 b_P   <- 0
-Tmax  <- 300
-Tplot <- 300
+Tmax  <- 200
+Tplot <- 110
+
 
 
 
@@ -38,14 +39,14 @@ pattern_str <- paste0("^cohort_distribution_filters_P.*_xid_", xi_d_target, "_.*
 latest_dist <- get_latest_dist(pattern_str)
 dist_list <- qs_read(latest_dist, nthreads = N_QS_THREADS)
 
-if (!is.null(dist_list$rolling_average$beta_median)) {
+if (!is.null(dist_list$rolling_average$beta_mean)) {
   dist_df <- dist_list$rolling_average
 } else {
   dist_df <- dist_list$raw
 }
 
 combined_df <- dist_df %>%
-  select(time, beta_median, gamma_P, mu_P) %>%
+  select(time, beta_mean, gamma_P, mu_P) %>%
   mutate(
     gamma_P = tidyr::replace_na(gamma_P, 0),
     mu_P = tidyr::replace_na(mu_P, 0)
@@ -56,20 +57,20 @@ gamma_col <- "gamma_P"
 mu_col    <- "mu_P"
 
 a_vals  <- combined_df$time
-beta_a  <- combined_df$beta_median
+beta_a  <- combined_df$beta_mean
 gamma_a <- combined_df[[gamma_col]]
 mu_a    <- combined_df[[mu_col]]
 
-dt <- median(diff(a_vals))
+dt <- mean(diff(a_vals))
 nA <- length(a_vals)
 
 t_vals <- seq(0,Tmax,by=dt)
 nT     <- length(t_vals)
 
-gamma_const <- median(gamma_a)
-mu_const    <- median(mu_a)
+gamma_const <- mean(gamma_a)
+mu_const    <- mean(mu_a)
 
-beta_const_scalar <- median(beta_a)
+beta_const_scalar <- mean(beta_a)
 beta_const <- rep(beta_const_scalar,nA)
 
 kernel_gc_mc <- exp(-(d_P + gamma_const + mu_const)*a_vals)
@@ -91,12 +92,8 @@ simulate_case <- function(beta_raw,kernel,panel_name){
   for(R0_target in R0_targets){
     
     R0_base <- compute_R0(beta_raw,kernel)
-    if (R0_base > 0) {
-      k <- R0_target/R0_base
-      beta_scaled <- k*beta_raw
-    } else {
-      beta_scaled <- numeric(length(beta_raw))
-    }
+    k <- R0_target/R0_base
+    beta_scaled <- k*beta_raw
     
     S <- numeric(nT)
     U <- numeric(nT)
@@ -127,6 +124,7 @@ simulate_case <- function(beta_raw,kernel,panel_name){
   
   bind_rows(res_list)
 }
+
 
 res_all <- bind_rows(
   simulate_case(beta_const,kernel_gc_mc,"beta_c_gamma_c_mu_c"),
@@ -193,11 +191,11 @@ p <- ggplot(res_all,aes(time,U,color=R0))+
 
 print(p)
 
-out_pdf <- file.path(figs_dir, "Figure-D3-incidence-fct-time-various-scenarios-median-AUC.pdf")
-out_png <- file.path(figs_dir, "Figure-D3-incidence-fct-time-various-scenarios-median-AUC.png")
+out_pdf <- file.path(figs_dir, "Figure-D1-incidence-fct-time-various-scenarios-mean-AUC.pdf")
+out_png <- file.path(figs_dir, "Figure-D1-incidence-fct-time-various-scenarios-mean-AUC.png")
 
 ggsave(out_pdf, p, width=22, height=12, units="cm")
 ggsave(out_png, p, width=22, height=12, units="cm")
 
 cat("Plot saved to:\n  -", out_pdf, "\n  -", out_png, "\n")
-print_end_time(start_time, "plot-Figure-D3-incidence-fct-time-various-scenarios-median-AUC.R")
+print_end_time(start_time, "plot-Figure-D1-incidence-fct-time-various-scenarios-mean-AUC.R")
