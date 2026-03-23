@@ -12,6 +12,7 @@ if [ "$PLOT" -eq 1 ]; then
     Rscript plot-Figure-D1-incidence-fct-time-various-scenarios-mean-AUC.R
     Rscript plot-Figure-D2-incidence-fct-time-same-R0P-different-summaries.R
     Rscript plot-Figure-E1-survival-fct-xir.R
+    Rscript plot-Figure-E2-R0P-vs-R0within.R
 fi
 
 echo "Between-host simulation pipeline complete!"

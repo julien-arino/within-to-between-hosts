@@ -25,6 +25,8 @@ if [ "$PROCESS" -eq 1 ]; then
     echo "Creating distributions (gamma, mu, beta)..."
     Rscript process-cohort-make-raw-distributions.R
     Rscript process-cohort-filter-raw-distributions.R
+    echo "Computing baseline individual R0_i^P values..."
+    Rscript process-cohort-compute-R0P.R
 
     echo "Preparing aggregated timelines for Figure C4..."
     Rscript process-cohort-prepare-Figure-C4.R

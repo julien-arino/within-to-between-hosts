@@ -92,9 +92,8 @@ p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = Psi_max)) +
     legend.title = element_blank()
   ) +
   labs(
-    x = expression("Time to maximum tissue damage" ~ tau[Psi[max]] ~ "(days)"),
-    y = expression("Maximum tissue damage" ~ Psi[max]),
-    parse = TRUE
+    x = expression("Time to maximum tissue damage" ~ tau[i]^{Psi[max]} ~ "(days)"),
+    y = expression("Maximum tissue damage" ~ Psi[i]^{max})
   ) +
   guides(
     color = guide_legend(
