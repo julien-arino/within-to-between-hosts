@@ -42,7 +42,7 @@ summary_df <- status_df %>%
 summary_df <- summary_df %>%
   mutate(
     R0 = R0_within,
-    x_var = max_V,
+    x_var = log10(max_V),
     R0_diff = (R0_P2P - R0_within) / R0_within
   ) %>%
   filter(!is.na(R0) & !is.na(R0_P2P) & !is.na(x_var)) %>%
@@ -89,16 +89,13 @@ p2 <- ggplot(summary_df, aes(x = x_var, y = R0_diff)) +
     trans = scales::pseudo_log_trans(base = 10),
     breaks = c(-1000, -100, -10, 0, 10, 100, 1000, 10000)
   ) +
-  scale_x_log10(
-    labels = scales::trans_format("log10", scales::math_format(10^.x))
-  ) +
   theme_minimal(base_size = 14) +
   theme(
     legend.position = "top",
     legend.title = element_blank()
   ) +
   labs(
-    x = expression("Maximum viral load" ~ V[i]^{max}),
+    x = expression(log[10] ~ "maximum viral load" ~ (V[i]^{max})),
     y = expression("Normalised difference" ~ (R["0i"]^P - R["0i"]) / R["0i"])
   ) +
   guides(

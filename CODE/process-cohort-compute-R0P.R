@@ -90,7 +90,8 @@ beta_last <- beta_mat[nrow(beta_mat), ]
 integral <- dt * (beta_sum - 0.5 * beta_first - 0.5 * beta_last)
 R0_P2P_values <- S_P_0 * integral
 
-rm(beta_mat); gc() 
+rm(beta_mat)
+gc() 
 
 # ------------------------------------------------------------
 # 5) Formatting output

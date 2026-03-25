@@ -21,6 +21,8 @@ d_P <- 1 / (60 * 365) # 0.00
 b_P <- 2000 * d_P # 0.00
 Tmax <- 110
 
+selected_filter <- "raw" # Options: "raw", "rolling_average", "spline", "spline_with_zeros"
+
 xi_pairs <- list(
   c(4, 1),
   c(4, 4)
@@ -66,8 +68,12 @@ for (pair in xi_pairs) {
   cat("Loading:", basename(latest_dist), "\n")
   dist_list <- qs_read(latest_dist, nthreads = N_QS_THREADS)
   
-  dist_df <- dist_list$rolling_average
-  if (is.null(dist_df$beta_mean)) dist_df <- dist_list$raw
+  if (!is.null(dist_list[[selected_filter]])) {
+    dist_df <- dist_list[[selected_filter]]
+  } else {
+    cat(sprintf("Filter '%s' not found for xic=%g xir=%g. Falling back to 'raw'\n", selected_filter, xic, xir))
+    dist_df <- dist_list$raw
+  }
   
   combined_df <- dist_df %>%
     select(time, beta_mean, gamma_P, mu_P) %>%
@@ -104,6 +110,7 @@ for (pair in xi_pairs) {
   kernel_var <- exp(-cumhaz_var)
   
   R0_base_var <- S0 * sum(beta_base * kernel_var, na.rm = TRUE) * dt
+  cat(sprintf("[Baseline R0] Unfiltered R0_base_var for xic=%g, xir=%g: %f\n", xic, xir, R0_base_var))
   
   # scale beta(a) to hit R0_t exactly
   k_var <- R0_t / R0_base_var

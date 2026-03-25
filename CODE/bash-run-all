@@ -1,4 +1,8 @@
 #!/bin/bash
+# ============================================================
+# Script: bash-run-all
+# Description: Executes sims, data processing, and all plotting sequentially
+# ============================================================
 
 # Exit immediately if a command exits with a non-zero status
 set -e
@@ -6,14 +10,47 @@ set -e
 # Record start time
 start_time=$(date +%s)
 
-echo "=== Running bash-1-run-sensitivity-analysis ==="
-./bash-1-run-sensitivity-analysis
+echo "=== 1. Running Simulations (Julia) ==="
+echo "--> Running run-sensitivity-analysis-sims.jl"
+julia run-sensitivity-analysis-sims.jl
 
-echo "=== Running bash-2-run-cohort ==="
-./bash-2-run-cohort
+echo "--> Running run-virtual-cohort-sims.jl"
+julia run-virtual-cohort-sims.jl
 
-echo "=== Running bash-3-run-between-host ==="
-./bash-3-run-between-host
+echo ""
+echo "=== 2. Running Data Processing (R) ==="
+echo "--> Running process-PRCC.R"
+Rscript process-PRCC.R
+
+echo "--> Running process-cohort-classify-individuals-fct-xih-xid.R"
+Rscript process-cohort-classify-individuals-fct-xih-xid.R
+
+echo "--> Running process-cohort-times-fct-xih-xid-xic-xir.R"
+Rscript process-cohort-times-fct-xih-xid-xic-xir.R
+
+echo "--> Running process-cohort-interpolate-solutions.R"
+Rscript process-cohort-interpolate-solutions.R
+
+echo "--> Running process-cohort-make-raw-distributions.R"
+Rscript process-cohort-make-raw-distributions.R
+
+echo "--> Running process-cohort-filter-raw-distributions.R"
+Rscript process-cohort-filter-raw-distributions.R
+
+echo "--> Running process-cohort-compute-R0P.R"
+Rscript process-cohort-compute-R0P.R
+
+echo "--> Running process-cohort-prepare-Figure-C4.R"
+Rscript process-cohort-prepare-Figure-C4.R
+
+echo ""
+echo "=== 3. Plotting all Figure scripts (R) ==="
+for script in plot-Figure-*.R; do
+    if [ -f "$script" ]; then
+        echo "--> Running $script"
+        Rscript "$script"
+    fi
+done
 
 # Record end time
 end_time=$(date +%s)
@@ -24,5 +61,6 @@ hours=$((duration / 3600))
 minutes=$(( (duration % 3600) / 60 ))
 seconds=$((duration % 60))
 
+echo ""
 echo "=== All scripts finished successfully ==="
 printf "Total run time: %02d:%02d:%02d\n" $hours $minutes $seconds

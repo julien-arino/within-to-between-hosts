@@ -124,21 +124,11 @@ if PARALLEL
     @everywhere include("functions-and-definitions.jl")
 end
 
-# INTERCEPT function to extract dynamic V0 from the individual dataframe before running the ODE wrapper
-@everywhere function run_individual_with_dynamic_V0(idx, individuals_df, base_IC, type_output)
-    # create a locally modified mutable copy of the IC array for this individual
-    local_IC = copy(base_IC)
-    # The sampled V0 is attached directly to the individuals dataframe now
-    local_IC[1] = individuals_df[idx, :V0]
-
-    return run_one_individual(idx, individuals_df, local_IC)
-end
-
-# Run computation via our intercept function
+# Run computation
 COHORT = if PARALLEL
-    pmap(x -> run_individual_with_dynamic_V0(x, individuals, IC, type_output), individuals_idx)
+    pmap(x -> run_one_individual(x, individuals, IC), individuals_idx)
 else
-    map(x -> run_individual_with_dynamic_V0(x, individuals, IC, type_output), individuals_idx)
+    map(x -> run_one_individual(x, individuals, IC), individuals_idx)
 end
 
 # Close the cluster if parallel processing was used

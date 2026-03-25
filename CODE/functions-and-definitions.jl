@@ -104,6 +104,7 @@ function set_parameters()
     # Add initial condition keys
     IC = set_IC()
     params[:V0] = IC[1]
+    params[:V0_stddev] = 0.5
     params[:S0] = IC[2]
     params[:I0] = IC[3]
     params[:R0] = IC[4]
@@ -190,10 +191,16 @@ end
 function run_one_individual(idx, individuals, IC)
     # Extract individual-specific parameters
     params_tmp = individuals[idx, :]
-    params_tmp = add_IC_to_params(params_tmp, IC)
 
     # Convert DataFrameRow to a correctly named tuple to ensure parameters are explicitly mapped
     params_nt = NamedTuple(params_tmp)
+
+    # Create local IC using the possibly-varied initial conditions from the parameter row
+    local_IC = copy(IC)
+    local_IC[1] = params_tmp[:V0]
+    local_IC[2] = params_tmp[:S0]
+    local_IC[3] = params_tmp[:I0]
+    local_IC[4] = params_tmp[:R0]
 
     # Define the time span
     tspan = (0.0, 100.0)
@@ -201,7 +208,7 @@ function run_one_individual(idx, individuals, IC)
     # Set the integration method
     integrator = Rodas5()
     # Define the ODE problem
-    prob = ODEProblem(rhs_within_host_ODE!, IC, tspan, params_nt)
+    prob = ODEProblem(rhs_within_host_ODE!, local_IC, tspan, params_nt)
 
     # Nonnegativity callback
     nonneg_callback = PositiveDomain()

@@ -23,6 +23,8 @@ d_P <- 1 / (60 * 365) # 0.00
 b_P <- 2000 * d_P # 0.00
 Tmax <- 110
 
+selected_filter <- "raw" # Options: "raw", "rolling_average", "spline", "spline_with_zeros"
+
 # Load data
 get_latest_dist <- function(pattern) {
   files <- list.files(output_dir, pattern = pattern, full.names = TRUE)
@@ -37,9 +39,10 @@ pattern_str <- paste0("^cohort_distribution_filters_P.*_xid_", xi_d_target, "_.*
 latest_dist <- get_latest_dist(pattern_str)
 dist_list <- qs_read(latest_dist, nthreads = N_QS_THREADS)
 
-if (!is.null(dist_list$rolling_average$beta_mean)) {
-  dist_df <- dist_list$rolling_average
+if (!is.null(dist_list[[selected_filter]])) {
+  dist_df <- dist_list[[selected_filter]]
 } else {
+  cat(sprintf("Filter '%s' not found. Falling back to 'raw'\n", selected_filter))
   dist_df <- dist_list$raw
 }
 
@@ -111,6 +114,8 @@ compute_R0P <- function(beta_age, kernel_age) {
 # Build curves for each R0 target
 denom_const <- S0 * sum(kernel_const, na.rm = TRUE) * dt
 R0_base_var <- compute_R0P(beta_base, kernel_var)
+
+cat(sprintf("\n[Baseline R0] Unfiltered R0_base_var before scale modification: %f\n\n", R0_base_var))
 
 res_list <- list()
 
