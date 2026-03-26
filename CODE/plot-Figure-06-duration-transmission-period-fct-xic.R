@@ -1,6 +1,6 @@
 #!/usr/bin/env Rscript
 # ============================================================
-# File: plot-Figure-06a-duration-transmission-period-fct-xic.R
+# File: plot-Figure-06-duration-transmission-period-fct-xic.R
 # Description:
 #   Generates a grouped boxplot showing the duration of the transmission period
 #   (tau_r - tau_c) for varying transmissionness onset thresholds (xi^c),
@@ -11,7 +11,7 @@
 project_dir <- here::here()
 source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
-start_time <- start_time_and_hello("plot-Figure-06a-duration-transmission-period-fct-xic.R")
+start_time <- start_time_and_hello("plot-Figure-06-duration-transmission-period-fct-xic.R")
 
 load_libraries(c("ggplot2", "dplyr", "qs2"))
 
@@ -96,9 +96,25 @@ duration_df <- bind_rows(results)
 # Deduplicate percentages so we only get one text label per xi_c group
 percent_df <- percent_df %>% distinct(xi_c, percent)
 
-# Labels for percentages
+# Compute the highest visible point across all dodging geometries 
+# (either the top whisker or the red mean point) to tightly crop the empty y-axis space
+visible_extents <- duration_df %>%
+  group_by(xi_c, xi_r) %>%
+  summarise(
+    mean_val = mean(transmission_duration, na.rm = TRUE),
+    q3 = quantile(transmission_duration, 0.75, na.rm = TRUE),
+    iqr = IQR(transmission_duration, na.rm = TRUE),
+    top_whisker = suppressWarnings(max(transmission_duration[transmission_duration <= q3 + 1.5 * iqr], na.rm = TRUE)),
+    .groups = "drop"
+  ) %>%
+  mutate(max_vis = pmax(mean_val, top_whisker, na.rm = TRUE))
+
+max_y_plot <- max(visible_extents$max_vis, na.rm = TRUE)
+
+# Labels for percentages 
 percent_df$label <- paste0(round(percent_df$percent, 1), "%")
-percent_df$ypos <- max(duration_df$transmission_duration, na.rm = TRUE) * 1.05
+# Set the bottom of the info ~15% above the highest extent of the boxes/means
+percent_df$ypos <- max_y_plot * 1.15
 
 # Define custom color palette depending on what xi_r values exist
 unique_r <- as.character(sort(unique(duration_df$xi_r)))
@@ -149,26 +165,29 @@ p <- ggplot(
     x = expression(xi^c ~ "(log"[10] ~ "viral load threshold)"),
     y = "Transmission period duration (days)"
   ) +
-  theme_minimal(base_size = 14) +
-  theme(legend.position = "right") +
-  annotate(
-    "text",
-    x = length(unique(duration_df$xi_c)) / 2 + 0.5,
-    y = max(duration_df$transmission_duration, na.rm = TRUE) * 1.15,
-    label = "Percentage of transmitters",
-    size = 4,
-    fontface = "italic"
-  )
+    theme_minimal(base_size = 14) +
+    theme(legend.position = "right") +
+    annotate(
+      "text",
+      x = length(unique(duration_df$xi_c)) / 2 + 0.5,
+      y = max_y_plot * 1.25,
+      label = "Percentage of transmitters",
+      size = 4,
+      fontface = "italic"
+    ) +
+    # Gracefully crop the camera viewport (to cut out invisible y=100 outliers) 
+    # without destroying the underlying math calculations that `ylim()` would trigger
+    coord_cartesian(ylim = c(0, max_y_plot * 1.35))
 
 print(p)
 
 # Save
-out_pdf <- file.path(figs_dir, "Figure-06a-duration-transmission-period-fct-xic.pdf")
-out_png <- file.path(figs_dir, "Figure-06a-duration-transmission-period-fct-xic.png")
+out_pdf <- file.path(figs_dir, "Figure-06-duration-transmission-period-fct-xic.pdf")
+out_png <- file.path(figs_dir, "Figure-06-duration-transmission-period-fct-xic.png")
 
 ggsave(out_pdf, plot = p, width = 25, height = 15, units = "cm", dpi = 300)
 ggsave(out_png, plot = p, width = 25, height = 15, units = "cm", dpi = 300)
 
 cat("\nSaved to:\n  -", out_pdf, "\n  -", out_png, "\n")
 
-print_end_time(start_time, "plot-Figure-06a-duration-transmission-period-fct-xic.R")
+print_end_time(start_time, "plot-Figure-06-duration-transmission-period-fct-xic.R")

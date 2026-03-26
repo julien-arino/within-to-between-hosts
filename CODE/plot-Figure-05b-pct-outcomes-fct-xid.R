@@ -16,8 +16,7 @@ start_time <- start_time_and_hello("plot-Figure-05b-pct-outcomes-fct-xid.R")
 load_libraries(c("ggplot2", "dplyr", "qs2", "tidyr"))
 
 # USER SETTINGS
-xi_h_target <- 70
-xi_values <- c(75, 80, 85, 90, 95)
+xi_h_target <- 75
 
 # Load all available base files (excluding the _xic_..._xir_... extensions)
 all_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xid_[0-9]+\\.qs$", full.names = TRUE)
@@ -78,13 +77,12 @@ counts_all <- bind_rows(results)
 # If the targeted xi_h isn't in the dataset, fallback to the clearest baseline
 if (!(xi_h_target %in% unique(counts_all$xi_h))) {
   xi_h_target <- counts_all$xi_h[1]
-  cat("\nTarget xi_h=70 not found. Falling back to plotting xi_h =", xi_h_target, "\n")
+  cat("\nTarget xi_h=75 not found. Falling back to plotting xi_h =", xi_h_target, "\n")
 }
 
-counts_all <- counts_all %>% filter(xi_h == xi_h_target)
-
-# Compute proportions
-prop_df <- counts_all %>%
+# --- Preparation for Plotting (xi_h_target = 75) ---
+prop_plot <- counts_all %>% 
+  filter(xi_h == xi_h_target) %>%
   group_by(xi_d) %>%
   mutate(percent = 100 * n / sum(n)) %>%
   ungroup()
@@ -96,17 +94,29 @@ col_outcomes <- c(
   Dead = "red"
 )
 
-# Capitalize factor levels to match colors and standardise ordering
-# To put Mild at the bottom, ICU in the middle, Dead at the top, we need factor levels c("Dead", "ICU", "Mild")
-prop_df$outcome <- factor(prop_df$outcome, levels = c("Dead", "ICU", "Mild"))
+prop_plot$outcome <- factor(prop_plot$outcome, levels = c("Dead", "ICU", "Mild"))
+
+# --- Preparation for Printed Table (Fixed for xi_h = 75) ---
+xi_h_table <- 75
+if (!(xi_h_table %in% unique(counts_all$xi_h))) {
+  xi_h_table <- counts_all$xi_h[1]
+  cat("\nTarget xi_h=75 for table not found. Falling back to xi_h =", xi_h_table, "\n")
+}
+
+prop_table <- counts_all %>% 
+  filter(xi_h == xi_h_table) %>%
+  group_by(xi_d) %>%
+  mutate(percent = 100 * n / sum(n)) %>%
+  ungroup()
+
+prop_table$outcome <- factor(prop_table$outcome, levels = c("Dead", "ICU", "Mild"))
 
 # Print summary table
-cat("\n==== Percentages per Outcome (xi_h = ", xi_h_target, ") ===\n")
-summary_table <- prop_df %>%
+cat("\n==== Percentages per Outcome (xi_h = ", xi_h_table, ") ===\n")
+summary_table <- prop_table %>%
   select(xi_d, outcome, percent) %>%
   pivot_wider(names_from = outcome, values_from = percent) %>%
   arrange(xi_d) %>%
-  # We can reorder columns for display: xi_d, Mild, ICU, Dead
   select(xi_d, Mild, ICU, Dead) %>%
   mutate(across(c(Mild, ICU, Dead), ~ sprintf("%.2f%%", .x)))
 
@@ -114,7 +124,7 @@ print(as.data.frame(summary_table), row.names = FALSE)
 cat("===============================================\n\n")
 
 # Plot: stacked bar chart
-p_outcomes <- ggplot(prop_df, aes(x = factor(xi_d), y = percent, fill = outcome)) +
+p_outcomes <- ggplot(prop_plot, aes(x = factor(xi_d), y = percent, fill = outcome)) +
   geom_bar(stat = "identity", width = 0.75, color = "white") +
   scale_fill_manual(
     values = col_outcomes,

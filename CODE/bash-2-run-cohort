@@ -38,8 +38,7 @@ if [ "$PLOT" -eq 1 ]; then
     Rscript plot-Figure-04-Psi_max-vs-Psi_max_time.R
     Rscript plot-Figure-05a-length-of-hospital-stay.R
     Rscript plot-Figure-05b-pct-outcomes-fct-xid.R
-    Rscript plot-Figure-06a-duration-transmission-period-fct-xic.R
-    Rscript plot-Figure-06b-max-transmission-rate-fct-xic.R
+    Rscript plot-Figure-06-duration-transmission-period-fct-xic.R
     Rscript plot-Figure-07a-death-time-fct-xid.R
     Rscript plot-Figure-07b-pdf-fd-fct-xid.R
     Rscript plot-Figure-08a-pdf-fr-fct-xir.R

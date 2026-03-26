@@ -68,8 +68,7 @@ p_V <- make_plot(
 )
 
 p_beta <- make_plot("beta_mean", "beta_sd",
-  expression("Transmission rate"),
-  xlim = c(0, 30)
+  expression("Transmission rate")
 )
 
 p_I <- make_plot(
