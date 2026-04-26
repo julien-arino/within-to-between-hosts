@@ -108,10 +108,11 @@ P_max <- ggplot() +
     ) +
     scale_x_discrete(labels = function(x) parse(text = x_labels[x])) +
     coord_cartesian(ylim = c(-1, 1)) +
-    theme_minimal(base_size = 14) +
+    theme_minimal(base_size = 20) +
     labs(x = "Parameter", y = "Partial Rank Correlation Coefficient") +
     scale_size_continuous(name = "|PRCC|", range = c(2.5, 8), guide = "none") +
-    theme(legend.position = "right", panel.grid.major.x = element_blank())
+    theme(legend.position = "right", panel.grid.major.x = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+    guides(fill = guide_legend(override.aes = list(fill = c("#ECD9EC", "#FEFEFE", "#F2F2F2"), alpha = 1, color = "black", linewidth = 0.5, size = 0.5)))
 
 print(P_max)
 ggsave(
@@ -166,10 +167,11 @@ P_tmax <- ggplot() +
     ) +
     scale_x_discrete(labels = function(x) parse(text = x_labels[x])) +
     coord_cartesian(ylim = c(-1, 1)) +
-    theme_minimal(base_size = 14) +
+    theme_minimal(base_size = 20) +
     labs(x = "Parameter", y = "PRCC of time to max") +
     scale_size_continuous(name = "|PRCC|", range = c(2.5, 8), guide = "none") +
-    theme(legend.position = "right", panel.grid.major.x = element_blank())
+    theme(legend.position = "right", panel.grid.major.x = element_blank(), axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1)) +
+    guides(fill = guide_legend(override.aes = list(fill = c("#ECD9EC", "#FEFEFE", "#F2F2F2"), alpha = 1, color = "black", linewidth = 0.5, size = 0.5)))
 
 print(P_tmax)
 ggsave(
@@ -215,17 +217,18 @@ P_global <- ggplot() +
     ) +
     scale_size_continuous(name = TeX("$\\Sigma|PRCC|$"), range = c(2.5, 8), guide = "none") +
     scale_x_discrete(labels = function(x) parse(text = x_labels[x])) +
-    theme_minimal(base_size = 14) +
+    theme_minimal(base_size = 20) +
     labs(
         x = "Parameter",
         y = parse(text = '"Global "*Sigma*"|PRCC| (values + times)"')
     ) +
     theme(
         legend.position = "right",
-        axis.text.x = element_text(angle = 0, hjust = 1, vjust = 1),
+        axis.text.x = element_text(angle = 45, hjust = 1, vjust = 1),
         panel.grid.major.x = element_blank(),
         plot.title = element_text(face = "bold")
-    )
+    ) +
+    guides(fill = guide_legend(override.aes = list(fill = c("#ECD9EC", "#FEFEFE", "#F2F2F2"), alpha = 1, color = "black", linewidth = 0.5, size = 0.5)))
 
 print(P_global)
 

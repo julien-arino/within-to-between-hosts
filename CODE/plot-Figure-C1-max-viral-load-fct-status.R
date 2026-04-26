@@ -11,7 +11,7 @@ source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
 start_time <- start_time_and_hello("plot-Figure-C1-max-viral-load-fct-status.R")
 
-load_libraries(c("ggplot2", "dplyr", "qs2", "here"))
+load_libraries(c("ggplot2", "dplyr", "qs2", "here", "ggrastr"))
 
 # ------------------------------------------------------------
 # 1. Automatically find the latest cohort_status file
@@ -50,15 +50,15 @@ viral_max_df$status <- factor(viral_max_df$status, levels = c("Mild", "ICU", "De
 # 4️⃣ Create the plot
 # ------------------------------------------------------------
 p_Vmax <- ggplot(viral_max_df, aes(x = status, y = V_max, color = status)) +
-  geom_jitter(width = 0.25, alpha = 0.3, size = 1) +                # scatter points
+  geom_jitter_rast(width = 0.25, alpha = 0.3, size = 1) +                # scatter points
   geom_boxplot(outlier.shape = NA, fill=NA, alpha = 0.4, width = 0.5, color="black") +      # overlay boxplot
   scale_color_manual(values = status_colors) +
   labs(
     x = "Severity group",
-    y = expression("log"[10]*"(Max Viral load [copies/ml])"),
+    y = expression("log"[10]*"(Maximum viral load [copies/ml])"),
     color = "Status"
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 20) +
   theme(
     legend.position = "top",
     # plot.title = element_text(face = "bold", hjust = 0.5)

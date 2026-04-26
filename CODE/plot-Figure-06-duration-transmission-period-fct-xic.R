@@ -94,7 +94,7 @@ cat("===============================\n\n")
 duration_df <- bind_rows(results)
 
 # Deduplicate percentages so we only get one text label per xi_c group
-percent_df <- percent_df %>% distinct(xi_c, percent)
+percent_df <- percent_df %>% group_by(xi_c) %>% summarise(percent = mean(percent), .groups = "drop")
 
 # Compute the highest visible point across all dodging geometries 
 # (either the top whisker or the red mean point) to tightly crop the empty y-axis space
@@ -140,7 +140,7 @@ p <- ggplot(
   stat_summary(
     fun = mean,
     geom = "point",
-    color = "red",
+    color = "darkred",
     size = 2,
     position = position_dodge(width = 0.8),
     show.legend = FALSE
@@ -152,7 +152,7 @@ p <- ggplot(
       y = ypos,
       label = label
     ),
-    size = 3.5,
+    size = 6,
     fontface = "bold",
     vjust = -0.5,
     inherit.aes = FALSE
@@ -165,19 +165,19 @@ p <- ggplot(
     x = expression(xi^c ~ "(log"[10] ~ "viral load threshold)"),
     y = "Transmission period duration (days)"
   ) +
-    theme_minimal(base_size = 14) +
+    theme_minimal(base_size = 20) +
     theme(legend.position = "right") +
     annotate(
       "text",
       x = length(unique(duration_df$xi_c)) / 2 + 0.5,
-      y = max_y_plot * 1.25,
+      y = max_y_plot * 1.35,
       label = "Percentage of transmitters",
-      size = 4,
+      size = 6,
       fontface = "italic"
     ) +
     # Gracefully crop the camera viewport (to cut out invisible y=100 outliers) 
     # without destroying the underlying math calculations that `ylim()` would trigger
-    coord_cartesian(ylim = c(0, max_y_plot * 1.35))
+    coord_cartesian(ylim = c(0, max_y_plot * 1.45))
 
 print(p)
 

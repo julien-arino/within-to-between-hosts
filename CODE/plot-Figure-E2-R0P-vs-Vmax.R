@@ -11,7 +11,7 @@ source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
 start_time <- start_time_and_hello("plot-Figure-E2-R0P-vs-Vmax.R")
 
-load_libraries(c("ggplot2", "dplyr", "qs2", "tidyr", "patchwork"))
+load_libraries(c("ggplot2", "dplyr", "qs2", "tidyr", "patchwork", "ggrastr"))
 
 # 1a) Find latest processed status file (base file)
 status_files <- list.files(output_dir, pattern = "^cohort_status_P.*\\.qs$", full.names = TRUE)
@@ -65,7 +65,7 @@ p2 <- ggplot(summary_df, aes(x = x_var, y = R0_diff)) +
   geom_hline(yintercept = 0, linetype = "dashed", color = "black", alpha = 0.5) +
 
   # Patients with R0 >= 1 (colored by status)
-  geom_point(
+  geom_point_rast(
     data = subset(summary_df, R0 >= 1),
     aes(color = status),
     alpha = 0.18,
@@ -73,7 +73,7 @@ p2 <- ggplot(summary_df, aes(x = x_var, y = R0_diff)) +
   ) +
 
   # Patients with R0 < 1 (forced explicitly to DARK GREEN)
-  geom_point(
+  geom_point_rast(
     data = subset(summary_df, R0 < 1),
     color = "darkgreen",
     alpha = 0.4,
@@ -89,13 +89,13 @@ p2 <- ggplot(summary_df, aes(x = x_var, y = R0_diff)) +
     trans = scales::pseudo_log_trans(base = 10),
     breaks = c(-1000, -100, -10, 0, 10, 100, 1000, 10000)
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 20) +
   theme(
     legend.position = "top",
     legend.title = element_blank()
   ) +
   labs(
-    x = expression(log[10] ~ "maximum viral load" ~ (V[i]^{max})),
+    x = expression(log[10] ~ "Maximum viral load" ~ (V[i]^{max})),
     y = expression("Normalised difference" ~ (R["0i"]^P - R["0i"]) / R["0i"])
   ) +
   guides(
@@ -118,7 +118,7 @@ p_violin <- ggplot(summary_df, aes(x = status, y = R0_diff, fill = status)) +
     trans = scales::pseudo_log_trans(base = 10),
     breaks = c(-1000, -100, -10, 0, 10, 100, 1000, 10000)
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 20) +
   theme(
     legend.position = "none",
     axis.title.y = element_blank(),

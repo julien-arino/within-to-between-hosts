@@ -88,7 +88,7 @@ status_cols <- c(
 ### CONSTANTS
 ###
 # Output path
-output_dir <- file.path(project_dir, "OUTPUT")
+output_dir <- "/mnt/NAS-small-OUTPUT/within-to-between-hosts"
 # Figure path
 figs_dir <- file.path(project_dir, "FIGS")
 # Number of cores for qs2 (parallel)

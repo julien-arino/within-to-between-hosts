@@ -113,7 +113,7 @@ p_multi <- ggplot(psi_tau_all,
     fill  = expression(xi^d~"(%)")
   ) +
   coord_cartesian(xlim=c(0,20), ylim=c(82,100)) +
-  theme_minimal(base_size=14) +
+  theme_minimal(base_size=20) +
   theme(
     plot.title = element_text(hjust=0.5, face="bold"),
     legend.position="right"

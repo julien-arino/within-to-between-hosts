@@ -10,7 +10,7 @@ source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
 start_time <- start_time_and_hello("plot-Figure-C6a-max-viral-load-vs-V0.R")
 
-load_libraries(c("ggplot2", "dplyr", "qs2", "here"))
+load_libraries(c("ggplot2", "dplyr", "qs2", "here", "ggrastr"))
 
 # ------------------------------------------------------------
 # 1. Automatically find the latest cohort files
@@ -58,14 +58,14 @@ plot_df$status <- factor(plot_df$status, levels = c("Mild", "ICU", "Dead"))
 # 4. Create the plot
 # ------------------------------------------------------------
 p_scatter <- ggplot(plot_df, aes(x = V0, y = V_max, color = status)) +
-  geom_point(alpha = 0.3, size = 1) +
+  geom_point_rast(alpha = 0.3, size = 1) +
   scale_color_manual(values = status_colors) +
   labs(
-    x = expression("log"[10]*"(Initial Viral load (V"[0]*") [copies/ml])"),
-    y = expression("log"[10]*"(Max Viral load [copies/ml])"),
+    x = expression("log"[10]*"(Initial viral load (V"[0]*") [copies/ml])"),
+    y = expression("log"[10]*"(Maximum viral load [copies/ml])"),
     color = "Status"
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 20) +
   theme(
     legend.position = "top"
   )

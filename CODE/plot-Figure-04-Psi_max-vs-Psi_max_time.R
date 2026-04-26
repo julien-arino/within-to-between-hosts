@@ -19,7 +19,7 @@ source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 start_time <- start_time_and_hello("plot-Figure-04-Psi_max-vs-Psi_max_time.R")
 
 # Load libraries
-load_libraries(c("ggplot2", "dplyr", "qs2", "tidyr", "patchwork"))
+load_libraries(c("ggplot2", "dplyr", "qs2", "tidyr", "patchwork", "ggrastr"))
 
 # 1a) Find latest processed status file (xi_h=75, xi_d=85)
 status_files <- list.files(output_dir, pattern = "^cohort_status_P.*_xih_75_xid_85\\.qs$", full.names = TRUE)
@@ -66,7 +66,7 @@ summary_df <- summary_df %>% filter(t_Psi_max < 100)
 p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = Psi_max)) +
 
   # Patients with R0 >= 1 (colored by status)
-  geom_point(
+  geom_point_rast(
     data = subset(summary_df, R0 >= 1),
     aes(color = status),
     alpha = 0.18,
@@ -74,7 +74,7 @@ p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = Psi_max)) +
   ) +
 
   # Patients with R0 < 1 (DARK GREEN)
-  geom_point(
+  geom_point_rast(
     data = subset(summary_df, R0 < 1),
     color = "darkgreen",
     alpha = 0.4,
@@ -103,8 +103,8 @@ p2 <- ggplot(summary_df, aes(x = t_Psi_max, y = Psi_max)) +
 
 p2 <- p2 +
   annotate("text",
-    x = 1, y = 15,
-    label = "R[0] < 1",
+    x = 1, y = 5,
+    label = "R['0i'] < 1",
     size = 4,
     color = "darkgreen",
     parse = TRUE,
@@ -112,7 +112,7 @@ p2 <- p2 +
   ) +
   annotate("text",
     x = 45, y = 95,
-    label = "R[0] >= 1",
+    label = "R['0i'] >= 1",
     size = 4,
     color = "black",
     parse = TRUE,

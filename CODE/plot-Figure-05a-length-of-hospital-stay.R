@@ -96,7 +96,7 @@ p <- ggplot(
   stat_summary(
     fun = mean,
     geom = "point",
-    color = "deeppink",
+    color = "darkred",
     size = 3
   ) +
   geom_text(
@@ -108,19 +108,19 @@ p <- ggplot(
     ),
     inherit.aes = FALSE,
     fontface = "bold",
-    size = 4
+    size = 6
   ) +
   labs(
     x = expression(xi^h ~ "(Hospitalisation threshold %)"),
     y = "Length of stay in hospital (days)"
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 20) +
   annotate(
     "text",
     x = 3, # center of 5 categories
     y = max(hospital_df$duration, na.rm = TRUE) * 1.15,
     label = "Surviving hospitalised patients (%)",
-    size = 4,
+    size = 6,
     fontface = "italic"
   )
 

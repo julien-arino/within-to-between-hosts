@@ -77,7 +77,7 @@ label_df <- psi_groups %>%
   group_by(xi_group) %>%
   summarize(
     pct_dead_lbl = first(pct_dead_lbl),
-    Psi_max = 101
+    Psi_max = 102
   ) %>%
   ungroup()
 
@@ -96,10 +96,11 @@ p_violin <- ggplot(psi_groups,
     y = expression(Psi[max]~"(%)")
   ) +
   geom_text(data = label_df, aes(x = xi_group, y = Psi_max, label = pct_dead_lbl), 
-            size = 5, fontface = "bold", inherit.aes = FALSE) +
-  annotate("text", x = 2, y = 102, label = "Deaths (%)", size = 5, fontface = "italic") +
-  coord_cartesian(ylim = c(82, 103)) +
-  theme_minimal(base_size = 15) +
+            size = 6, fontface = "bold", inherit.aes = FALSE) +
+  annotate("text", x = 2, y = 103.5, label = "Deaths (%)", size = 6, fontface = "italic") +
+  scale_y_continuous(breaks = seq(80, 100, by = 5)) +
+  coord_cartesian(ylim = c(82, 105)) +
+  theme_minimal(base_size = 20) +
   theme(
     legend.position = "none",
     plot.title = element_text(hjust = 0.5, face = "bold")

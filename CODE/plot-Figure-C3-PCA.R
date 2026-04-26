@@ -12,7 +12,7 @@ source(file.path(project_dir, "CODE", "functions-and-definitions.R"))
 
 start_time <- start_time_and_hello("plot-Figure-C3-PCA.R")
 
-load_libraries(c("qs2", "dplyr", "FactoMineR", "factoextra", "ggplot2", "here"))
+load_libraries(c("qs2", "dplyr", "FactoMineR", "factoextra", "ggplot2", "here", "ggrastr"))
 
 # ------------------------------------------------------------
 # 2. Automatically find the latest cohort_truncated file
@@ -73,15 +73,17 @@ if (!is.null(res.pca)) {
     res.pca,
     geom.ind      = "point",
     habillage     = "status",
-    addEllipses   = TRUE,
-    ellipse.level = 0.68,
+    # addEllipses   = TRUE,
+    # ellipse.level = 0.68,
     label         = "none",    # we will add our own labels
     col.var       = "black") +
     scale_color_manual(values = status_colors,
                        labels = status_labels,
                        name   = "Status") +
-    guides(fill = "none", shape = "none") +
-    theme_minimal(base_size = 14) +
+    scale_shape_manual(values = c(Mild = 16, ICU = 16, Dead = 16),
+                       guide  = "none") +
+    guides(color = guide_legend(override.aes = list(shape = 16, fill = NA, linetype = 0)), fill = "none") +
+    theme_minimal(base_size = 20) +
     labs(title = NULL) +
     theme(
       plot.title = element_blank(), 
@@ -109,17 +111,20 @@ if (!is.null(res.pca)) {
   
   # Add labels at vector ends
   p_biplot <- p_biplot +
-    geom_text(
+    geom_label(
       data = var_coord,
       aes(x = x_lab, y = y_lab, label = label),
       parse = TRUE,
-      size = 4.5,
+      size = 6,
       fontface = "bold",
       hjust = 0.5,
       vjust = 0.5,
+      fill = alpha("white", 0.8),
+      label.size = 0,
       inherit.aes = FALSE
     )
   
+  p_biplot <- rasterise(p_biplot, layers = "Point", dpi = 300)
   print(p_biplot)
   
   # ------------------------------------------------------------

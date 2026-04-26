@@ -78,7 +78,7 @@ label_df <- psi_groups %>%
   group_by(xi_group) %>%
   summarize(
     pct_dead_lbl = first(pct_dead_lbl),
-    tau_max_Psi = global_max_y * 1.05
+    tau_max_Psi = global_max_y * 1.10
   ) %>%
   ungroup()
 
@@ -97,10 +97,10 @@ p_violin <- ggplot(psi_groups,
     y = expression("Time to maximum tissue damage"~tau[i]^{Psi[max]})
   ) +
   geom_text(data = label_df, aes(x = xi_group, y = tau_max_Psi, label = pct_dead_lbl), 
-            size = 5, fontface = "bold", inherit.aes = FALSE) +
-  annotate("text", x = 2, y = global_max_y * 1.12, label = "Deaths (%)", size = 5, fontface = "italic") +
-  scale_y_continuous(expand = expansion(mult = c(0.05, 0.20))) +
-  theme_minimal(base_size = 15) +
+            size = 6, fontface = "bold", inherit.aes = FALSE) +
+  annotate("text", x = 2, y = global_max_y * 1.18, label = "Deaths (%)", size = 6, fontface = "italic") +
+  scale_y_continuous(expand = expansion(mult = c(0.05, 0.25))) +
+  theme_minimal(base_size = 20) +
   theme(
     legend.position = "none",
     plot.title = element_text(hjust = 0.5, face = "bold")

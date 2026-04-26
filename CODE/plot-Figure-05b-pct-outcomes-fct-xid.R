@@ -135,7 +135,7 @@ p_outcomes <- ggplot(prop_plot, aes(x = factor(xi_d), y = percent, fill = outcom
     y = "Percentage of individuals (%)",
     fill = "Status"
   ) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 20) +
   theme(
     plot.title = element_text(hjust = 0.5, face = "bold")
   )
