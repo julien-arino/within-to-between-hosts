@@ -86,11 +86,11 @@ p_mu <- ggplot(mu_all, aes(x = a, y = f_d_val, color = xi_d, fill = xi_d)) +
     )
   ) +
   coord_cartesian(xlim = c(0, 20), ylim = c(0, max(mu_all$f_d_val, na.rm = TRUE) + 0.01)) +
-  theme_minimal(base_size = 14) +
+  theme_minimal(base_size = 20) +
   theme(
     legend.position = "right",
-    legend.title = element_text(size = 12, face = "italic"),
-    legend.text = element_text(size = 11)
+    legend.title = element_text(size = 18, face = "italic"),
+    legend.text = element_text(size = 16)
   )
 
 print(p_mu)

@@ -164,7 +164,7 @@ summary_stats <- res_all %>%
   mutate(
     label = paste0("AUC = ", round(AUC,0)),
     y_pos = max(res_all$U) * 0.85 -
-      (as.numeric(factor(R0)) - 1) * max(res_all$U) * 0.08
+      (as.numeric(factor(R0)) - 1) * max(res_all$U) * 0.15
   )
 
 p <- ggplot(res_all,aes(time,U,color=R0))+
@@ -176,7 +176,7 @@ p <- ggplot(res_all,aes(time,U,color=R0))+
                 label=label,
                 color=R0),
             inherit.aes=FALSE,
-            size=2,
+            size=4,
             show.legend=FALSE)+
   scale_color_manual(values=c("R0=2.5"="navy",
                               "R0=5"="darkred"),

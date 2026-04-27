@@ -66,7 +66,12 @@ p <- ggplot(
     labels = c("1" = expression(1), "4" = expression(4)),
     drop = FALSE
   ) +
-  theme_minimal(base_size = 14)
+  theme_minimal(base_size = 20) +
+  theme(
+    legend.position = "right",
+    legend.title = element_text(size = 18, face = "italic"),
+    legend.text = element_text(size = 16)
+  )
 
 print(p)
 

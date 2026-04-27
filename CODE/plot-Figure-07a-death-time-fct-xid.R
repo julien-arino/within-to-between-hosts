@@ -87,7 +87,7 @@ p_violin <- ggplot(
     inherit.aes = FALSE,
     vjust = -2,
     hjust = 1,
-    size = 4,
+    size = 6,
     color = "black"
   ) +
   coord_cartesian(xlim = c(0, 20)) +
@@ -106,7 +106,7 @@ p_violin <- ggplot(
       expression(xi^d == 95)
     )
   ) +
-  theme_minimal(base_size = 14)
+  theme_minimal(base_size = 20)
 
 print(p_violin)
 
