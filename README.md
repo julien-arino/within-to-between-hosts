@@ -1,6 +1,6 @@
 # From a virtual cohort to an age-of-infection model
 
-This repo contains the code used in the paper *From a virtual cohort to an age-of-infection model* by Julien Arino, Morgan Craig, Clotilde Djuikem, Kang-Ling Liao and Stéphanie Portet.
+This repo contains the code used in the paper *From a virtual cohort to an age-of-infection model* by Julien Arino, Morgan Craig, Clotilde Djuikem, Kang-Ling Liao and Stéphanie Portet, submitted and also [arXiv:2605.17129](https://arxiv.org/abs/2605.17129).
 
 ## Content of the repository
 - CODE contains the code itself, a mixture of `R` and `julia`.
